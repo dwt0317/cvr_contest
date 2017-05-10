@@ -9,7 +9,6 @@ test_path = os.getcwd() + "/dataset/raw/test.csv"
 cus_train_path = os.getcwd()+"/dataset/custom/train_t.csv"
 cus_test_path = os.getcwd()+"/dataset/custom/test_t.csv"
 
-file_header = 'label,clickTime,conversionTime,creativeID,userID,positionID,connectionType,telecomsOperator'
 
 # 统计训练集中正负样例的比例
 def count_positive():
@@ -35,7 +34,7 @@ def time2num(num):
 # 替换数据时间表示，便于加减操作
 def convert_data_time(file_path, to_path, offset):
     df = pd.read_csv(file_path)
-    # 使用0替换na
+    # 使用-1替换na
     df = df.fillna(-1)
     print df.head(5)
     narray = df.as_matrix().astype(int)
@@ -43,6 +42,7 @@ def convert_data_time(file_path, to_path, offset):
     for row in narray:
         row[offset+1] = time2num(int(row[offset + 1]))
         row[offset+2] = time2num(int(row[offset + 2]))
+    file_header = ','.join(df.columns.values.tolist())
     with open(to_path, 'w') as f:
         np.savetxt(f, narray, fmt='%d', delimiter=',', header=file_header)
 

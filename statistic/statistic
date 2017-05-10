@@ -12,3 +12,24 @@ mean: 4.4512
 70% :0.3833
 90% :17.85
 100% :119.2166
+
+
+Advertising ID statistic:
+ad 20%: 9.0
+campaignID 20%: 32.2
+advertiserID 20%: 198.8
+appID 20%: 355.8
+
+ad 85%: 403.1
+campaignID 85%: 4784.4
+advertiserID 85%: 34618.8
+appID 85%: 77428.0
+
+
+User ID statistic:
+user 20%: 1.0
+user 40%: 1.0
+user 60%: 1.0
+user 80%: 2.0
+user 90%: 2.0
+user 95%: 3.0

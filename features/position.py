@@ -8,7 +8,7 @@ def build_position():
     f = open(constants.project_path + "/dataset/raw/" + "position.csv")
     position = {}
     f.readline()
-
+    offset = 0
     for line in f:
         fields = line.strip().split(',')
         features = {}
@@ -19,11 +19,11 @@ def build_position():
         offset += 3
         # type
         features[offset+int(fields[2])] = 1
-
-        position[fields[0]] = features
+        offset += 6
+        position[int(fields[0])] = features
 
     print "Buliding position finished."
-    return position
+    return position, offset
 
 
 if __name__ == '__main__':

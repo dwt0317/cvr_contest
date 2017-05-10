@@ -8,6 +8,7 @@ def build_user_profile():
     # make user raw data
     f = open(constants.project_path + "/dataset/raw/" + "user.csv")
     user_feature = []
+    offset = 0
     f.readline()
     for line in f:
         offset = 0
@@ -34,11 +35,11 @@ def build_user_profile():
         offset += 7
         # residence
         features[offset+int(fields[6])/100] = 1
-
+        offset += 35
         user_feature.append(features)
 
     print "Buliding user profile finished."
-    return user_feature
+    return user_feature, offset
 
 
 def count_user_freq():

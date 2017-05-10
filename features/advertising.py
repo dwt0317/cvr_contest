@@ -51,31 +51,48 @@ def build_ad_train(to_path):
     ad_train = []
     for line in train_f:
         fields = line.strip().split(',')
-        ad_train.append(ad_dict[int(fields[3])])
+        tmp = [int(fields[0])] + ad_dict[int(fields[3])]
+        ad_train.append(tmp)
 
     a = np.array(ad_train, dtype=int)
     print a[:5]
     print a.shape
-    file_header = "creativeID,adID,campaignID,advertiserID,appID,appPlatform"
+    file_header = "label,creativeID,adID,campaignID,advertiserID,appID,appPlatform"
     with open(to_path, 'w') as f:
         np.savetxt(f, a, delimiter=',', fmt="%s", header=file_header)
 
 
 # 生成广告特征 return {creativeID:(adID,campaignID,advertiserID), appID,appPlatform}
-def build_ad_id(has_id=True):
+def build_ad_feature(has_id=True):
     train_df = pd.read_csv(constants.project_path + "/dataset/raw/" + "ad.csv")
 
+    ad_id_lens = [0, 0, 0, 0, 0]
+    appID_set = list2dict(train_df['appID'].unique())
+    ad_id_lens[4] = len(appID_set) + 1
     if has_id:
         # 将list转为dict{id:index}
         creativeID_set = list2dict(train_df['creativeID'].unique())
         adID_set = list2dict(train_df['adID'].unique())
         campID_set = list2dict(train_df['campaignID'].unique())
         adverID_set = list2dict(train_df['advertiserID'].unique())
-        appID_set = list2dict(train_df['appID'].unique())
+        ad_id_lens = [len(creativeID_set) + 1, len(adID_set) + 1, len(campID_set) + 1, len(adverID_set) + 1,
+                      len(appID_set) + 1]
+    print "Building ID set finished."
 
-        ad_id_lens = [len(creativeID_set)+1, len(adID_set)+1, len(campID_set)+1, len(adverID_set)+1, len(appID_set)+1]
+    # read APP category
+    category_dict = {}
+    with open(constants.project_path + "/dataset/raw/" + "app_categories.csv") as cate_f:
+        cate_f.readline()
+        for line in cate_f:
+            fields = line.strip().split(',')
+            category_dict[int(fields[0])] = int(fields[1])
+    category = list2dict(list(set(category_dict.values())))
+    print "Building category set finished."
+
+    # read feature file
     f = open(constants.project_path + "/dataset/raw/" + "ad.csv")
     ad_feature = {}
+    offset = 0
     f.readline()
     for line in f:
         line_feature = []
@@ -114,14 +131,20 @@ def build_ad_id(has_id=True):
         offset += ad_id_lens[4]
         # appPlatform
         line_feature.append(offset+int(fields[5]))
+        offset += 3
+        # app category one hot
+        line_feature.append(offset+category[category_dict[int(fields[4])]])
         ad_feature[int(fields[0])] = line_feature
+        offset += len(category)
 
-    print "Building ad id feature finished."
-    return ad_feature
+    f.close()
+    print "Building ad feature finished."
+    return ad_feature, offset
 
 
 if __name__ == '__main__':
-    # build_ad_train(constants.project_path + "/dataset/custom/train_ad.csv")
-    pos = build_ad_id()
-    for key in pos.keys()[:10]:
-        print pos[key]
+    # build_ad_train(constants.project_path + "/dataset/custom/train_ad_label.csv")
+    pos, lent = build_ad_feature(has_id=True)
+    print lent
+    # for key in pos.keys()[:10]:
+    #     print pos[key]

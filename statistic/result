@@ -1,0 +1,5 @@
+fm: onehot + 100 iters:
+auc_test: 0.730996886918
+logloss: 0.108594944267
+time: 0:20:43.032000
+

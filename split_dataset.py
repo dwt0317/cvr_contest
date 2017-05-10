@@ -88,19 +88,47 @@ def conversion_graph():
     plt.savefig(img_path)
 
 
+# 舍弃部分异常日期的数据
+def abandon_data(total_df, abandon_list):
+    for i in abandon_list:
+        total_df = total_df[(total_df['clickTime'] >= (i+1)*1440)
+                            | (total_df['clickTime'] < i*1440)]
+    return total_df
+
+
 # 切分数据集
-def split_dataset(start_date, end_date, to_path):
-    rbound = (end_date+1) * 1440
-    lbound = start_date * 1440
-    train_df = pd.read_csv(cus_train_path)
-    split_df = train_df[(train_df['clickTime'] < rbound)
-                        & (train_df['clickTime'] >= lbound)]
-    split_df.to_csv(path_or_buf=to_path, index=False)
+def split_dataset(train_percent, valid_percent, to_path):
+    total_df = pd.read_csv(cus_train_path)
+    print total_df.shape
+    abandon_list = [19, 30]
+    total_df = abandon_data(total_df, abandon_list)
+
+    # shuffle原数据集
+    random_df = total_df.sample(frac=1).reset_index(drop=True)
+    print random_df.shape
+
+    n = len(random_df)
+    train_bound = int(n * train_percent)
+    train_df = random_df.ix[:train_bound, :]
+    train_df.to_csv(path_or_buf=to_path+"local_train.csv", index=False)
+    print train_df.shape
+    del train_df
+
+    valid_bound = train_bound + int(n * valid_percent)
+    print valid_bound
+    valid_df = random_df.ix[train_bound:valid_bound, :]
+    valid_df.to_csv(path_or_buf=to_path+"local_valid.csv", index=False)
+    print valid_df.shape
+    del valid_df
+
+    test_df = random_df.ix[valid_bound:, :]
+    test_df.to_csv(path_or_buf=to_path+"local_test.csv", index=False)
+    print test_df.shape
+    del test_df
+
 
 if __name__ == '__main__':
-    split_dataset(17, 27, os.getcwd()+"/dataset/custom/local_train.csv")
-    split_dataset(27, 28, os.getcwd() + "/dataset/custom/local_validation.csv")
-    split_dataset(28, 29, os.getcwd() + "/dataset/custom/local_test.csv")
+    split_dataset(0.8, 0.1, os.getcwd()+"/dataset/custom/")
     # conversion_graph()
     # conversion_gap()
     # convert_data_time(train_path, os.getcwd()+"/dataset/custom/train_t.csv", 0)

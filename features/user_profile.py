@@ -7,7 +7,8 @@ import numpy as np
 def build_user_profile():
     # make user raw data
     f = open(constants.project_path + "/dataset/raw/" + "user.csv")
-    user_feature = []
+    # user编号从1开始的
+    user_feature = [{0: 0}]
     offset = 0
     f.readline()
     for line in f:

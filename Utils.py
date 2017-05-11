@@ -1,4 +1,7 @@
 import scipy as sp
+import io
+import constants
+
 
 def list2dict(mylist):
     myDict = {}
@@ -16,3 +19,23 @@ def logloss(act, pred):
     ll = sum(act*sp.log(pred) + sp.subtract(1,act)*sp.log(sp.subtract(1,pred)))
     ll = ll * -1.0/len(act)
     return ll
+
+
+def build_submission(from_path, to_path):
+    to_file = io.open(to_path, 'w', newline='\n')
+    to_file.write(unicode("fm 130 iters"))
+    to_file.write(unicode('\n'))
+
+    with open(from_path) as f:
+        instance = 1
+        for line in f:
+            rcd = str(instance) + "," + line.strip()
+            to_file.write(unicode(rcd))
+            to_file.write(unicode('\n'))
+            instance += 1
+    to_file.close()
+
+
+if __name__ == "__main__":
+    build_submission(constants.project_path+"/model/model_file/fm_gbdt_100.out",
+                     constants.project_path + "/submission/submission.csv")

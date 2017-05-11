@@ -11,7 +11,7 @@ def build_gbdt(dataset):
     elif dataset == "test":
         path = test_path
     gbdt_feature = pickle.load(open(path, "rb"))
-    print "Load GBDT features finished."
+    print "Loading GBDT features finished."
     return gbdt_feature
 
 

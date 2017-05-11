@@ -3,3 +3,11 @@ auc_test: 0.730996886918
 logloss: 0.108594944267
 time: 0:20:43.032000
 
+fm: onehot + 60 iters:
+auc_test: 0.730053682215
+logloss: 0.110039546855
+time: 0:12:34.802000
+
+GBDT: onehot 40 rounds:
+auc_test: 0.685661919571
+logloss: 0.112036076747

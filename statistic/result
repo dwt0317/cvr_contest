@@ -10,4 +10,10 @@ time: 0:12:34.802000
 
 GBDT: onehot 40 rounds:
 auc_test: 0.685661919571
-logloss: 0.112036076747
+logloss: 0.112036076747fm: onehot + gbdt + 100 iters:
+
+fm: onehot + gbdt + 100
+auc_test: 0.730683888359
+logloss: 0.108616286963
+time: 0:42:24.369000
+

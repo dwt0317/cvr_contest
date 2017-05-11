@@ -53,6 +53,11 @@ def build_x_hepler(from_path, to_path,
             features[offset+i] = 1
         offset += pos_dim
 
+        # network feature connection*5, tele-operator*4
+        features[offset+int(fields[6])] = 1
+        features[offset+int(fields[7])] = 1
+        offset += 9
+
         if has_gbdt:
             # GBDT feature
             for k in gbdt_feature[row]:

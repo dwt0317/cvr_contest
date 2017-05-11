@@ -62,7 +62,7 @@ def build_ad_train(to_path):
         np.savetxt(f, a, delimiter=',', fmt="%s", header=file_header)
 
 
-# 生成广告特征 return {creativeID:(adID,campaignID,advertiserID), appID,appPlatform}
+# 生成广告特征 return {creativeID:(adID,campaignID,advertiserID), appID,appPlatform,appCategory}
 def build_ad_feature(has_id=True):
     train_df = pd.read_csv(constants.project_path + "/dataset/raw/" + "ad.csv")
 

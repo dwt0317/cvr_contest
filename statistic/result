@@ -17,3 +17,19 @@ auc_test: 0.730683888359
 logloss: 0.108616286963
 time: 0:42:24.369000
 
+fm: onehot + 80 iters:
+auc_test: 0.737582477635
+logloss: 0.108775055464
+time: 0:16:09.990000
+
+GBDT: onehot_re 150:
+auc_test: 0.700221723866
+logloss: 0.109297083688
+
+GBDT: onehot_re 200:
+auc_test: 0.702534847672
+logloss: 0.109139313923
+
+GBDT: onehot_re 180:
+auc_test: 0.702076614688
+logloss: 0.109155417065

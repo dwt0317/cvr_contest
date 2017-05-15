@@ -83,22 +83,22 @@ def build_x():
     ad_features, ad_dim = af.build_ad_feature(has_id=False)
     user_features, user_dim = uf.build_user_profile()
     pos_features, pos_dim = pf.build_position()
-    # build_x_hepler(constants.local_valid_path, constants.project_path + "/dataset/x_y/local_valid_x",
+    build_x_hepler(constants.local_valid_path, constants.project_path + "/dataset/x_y/local_valid_x",
+                   ad_features, ad_dim,
+                   user_features, user_dim,
+                   pos_features, pos_dim)
+    # build_x_hepler(constants.cus_train_path, constants.project_path + "/dataset/x_y/cus_train_x_gbdt",
     #                ad_features, ad_dim,
     #                user_features, user_dim,
-    #                pos_features, pos_dim)
-    build_x_hepler(constants.cus_train_path, constants.project_path + "/dataset/x_y/cus_train_x_gbdt",
-                   ad_features, ad_dim,
-                   user_features, user_dim,
-                   pos_features, pos_dim,
-                   dataset="train",
-                   has_gbdt=True)
-    build_x_hepler(constants.cus_test_path, constants.project_path + "/dataset/x_y/cus_test_x_gbdt",
-                   ad_features, ad_dim,
-                   user_features, user_dim,
-                   pos_features, pos_dim,
-                   dataset="test",
-                   has_gbdt=True)
+    #                pos_features, pos_dim,
+    #                dataset="train",
+    #                has_gbdt=True)
+    # build_x_hepler(constants.cus_test_path, constants.project_path + "/dataset/x_y/cus_test_x_gbdt",
+    #                ad_features, ad_dim,
+    #                user_features, user_dim,
+    #                pos_features, pos_dim,
+    #                dataset="test",
+    #                has_gbdt=True)
 
 
 if __name__ == '__main__':

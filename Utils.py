@@ -23,7 +23,7 @@ def logloss(act, pred):
 
 def build_submission(from_path, to_path):
     to_file = io.open(to_path, 'w', newline='\n')
-    to_file.write(unicode("fm 130 iters"))
+    to_file.write(unicode("gbdt 180"))
     to_file.write(unicode('\n'))
 
     with open(from_path) as f:
@@ -37,5 +37,5 @@ def build_submission(from_path, to_path):
 
 
 if __name__ == "__main__":
-    build_submission(constants.project_path+"/model/model_file/fm_gbdt_100.out",
+    build_submission(constants.project_path+"/model/model_file/fm_cus_re_80.out",
                      constants.project_path + "/submission/submission.csv")

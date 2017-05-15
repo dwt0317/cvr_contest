@@ -7,32 +7,32 @@ import Utils
 import cPickle as pickle
 
 
-train_x_file = constants.project_path + "/dataset/x_y/local_train_x_gbdt"
-train_y_file = constants.project_path + "/dataset/x_y/local_train_y"
-test_x_file = constants.project_path + "/dataset/x_y/local_test_x"
+train_x_file = constants.project_path + "/dataset/x_y/cus_train_x_3"
+train_y_file = constants.project_path + "/dataset/x_y/cus_train_y"
+test_x_file = constants.project_path + "/dataset/x_y/cus_test_x_3"
 test_y_file = constants.project_path + "/dataset/x_y/local_test_y"
 
 
 # build fm interaction vectors
 def build_fm_interaction():
     begin = datetime.datetime.now()
-    # test_y = np.loadtxt(open(test_y_file), dtype=int)
-    fm = pywFM.FM(task='classification', num_iter=100, learning_method='mcmc', temp_path=constants.project_path+"/model/tmp/")
+    test_y = np.loadtxt(open(test_y_file), dtype=int)
+    fm = pywFM.FM(task='classification', num_iter=80, learning_method='mcmc', temp_path=constants.project_path+"/model/tmp/")
 
     model = fm.run(None, None, None, None, train_path=train_x_file, test_path=test_x_file,
                    model_path=constants.project_path + "/model/model_file/fm_model",
-                   out_path=constants.project_path + "/model/model_file/fm_gbdt_100.out"
+                   out_path=constants.project_path + "/model/model_file/fm_cus_re_80.out"
                    )
     end = datetime.datetime.now()
 
-    prob_test = model.predictions
+    # prob_test = model.predictions
     # auc_test = metrics.roc_auc_score(test_y, prob_test)
     # logloss = Utils.logloss(test_y, prob_test)
     # print auc_test, logloss
-
-
+    #
+    #
     # log_file = open(constants.result_path, "a")
-    # log_file.write("fm: onehot + gbdt + 100 iters:" + '\n')
+    # log_file.write("fm: onehot + 80 iters:" + '\n')
     # log_file.write("auc_test: " + str(auc_test) + '\n')
     # log_file.write("logloss: " + str(logloss) + '\n')
     # log_file.write("time: " + str(end - begin) + '\n' + '\n')

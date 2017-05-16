@@ -32,4 +32,8 @@ logloss: 0.109139313923
 
 GBDT: onehot_re 180:
 auc_test: 0.702076614688
-logloss: 0.109155417065
+logloss: 0.109155417065fm: sgd + 50 iters:
+auc_test: 0.642650615518
+logloss: 0.122894502225
+time: 0:02:22.322000
+

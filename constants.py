@@ -7,8 +7,8 @@ cus_test_path = project_path+"/dataset/custom/test_c_time.csv"
 train_path = project_path + "/dataset/raw/train.csv"
 test_path = project_path + "/dataset/raw/test.csv"
 
-local_train_path = project_path+"/dataset/custom/local_train.csv"
+local_train_path = project_path+"/dataset/custom/local_train_2.csv"
 local_valid_path = project_path+"/dataset/custom/local_valid.csv"
-local_test_path = project_path+"/dataset/custom/local_test.csv"
+local_test_path = project_path+"/dataset/custom/local_test_2.csv"
 
 result_path = project_path+"/statistic/result"

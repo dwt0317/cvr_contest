@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 
 train_path = os.getcwd() + "/dataset/raw/train.csv"
 test_path = os.getcwd() + "/dataset/raw/test.csv"
-cus_train_path = os.getcwd()+"/dataset/custom/train_t.csv"
-cus_test_path = os.getcwd()+"/dataset/custom/test_t.csv"
+cus_train_path = os.getcwd()+"/dataset/custom/train_c_time.csv"
+cus_test_path = os.getcwd()+"/dataset/custom/test_c_time.csv"
 
 
 # 统计训练集中正负样例的比例
@@ -110,7 +110,7 @@ def split_dataset(train_percent, valid_percent, to_path):
     n = len(random_df)
     train_bound = int(n * train_percent)
     train_df = random_df.ix[:train_bound, :]
-    train_df.to_csv(path_or_buf=to_path+"local_train.csv", index=False)
+    train_df.to_csv(path_or_buf=to_path+"local_train_2.csv", index=False)
     print train_df.shape
     del train_df
 
@@ -122,13 +122,13 @@ def split_dataset(train_percent, valid_percent, to_path):
     del valid_df
 
     test_df = random_df.ix[valid_bound:, :]
-    test_df.to_csv(path_or_buf=to_path+"local_test.csv", index=False)
+    test_df.to_csv(path_or_buf=to_path+"local_test_2.csv", index=False)
     print test_df.shape
     del test_df
 
 
 if __name__ == '__main__':
-    split_dataset(0.8, 0.1, os.getcwd()+"/dataset/custom/")
+    split_dataset(0.9, 0.0, os.getcwd()+"/dataset/custom/")
     # conversion_graph()
     # conversion_gap()
     # convert_data_time(train_path, os.getcwd()+"/dataset/custom/train_t.csv", 0)

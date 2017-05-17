@@ -6,6 +6,7 @@ import advertising as af
 import position as pf
 import user_profile as uf
 import gbdt_feature as gf
+import cvr
 
 
 # 以libfm形式存储
@@ -37,6 +38,7 @@ def build_x_hepler(from_path, to_path,
                    ad_features, ad_dim,
                    user_features, user_dim,
                    pos_features, pos_dim,
+                   user_cvr_features,
                    dataset="train",
                    has_gbdt=False,
                    ffm=False):
@@ -46,14 +48,22 @@ def build_x_hepler(from_path, to_path,
 
     if has_gbdt:
         gbdt_feature = gf.build_gbdt(dataset)
-    row = 0
+
+    row_num = 0
     for line in from_file:
         features = {}
         offset = 0
-        line_data = line.strip().split(',')
+        row = line.strip().split(',')
         field = 0
+        # user cvr feature
+        user_cvr = user_cvr_features[int(row[4])]
+        for i in xrange(len(user_cvr)):
+            features[offset+i] = str(field) + "," + str(user_cvr[i]) if ffm else user_cvr[i]
+        offset += len(user_cvr)
+        field += 1
+
         # user feature
-        user_f = user_features[int(line_data[4])]
+        user_f = user_features[int(row[4])]
         for i in user_f:
             field += 1
             features[offset+i] = str(field) + "," + str(1) if ffm else 1
@@ -61,38 +71,38 @@ def build_x_hepler(from_path, to_path,
 
         field += 1
         # position feature
-        pos_f = pos_features[int(line_data[5])]
+        pos_f = pos_features[int(row[5])]
         for i in pos_f:
             features[offset+i] = str(field) + "," + str(1) if ffm else 1
         offset += pos_dim
 
         field += 1
         # network feature connection*5, tele-operator*4
-        features[offset+int(line_data[6])] = str(field) + "," + str(1) if ffm else 1
+        features[offset+int(row[6])] = str(field) + "," + str(1) if ffm else 1
         field += 1
-        features[offset+int(line_data[7])] = str(field) + "," + str(1) if ffm else 1
+        features[offset+int(row[7])] = str(field) + "," + str(1) if ffm else 1
         offset += 9
 
         if has_gbdt:
             # GBDT feature
-            for k in gbdt_feature[row]:
+            for k in gbdt_feature[row_num]:
                 features[k + offset] = 1
             offset += 400
 
         field += 1
         # ad feature
-        ad_f = ad_features[int(line_data[3])]
+        ad_f = ad_features[int(row[3])]
         for i in ad_f:
             features[offset+i] = str(field) + "," + str(1) if ffm else 1
         offset += ad_dim
 
         if ffm:
-            write_as_libffm(features, to_file, line_data[0])
+            write_as_libffm(features, to_file, row[0])
         else:
-            write_as_libfm(features, to_file, line_data[0])
-        if row % 100000 == 0:
-            print row
-        row += 1
+            write_as_libfm(features, to_file, row[0])
+        if row_num % 100000 == 0:
+            print row_num
+        row_num += 1
     print "Building x finished."
     from_file.close()
     to_file.close()
@@ -102,21 +112,24 @@ def build_x():
     ad_features, ad_dim = af.build_ad_feature(has_id=False)
     user_features, user_dim = uf.build_user_profile()
     pos_features, pos_dim = pf.build_position()
+    user_cvr_features = cvr.build_user_cvr()
     # build_x_hepler(constants.local_valid_path, constants.project_path + "/dataset/x_y/local_valid_x",
     #                ad_features, ad_dim,
     #                user_features, user_dim,
     #                pos_features, pos_dim)
-    # build_x_hepler(constants.local_train_path, constants.project_path + "/dataset/x_y/cus_train_x.ffm",
-    #                ad_features, ad_dim,
-    #                user_features, user_dim,
-    #                pos_features, pos_dim,
-    #                dataset="train",
-    #                has_gbdt=False,
-    #                ffm=True)
-    build_x_hepler(constants.cus_test_path, constants.project_path + "/dataset/x_y/cus_test_x.ffm",
+    build_x_hepler(constants.local_train_path, constants.project_path + "/dataset/x_y/local_train_x_ucvr.ffm",
                    ad_features, ad_dim,
                    user_features, user_dim,
                    pos_features, pos_dim,
+                   user_cvr_features,
+                   dataset="train",
+                   has_gbdt=False,
+                   ffm=True)
+    build_x_hepler(constants.local_test_path, constants.project_path + "/dataset/x_y/local_test_x_ucvr.ffm",
+                   ad_features, ad_dim,
+                   user_features, user_dim,
+                   pos_features, pos_dim,
+                   user_cvr_features,
                    dataset="train",
                    has_gbdt=False,
                    ffm=True)

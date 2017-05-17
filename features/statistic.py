@@ -3,7 +3,9 @@ import constants
 import pandas as pd
 import numpy as np
 from Utils import list2dict
-
+'''
+统计相关维度点击率信息
+'''
 
 def ad():
     train_df = pd.read_csv(constants.project_path + "/dataset/custom/train_c_time.csv")

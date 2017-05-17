@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+import constants
 
 train_path = os.getcwd() + "/dataset/raw/train.csv"
 test_path = os.getcwd() + "/dataset/raw/test.csv"
@@ -127,9 +128,30 @@ def split_dataset(train_percent, valid_percent, to_path):
     del test_df
 
 
+# 在train文件中merge user信息
+def merge_by_user(to_path):
+    total_df = pd.read_csv(cus_train_path)
+    abandon_list = [19, 30]
+    total_df = abandon_data(total_df, abandon_list)
+    user_df = pd.read_csv(constants.project_path + "/dataset/raw/" + "user.csv")
+    merge_df = pd.merge(left=total_df, right=user_df, on=['userID'])
+    merge_df.to_csv(path_or_buf=to_path, index=False)
+
+
+# 在train文件中merge ad信息
+def merge_by_ad(to_path):
+    total_df = pd.read_csv(cus_train_path)
+    abandon_list = [19, 30]
+    total_df = abandon_data(total_df, abandon_list)
+    ad_df = pd.read_csv(constants.project_path + "/dataset/raw/" + "ad.csv")
+    merge_df = pd.merge(left=total_df, right=ad_df, on=['creativeID'])
+    merge_df.to_csv(path_or_buf=to_path, index=False)
+
+
 if __name__ == '__main__':
-    split_dataset(0.9, 0.0, os.getcwd()+"/dataset/custom/")
+    # split_dataset(0.9, 0.0, os.getcwd()+"/dataset/custom/")
     # conversion_graph()
+    merge_by_ad(constants.project_path + "/dataset/custom/train_with_ad_info.csv")
     # conversion_gap()
     # convert_data_time(train_path, os.getcwd()+"/dataset/custom/train_t.csv", 0)
     # convert_data_time(test_path, os.getcwd()+"/dataset/custom/test_t.csv", 1)

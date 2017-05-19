@@ -137,13 +137,13 @@ if __name__ == '__main__':
     # pass
     # split_dataset(0.8, 0.1, os.getcwd()+"/dataset/custom/split_3/")
     # abandon_thirty(constants.cus_train_path)
-    # split_by_date(27, constants.project_path + "/dataset/custom/split_4/")
-    merge_by_ad(constants.local_train_path,
-                constants.project_path + "/dataset/custom/split_4/b1/train_with_ad_info.csv")
-    merge_by_pos(constants.local_train_path,
-                 constants.project_path + "/dataset/custom/split_4/b1/train_with_pos_info.csv")
-    merge_by_user(constants.local_train_path,
-                  constants.project_path + "/dataset/custom/split_4/b1/train_with_user_info.csv")
+    # split_by_date(28, constants.project_path + "/dataset/custom/split_4/")
+    merge_by_ad(constants.clean_train_path,
+                constants.project_path + "/dataset/custom/split_online/train_with_ad_info.csv")
+    merge_by_pos(constants.clean_train_path,
+                 constants.project_path + "/dataset/custom/split_online/train_with_pos_info.csv")
+    merge_by_user(constants.clean_train_path,
+                  constants.project_path + "/dataset/custom/split_online/train_with_user_info.csv")
     # conversion_gap()
     # convert_data_time(constants.raw_train_path, constants.project_path + "/dataset/custom/train_re-time.csv", 0)
     # convert_data_time(constants.raw_test_path, constants.project_path  + "/dataset/custom/test_re-time.csv", 1)

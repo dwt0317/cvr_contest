@@ -121,21 +121,23 @@ def build_x():
     user_features, user_dim = uf.build_user_profile()
     pos_features, pos_dim = pf.build_position()
 
+    src_dir_path = constants.project_path+"/dataset/custom/split_4/b1/"
+    des_dir_path = constants.project_path+"/dataset/x_y/split_4/b1/"
     # 加载cvr特征
-    cvr_handler = cvr.CVRHandler(constants.project_path+"/dataset/custom/split_4/b1/")
+    cvr_handler = cvr.CVRHandler(src_dir_path)
     cvr_handler.load_train_cvr()
-    # cvr_handler.load_test_cvr()
+    cvr_handler.load_test_cvr()
 
-    # build_x_hepler(constants.local_test_path, constants.project_path + "/dataset/x_y/split_4/test_x.fm",
-    #                ad_features, ad_dim,
-    #                user_features, user_dim,
-    #                pos_features, pos_dim,
-    #                cvr_handler,
-    #                data_type="test",
-    #                has_gbdt=False,
-    #                ffm=False)
+    build_x_hepler(constants.local_test_path, des_dir_path+"test_x.fm",
+                   ad_features, ad_dim,
+                   user_features, user_dim,
+                   pos_features, pos_dim,
+                   cvr_handler,
+                   data_type="test",
+                   has_gbdt=False,
+                   ffm=False)
 
-    build_x_hepler(constants.local_train_path, constants.project_path + "/dataset/x_y/split_4/b1/train_x.fm",
+    build_x_hepler(constants.local_train_path, des_dir_path+"train_x.fm",
                    ad_features, ad_dim,
                    user_features, user_dim,
                    pos_features, pos_dim,

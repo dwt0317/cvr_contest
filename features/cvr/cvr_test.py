@@ -16,7 +16,7 @@ def cvr_helper(total_df, header, dim, feature_map):
         dim: 该维度的维数
         feature_map: 记录map
     '''
-    alpha = 0.02  # for smoothing
+    alpha = 0.0248  # for smoothing
     beta = 75
     # [,..,] * dim
     feature = []
@@ -98,17 +98,18 @@ def userID_cvr():
 
 
 # {userID1:[cvr1, cvr2,..], userID2:[cvr1, cvr2,..], ...}
-def build_user_cvr():
+def build_user_cvr(train_dir):
     # 暂不加入userID转化率特征
     userID_feature = userID_cvr()
-    user_pro_feature = user_profile_cvr(constants.project_path + "/dataset/custom/split_1/train_with_user_info.csv")
+    user_pro_feature = user_profile_cvr(train_dir+"train_with_user_info.csv")
     user_cvr_features = {}
     user_file = open(constants.project_path + "/dataset/raw/user.csv", 'r')
     user_file.readline()
     for line in user_file:
         row = line.strip().split(',')
-        # feature_list = [userID_feature[int(row[0])]]
-        feature_list = copy.copy(user_pro_feature['gender'][int(row[2])])
+        feature_list = [userID_feature[int(row[0])]]
+        # feature_list = copy.copy(user_pro_feature['gender'][int(row[2])])
+        feature_list.extend(user_pro_feature['gender'][int(row[2])])
         feature_list.extend(user_pro_feature['education'][int(row[3])])
         feature_list.extend(user_pro_feature['marriageStatus'][int(row[4])])
         feature_list.extend(user_pro_feature['haveBaby'][int(row[5])])
@@ -133,8 +134,8 @@ def pos_info_cvr(pos_info_file):
 
 
 # 按positionID处理cvr数据
-def build_pos_cvr():
-    pos_info_feature = pos_info_cvr(constants.project_path + "/dataset/custom/split_1/train_with_pos_info.csv")
+def build_pos_cvr(train_dir):
+    pos_info_feature = pos_info_cvr(train_dir+"train_with_pos_info.csv")
     pos_file = open(constants.project_path + "/dataset/raw/position.csv", 'r')
     pos_file.readline()
     pos_cvr_features = {}

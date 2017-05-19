@@ -20,11 +20,11 @@ class CVRHandler:
         self._ad_cvr_fd = None
         self._other_cvr_fd = None
 
-    # 读取test文件所需cvr数据
+    # 读取test文件所需cvr数据, test的统计数据只使用对应train的
     def load_test_cvr(self):
         import cvr_test
-        self._user_cvr_features = cvr_test.build_user_cvr()
-        self._pos_cvr_features = cvr_test.build_pos_cvr()
+        self._user_cvr_features = cvr_test.build_user_cvr(self._dir_path)
+        self._pos_cvr_features = cvr_test.build_pos_cvr(self._dir_path)
         print "Loading test cvr finished."
 
     # 读取train文件所需cvr数据
@@ -36,14 +36,20 @@ class CVRHandler:
     # 获取user_cvr feature
     def get_user_cvr(self, data_type, userID):
         if data_type == 'train':
-            features = self._user_cvr_fd.readline().strip().split(',')
+            try:
+                features = self._user_cvr_fd.readline().strip().split(',')
+            except:
+                raise Exception("File reaches end!")
             return features
         else:
             return self._user_cvr_features[userID]
 
     def get_pos_cvr(self, data_type, positionID):
         if data_type == 'train':
-            features = self._pos_cvr_fd.readline().strip().split(',')
+            try:
+                features = self._pos_cvr_fd.readline().strip().split(',')
+            except:
+                raise Exception("File reaches end!")
             return features
         else:
             return self._pos_cvr_features[positionID]

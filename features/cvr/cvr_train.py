@@ -7,6 +7,7 @@ import numpy as np
 alpha = 0.0248  # for smoothing
 beta = 75
 
+
 # gender * 3, education * 8, marriage * 4, baby * 7,
 def build_user_cvr_file(train_user_file, feature_file):
     user_cvr_dict = {'gender': np.zeros((3, 2)), 'education': np.zeros((8, 2)), 'marriageStatus': np.zeros((4, 2)),
@@ -87,8 +88,8 @@ def build_pos_cvr_file(pos_user_file, feature_file):
 
 
 if __name__ == '__main__':
-    dir_path = constants.project_path+"/dataset/custom/split_4/b1/"
-    # build_user_cvr_file(dir_path+"train_with_user_info.csv", dir_path+"user_cvr_feature")
+    dir_path = constants.project_path+"/dataset/custom/split_online/b1/"
+    build_user_cvr_file(dir_path+"train_with_user_info.csv", dir_path+"user_cvr_feature")
     build_pos_cvr_file(dir_path+"train_with_pos_info.csv", dir_path+"pos_cvr_feature")
 
 

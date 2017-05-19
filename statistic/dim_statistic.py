@@ -1,8 +1,8 @@
 # -*- coding:utf-8 -*-
-import constants
 import pandas as pd
-import numpy as np
-from Utils import list2dict
+
+from util import constants
+
 '''
 统计相关维度点击率信息
 '''

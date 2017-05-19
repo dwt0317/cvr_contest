@@ -33,7 +33,47 @@ logloss: 0.109139313923
 GBDT: onehot_re 180:
 auc_test: 0.702076614688
 logloss: 0.109155417065fm: sgd + 50 iters:
-auc_test: 0.642650615518
-logloss: 0.122894502225
-time: 0:02:22.322000
+
+fm: ucvr:
+auc_test: 0.721678407301
+logloss: 0.108360781496
+time: 0:21:04.636000
+
+GBDT: 6 100:
+auc_test: 0.723862447529
+logloss: 0.106674855767
+
+GBDT: only_cvr 100:
+auc_test: 0.722829066504
+logloss: 0.106725529401
+
+fm: only cvr:
+auc_test: 0.72141436276
+logloss: 0.108355126815
+time: 0:17:51.831000
+
+
+fm: only cvr:
+auc_test: 0.717419725465
+logloss: 0.110000954008
+time: 0:14:59.015000
+
+GBDT: only_cvr 8 100_data1:
+auc_test: 0.723921875363
+logloss: 0.108239564126
+
+fm: pos + id:
+auc_test: 0.749072176355
+logloss: 0.107183354063
+time: 0:24:04.861000
+
+fm: k12 100:
+auc_test: 0.749076200446
+logloss: 0.106944191901
+time: 0:38:34.969000
+
+fm: k4 90:
+auc_test: 0.749336770247
+logloss: 0.107198175853
+time: 0:13:47.171000
 

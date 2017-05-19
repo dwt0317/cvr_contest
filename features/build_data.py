@@ -1,12 +1,14 @@
 # -*- coding:utf-8 -*-
-import constants
-import pandas as pd
 import io
+
+import pandas as pd
+
 import advertising as af
+import cvr_test
+import gbdt_feature as gf
 import position as pf
 import user_profile as uf
-import gbdt_feature as gf
-import cvr
+from util import constants
 
 
 # 以libfm形式存储
@@ -38,7 +40,7 @@ def build_x_hepler(from_path, to_path,
                    ad_features, ad_dim,
                    user_features, user_dim,
                    pos_features, pos_dim,
-                   user_cvr_features,
+                   user_cvr_features, pos_cvr_features,
                    dataset="train",
                    has_gbdt=False,
                    ffm=False):
@@ -68,15 +70,21 @@ def build_x_hepler(from_path, to_path,
             field += 1
             features[offset+i] = str(field) + "," + str(1) if ffm else 1
         offset += user_dim
-
         field += 1
+
         # position feature
         pos_f = pos_features[int(row[5])]
         for i in pos_f:
             features[offset+i] = str(field) + "," + str(1) if ffm else 1
         offset += pos_dim
 
+        site_cvr = pos_cvr_features[int(row[5])][0]
+        features[offset+0] = str(field) + "," + str(site_cvr) if ffm else site_cvr
+
+        type_cvr = pos_cvr_features[int(row[5])][1]
+        features[offset+1] = str(field) + "," + str(type_cvr) if ffm else type_cvr
         field += 1
+
         # network feature connection*5, tele-operator*4
         features[offset+int(row[6])] = str(field) + "," + str(1) if ffm else 1
         field += 1
@@ -112,31 +120,36 @@ def build_x():
     ad_features, ad_dim = af.build_ad_feature(has_id=False)
     user_features, user_dim = uf.build_user_profile()
     pos_features, pos_dim = pf.build_position()
-    user_cvr_features = cvr.build_user_cvr()
-    # build_x_hepler(constants.local_valid_path, constants.project_path + "/dataset/x_y/local_valid_x",
-    #                ad_features, ad_dim,
-    #                user_features, user_dim,
-    #                pos_features, pos_dim)
-    build_x_hepler(constants.local_train_path, constants.project_path + "/dataset/x_y/local_train_x_ucvr.ffm",
+    user_cvr_features = cvr_test.build_user_cvr()
+    pos_cvr_features = cvr_test.build_pos_cvr()
+    build_x_hepler(constants.local_valid_path, constants.project_path + "/dataset/x_y/split_3/valid_x_pos_no-id.fm",
                    ad_features, ad_dim,
                    user_features, user_dim,
                    pos_features, pos_dim,
-                   user_cvr_features,
+                   user_cvr_features, pos_cvr_features,
                    dataset="train",
                    has_gbdt=False,
-                   ffm=True)
-    build_x_hepler(constants.local_test_path, constants.project_path + "/dataset/x_y/local_test_x_ucvr.ffm",
+                   ffm=False)
+    build_x_hepler(constants.local_train_path, constants.project_path + "/dataset/x_y/split_3/train_x_pos_no-id.fm",
                    ad_features, ad_dim,
                    user_features, user_dim,
                    pos_features, pos_dim,
-                   user_cvr_features,
+                   user_cvr_features, pos_cvr_features,
                    dataset="train",
                    has_gbdt=False,
-                   ffm=True)
+                   ffm=False)
+    build_x_hepler(constants.local_test_path, constants.project_path + "/dataset/x_y/split_3/test_x_pos_no-id.fm",
+                   ad_features, ad_dim,
+                   user_features, user_dim,
+                   pos_features, pos_dim,
+                   user_cvr_features, pos_cvr_features,
+                   dataset="train",
+                   has_gbdt=False,
+                   ffm=False)
 
 
 if __name__ == '__main__':
     build_x()
-    # build_y(constants.local_train_path, constants.project_path + "/dataset/custom/local_train_y_2")
-    # build_y(constants.local_valid_path, constants.project_path + "/dataset/custom/local_valid_y")
-    # build_y(constants.local_test_path, constants.project_path + "/dataset/custom/local_test_y_2")
+    build_y(constants.local_train_path, constants.project_path + "/dataset/x_y/split_3/train_y")
+    build_y(constants.local_valid_path, constants.project_path + "/dataset/x_y/split_3/valid_y")
+    build_y(constants.local_test_path, constants.project_path + "/dataset/x_y/split_3/test_y")

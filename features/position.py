@@ -1,6 +1,5 @@
 # -*- coding:utf-8 -*-
-import constants
-import pandas as pd
+from util import constants
 
 
 # site * 3, type * 6

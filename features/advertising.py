@@ -1,8 +1,10 @@
 # -*- coding:utf-8 -*-
-import constants
-import pandas as pd
+from util import constants
 import numpy as np
-from Utils import list2dict
+import pandas as pd
+
+from util.utils import list2dict
+
 
 # 统计id类值出现频率
 def count_id_freq():
@@ -68,13 +70,15 @@ def build_ad_feature(has_id=True):
 
     ad_id_lens = [0, 0, 0, 0, 0]
     appID_set = list2dict(train_df['appID'].unique())
+    campID_set = list2dict(train_df['campaignID'].unique())
+    adverID_set = list2dict(train_df['advertiserID'].unique())
+    ad_id_lens[2] = len(campID_set) + 1
+    ad_id_lens[3] = len(adverID_set) + 1
     ad_id_lens[4] = len(appID_set) + 1
     if has_id:
         # 将list转为dict{id:index}
         creativeID_set = list2dict(train_df['creativeID'].unique())
         adID_set = list2dict(train_df['adID'].unique())
-        campID_set = list2dict(train_df['campaignID'].unique())
-        adverID_set = list2dict(train_df['advertiserID'].unique())
         ad_id_lens = [len(creativeID_set) + 1, len(adID_set) + 1, len(campID_set) + 1, len(adverID_set) + 1,
                       len(appID_set) + 1]
     print "Building ID set finished."
@@ -86,7 +90,7 @@ def build_ad_feature(has_id=True):
         for line in cate_f:
             fields = line.strip().split(',')
             category_dict[int(fields[0])] = int(fields[1])
-    category = list2dict(list(set(category_dict.values())))
+    # category = list2dict(list(set(category_dict.values())))
     print "Building category set finished."
 
     # read feature file
@@ -111,19 +115,19 @@ def build_ad_feature(has_id=True):
                 line_feature.append(offset)
             offset += ad_id_lens[1]
 
-            if int(fields[2]) in campID_set:
-                line_feature.append(offset+campID_set[int(fields[2])])
-            else:
-                line_feature.append(offset)
-            offset += ad_id_lens[2]
+        # 下面的id特征非常稠密，不与一般id类特征一同处理
+        if int(fields[2]) in campID_set:
+            line_feature.append(offset+campID_set[int(fields[2])])
+        else:
+            line_feature.append(offset)
+        offset += ad_id_lens[2]
 
-            if int(fields[3]) in adverID_set:
-                line_feature.append(offset+adverID_set[int(fields[3])])
-            else:
-                line_feature.append(offset)
-            offset += ad_id_lens[3]
+        if int(fields[3]) in adverID_set:
+            line_feature.append(offset+adverID_set[int(fields[3])])
+        else:
+            line_feature.append(offset)
+        offset += ad_id_lens[3]
 
-        # appID非常稠密，不与一般id类特征一同处理
         if int(fields[4]) in appID_set:
             line_feature.append(offset+appID_set[int(fields[4])])
         else:
@@ -132,10 +136,20 @@ def build_ad_feature(has_id=True):
         # appPlatform
         line_feature.append(offset+int(fields[5]))
         offset += 3
-        # app category one hot
-        line_feature.append(offset+category[category_dict[int(fields[4])]])
+
+        # app category one hot, category分为一级和二级类目
+        app_cate = int(category_dict[int(fields[4])])
+        if app_cate >= 100:
+            app_cate_1 = app_cate/100
+            app_cate_2 = app_cate - app_cate_1*100
+        else:
+            app_cate_1 = app_cate
+            app_cate_2 = 0
+        line_feature.append(offset+app_cate_1)
+        offset += 10
+        line_feature.append(offset+app_cate_2)
+        offset += 100
         ad_feature[int(fields[0])] = line_feature
-        offset += len(category)
 
     f.close()
     print "Building ad feature finished."

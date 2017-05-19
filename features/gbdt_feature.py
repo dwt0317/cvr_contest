@@ -1,5 +1,7 @@
-import constants
 import cPickle as pickle
+
+from util import constants
+
 train_path = constants.project_path + "/dataset/feature/train.onehot"
 test_path = constants.project_path + "/dataset/feature/test.onehot"
 

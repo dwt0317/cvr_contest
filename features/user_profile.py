@@ -1,7 +1,9 @@
 # -*- coding:utf-8 -*-
-import constants
-import pandas as pd
 import numpy as np
+import pandas as pd
+
+from util import constants
+
 
 # age * 9, gender * 3, education * 8, marriage * 4, baby * 7, residence * 35,
 def build_user_profile():

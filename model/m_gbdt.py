@@ -1,16 +1,16 @@
 # -*- coding:utf-8 -*-
 
+import cPickle as pickle
+
+import constants
 import numpy as np
+import xgboost as xgb
 from sklearn import metrics   #Additional scklearn functions
 from sklearn.datasets import load_svmlight_file
 from sklearn.model_selection import GridSearchCV   #Perforing grid search
 from xgboost.sklearn import XGBClassifier
-import cPickle as pickle
-import constants
-import xgboost as xgb
-import pandas as pd
-import os
-import Utils
+
+from util import utils
 
 train_x_file = constants.project_path + "/dataset/x_y/local_train_x_no_id"
 train_y_file = constants.project_path + "/dataset/x_ylocal_train_y"
@@ -67,7 +67,7 @@ def train_model():
         # print train_pred
         auc_test = metrics.roc_auc_score(test_y, train_pred)
         print auc_test
-        logloss = Utils.logloss(test_y, train_pred)
+        logloss = utils.logloss(test_y, train_pred)
         print logloss
 
         # fi = pd.DataFrame(xgb_model.get_fscore().items(), columns=['feature', 'importance']).sort_values('importance',

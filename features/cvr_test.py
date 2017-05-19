@@ -1,9 +1,14 @@
 # -*- coding:utf-8 -*-
-import constants
+import copy
 import pandas as pd
+from util import constants
+
+'''
+用于生成线上test样本的统计类特征
+'''
 
 
-# 处理用户画像cvr的统一方法
+# 处理cvr的统一方法
 def cvr_helper(total_df, header, dim, feature_map):
     '''
         total_df: dataframe
@@ -13,7 +18,7 @@ def cvr_helper(total_df, header, dim, feature_map):
     '''
     alpha = 0.02  # for smoothing
     beta = 75
-
+    # [,..,] * dim
     feature = []
     max_click = 0
     min_click = len(total_df) + 1
@@ -29,14 +34,14 @@ def cvr_helper(total_df, header, dim, feature_map):
         min_click = min(min_click, click_num)
         max_cv = max(max_cv, conversion_num)
         min_cv = min(min_cv, conversion_num)
-        feature_list.append(int(click_num))
-        feature_list.append(int(conversion_num))
+        # feature_list.append(int(click_num))
+        # feature_list.append(int(conversion_num))
         feature_list.append(conversion_rate)
         feature.append(feature_list)
     # 归一化
-    for i in xrange(dim):
-        feature[i][0] = round((feature[i][0] - min_click) / float(max_click - min_click), 5)
-        feature[i][1] = round((feature[i][1] - min_cv) / float(max_cv - min_cv), 5)
+    # for i in xrange(dim):
+    #     feature[i][0] = round((feature[i][0] - min_click) / float(max_click - min_click), 5)
+    #     feature[i][1] = round((feature[i][1] - min_cv) / float(max_cv - min_cv), 5)
     feature_map[header] = feature
 
 
@@ -49,8 +54,6 @@ def user_profile_cvr(file_path):
     cvr_helper(total_df, 'education', 9, user_features)
     cvr_helper(total_df, 'marriageStatus', 5, user_features)
     cvr_helper(total_df, 'haveBaby', 7, user_features)
-    for id in user_features['gender']:
-        print id
 
     print "Building user profile cvr finished."
     del total_df
@@ -63,7 +66,7 @@ def userID_cvr():
     beta = 75
 
     user_stat = pd.read_csv(constants.project_path + "/dataset/raw/user.csv")
-    stat_file = open(constants.project_path + "/dataset/custom/train_c_time.csv", 'r')
+    stat_file = open(constants.cus_train_path, 'r')
     userID_set = user_stat['userID'].values
     del user_stat
     click_set = {}
@@ -92,23 +95,48 @@ def userID_cvr():
 # {userID1:[cvr1, cvr2,..], userID2:[cvr1, cvr2,..], ...}
 def build_user_cvr():
     userID_feature = userID_cvr()
-    user_pro_feature = user_profile_cvr(constants.project_path + "/dataset/custom/train_with_user_info.csv")
+    user_pro_feature = user_profile_cvr(constants.project_path + "/dataset/custom/split_1/train_with_user_info.csv")
     user_cvr_features = {}
     user_file = open(constants.project_path + "/dataset/raw/user.csv", 'r')
     user_file.readline()
     for line in user_file:
         row = line.strip().split(',')
-        feature_list = [userID_feature[int(row[0])]]
-        feature_list += user_pro_feature['gender'][int(row[2])]
-        feature_list += user_pro_feature['education'][int(row[3])]
-        feature_list += user_pro_feature['marriageStatus'][int(row[4])]
-        feature_list += user_pro_feature['haveBaby'][int(row[5])]
+        # feature_list = [userID_feature[int(row[0])]]
+        feature_list = copy.copy(user_pro_feature['gender'][int(row[2])])
+        feature_list.extend(user_pro_feature['education'][int(row[3])])
+        feature_list.extend(user_pro_feature['marriageStatus'][int(row[4])])
+        feature_list.extend(user_pro_feature['haveBaby'][int(row[5])])
         user_cvr_features[int(row[0])] = feature_list
     print "Building user cvr feature finished."
     return user_cvr_features
 
 
+def pos_info_cvr(file_path):
+    total_df = pd.read_csv(file_path)
+    # {header:[[3],[3],...,[3]], }
+    pos_features = {}
+    cvr_helper(total_df, 'sitesetID', 3, pos_features)
+    cvr_helper(total_df, 'positionType', 6, pos_features)
+    return pos_features
+
+
+# 处理位置cvr信息
+def build_pos_cvr():
+    pos_info_feature = pos_info_cvr(constants.project_path + "/dataset/custom/split_1/train_with_pos_info.csv")
+    pos_file = open(constants.project_path + "/dataset/raw/position.csv", 'r')
+    pos_file.readline()
+    pos_cvr_features = {}
+    i = 1
+    for line in pos_file:
+        row = line.strip().split(',')
+        feature_list = copy.copy(pos_info_feature['sitesetID'][int(row[1])])
+        feature_list.extend(pos_info_feature['positionType'][int(row[2])])
+        pos_cvr_features[int(row[0])] = feature_list
+        # print pos_cvr_features[int(row[0])]
+    return pos_cvr_features
+
+
 if __name__ == "__main__":
-    user_cvr_feature = build_user_cvr()
-    for id in user_cvr_feature.keys()[:10]:
+    user_cvr_feature = build_pos_cvr()
+    for id in user_cvr_feature.keys()[:5]:
         print user_cvr_feature[id]

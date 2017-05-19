@@ -51,10 +51,7 @@ def abandon_data(total_df, abandon_list):
     return total_df
 
 
-abandon_list = []
-
-
-# 丢弃部分第30天的负样本
+# 丢弃第30天最后3个小时的负样本, 使得改天的转化率=平均值
 def abandon_thirty(cus_train_path):
     total_df = pd.read_csv(cus_train_path)
     front = total_df[(total_df['clickTime'] < 30*1440)]
@@ -63,10 +60,21 @@ def abandon_thirty(cus_train_path):
     remain_positive = total_df[(total_df['clickTime'] >= (30+1)*1440-180) &
                                (total_df['clickTime'] < (30 + 1) * 1440) &
                                (total_df['label'] == 1)]
-    re_thrity = partial_thirty.append(remain_positive)
-    print len(re_thrity[re_thrity['label'] == 1]) / float(len(re_thrity))
-    re_total = front.append(partial_thirty).append(remain_positive)
-    print re_total.shape
+    clean_thrity = partial_thirty.append(remain_positive)
+    print len(clean_thrity[clean_thrity['label'] == 1]) / float(len(clean_thrity))
+    clean_total = front.append(partial_thirty).append(remain_positive)
+    clean_total.to_csv(constants.project_path + "/dataset/custom/train_clean.csv", index=False)
+
+
+# 按日期进行分割
+def split_by_date(train_date_bound, to_dir):
+    total_df = pd.read_csv(constants.clean_train_path)
+    train_df = total_df[(total_df['clickTime'] < (train_date_bound+1)*1440)]
+    test_df = total_df[(total_df['clickTime'] >= (train_date_bound+1)*1440)]
+    train_df.to_csv(to_dir + "train_x.csv", index=False)
+    print train_df.shape
+    test_df.to_csv(to_dir + "test_x.csv", index=False)
+    print test_df.shape
 
 
 # 随机按量切分数据集
@@ -99,39 +107,43 @@ def random_split_dataset(train_percent, valid_percent, to_path):
 
 
 # 在train文件中merge user信息
-def merge_by_user(to_path):
-    total_df = pd.read_csv(constants.cus_train_path)
-    total_df = abandon_data(total_df, abandon_list)
+def merge_by_user(train_file, to_path):
+    total_df = pd.read_csv(train_file)
     user_df = pd.read_csv(constants.project_path + "/dataset/raw/" + "user.csv")
-    merge_df = pd.merge(left=total_df, right=user_df, on=['userID'])
+    merge_df = pd.merge(left=total_df, right=user_df, how='left', on=['userID'])
     merge_df.to_csv(path_or_buf=to_path, index=False)
+    print "Merging user finished."
 
 
 # 在train文件中merge ad信息
-def merge_by_ad(to_path):
-    total_df = pd.read_csv(constants.cus_train_path)
-    total_df = abandon_data(total_df, abandon_list)
+def merge_by_ad(train_file, to_path):
+    total_df = pd.read_csv(train_file)
     ad_df = pd.read_csv(constants.project_path + "/dataset/raw/" + "ad.csv")
-    merge_df = pd.merge(left=total_df, right=ad_df, on=['creativeID'])
+    merge_df = pd.merge(left=total_df, right=ad_df, how='left', on=['creativeID'])
     merge_df.to_csv(path_or_buf=to_path, index=False)
+    print "Merging ad finished."
 
 
 # 在train文件中merge pos信息
-def merge_by_pos(to_path):
-    total_df = pd.read_csv(constants.cus_train_path)
-    total_df = abandon_data(total_df, abandon_list)
+def merge_by_pos(train_file, to_path):
+    total_df = pd.read_csv(train_file)
     ad_df = pd.read_csv(constants.project_path + "/dataset/raw/" + "position.csv")
-    merge_df = pd.merge(left=total_df, right=ad_df, on=['positionID'])
+    merge_df = pd.merge(left=total_df, right=ad_df, how='left', on=['positionID'])
     merge_df.to_csv(path_or_buf=to_path, index=False)
+    print "Merging pos finished."
 
 
 if __name__ == '__main__':
+    # pass
     # split_dataset(0.8, 0.1, os.getcwd()+"/dataset/custom/split_3/")
-    # conversion_graph()
-    # merge_by_ad(constants.project_path + "/dataset/custom/split_1/train_with_ad_info.csv")
-    # merge_by_pos(constants.project_path + "/dataset/custom/split_1/train_with_pos_info.csv")
-    # merge_by_user(constants.project_path + "/dataset/custom/split_1/train_with_user_info.csv")
+    # abandon_thirty(constants.cus_train_path)
+    # split_by_date(27, constants.project_path + "/dataset/custom/split_4/")
+    merge_by_ad(constants.local_train_path,
+                constants.project_path + "/dataset/custom/split_4/b1/train_with_ad_info.csv")
+    merge_by_pos(constants.local_train_path,
+                 constants.project_path + "/dataset/custom/split_4/b1/train_with_pos_info.csv")
+    merge_by_user(constants.local_train_path,
+                  constants.project_path + "/dataset/custom/split_4/b1/train_with_user_info.csv")
     # conversion_gap()
     # convert_data_time(constants.raw_train_path, constants.project_path + "/dataset/custom/train_re-time.csv", 0)
     # convert_data_time(constants.raw_test_path, constants.project_path  + "/dataset/custom/test_re-time.csv", 1)
-    abandon_thirty(constants.cus_train_path)

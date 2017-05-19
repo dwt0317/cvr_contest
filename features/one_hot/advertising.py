@@ -160,5 +160,5 @@ if __name__ == '__main__':
     # build_ad_train(constants.project_path + "/dataset/custom/train_ad_label.csv")
     pos, lent = build_ad_feature(has_id=True)
     print lent
-    # for key in pos.keys()[:10]:
-    #     print pos[key]
+    for key in pos.keys()[:10]:
+        print pos[key]

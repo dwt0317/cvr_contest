@@ -38,16 +38,16 @@ def conversion_graph():
         conv_df = click_df[click_df['label'] == 1]
         # print tmp_df.head(5)
         x.append(i)
-        y2_click.append(len(click_df))
+        y2_click.append(len(conv_df)/float(len(click_df)))
     plt.figure(figsize=(18, 5))
     plt.xlabel("date")
-    plt.ylabel("click")
+    plt.ylabel("conversion")
     plt.xticks(np.arange(min(x), max(x) + 1, 1))
-    plt.plot(x, y2_click, color="blue", label="click")
+    plt.plot(x, y2_click, color="blue", label="conversion")
     # plt.plot(x, y2_click, color="red", label="click")
     # plt.show()
-    img_path = constants.project_path + '/img/' + "click" + '.png'
+    img_path = constants.project_path + '/img/' + "conversion" + '.png'
     plt.savefig(img_path)
 
 if __name__ == "__main__":
-    conversion_gap()
+    conversion_graph()

@@ -45,6 +45,11 @@ def cvr_helper(total_df, header, dim, feature_map):
     feature_map[header] = feature
 
 
+'''
+处理user相关cvr数据
+'''
+
+
 # 统计用户画像维度的点击率
 def user_profile_cvr(file_path):
     total_df = pd.read_csv(file_path)
@@ -62,7 +67,7 @@ def user_profile_cvr(file_path):
 
 # 统计userID维度的转化率
 def userID_cvr():
-    alpha = 0.02  # for smoothing
+    alpha = 0.0248  # for smoothing
     beta = 75
 
     user_stat = pd.read_csv(constants.project_path + "/dataset/raw/user.csv")
@@ -94,6 +99,7 @@ def userID_cvr():
 
 # {userID1:[cvr1, cvr2,..], userID2:[cvr1, cvr2,..], ...}
 def build_user_cvr():
+    # 暂不加入userID转化率特征
     userID_feature = userID_cvr()
     user_pro_feature = user_profile_cvr(constants.project_path + "/dataset/custom/split_1/train_with_user_info.csv")
     user_cvr_features = {}
@@ -111,8 +117,14 @@ def build_user_cvr():
     return user_cvr_features
 
 
-def pos_info_cvr(file_path):
-    total_df = pd.read_csv(file_path)
+'''
+处理position相关cvr数据
+'''
+
+
+# 统计position 各维度cvr数据
+def pos_info_cvr(pos_info_file):
+    total_df = pd.read_csv(pos_info_file)
     # {header:[[3],[3],...,[3]], }
     pos_features = {}
     cvr_helper(total_df, 'sitesetID', 3, pos_features)
@@ -120,7 +132,7 @@ def pos_info_cvr(file_path):
     return pos_features
 
 
-# 处理位置cvr信息
+# 按positionID处理cvr数据
 def build_pos_cvr():
     pos_info_feature = pos_info_cvr(constants.project_path + "/dataset/custom/split_1/train_with_pos_info.csv")
     pos_file = open(constants.project_path + "/dataset/raw/position.csv", 'r')

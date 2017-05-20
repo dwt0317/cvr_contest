@@ -1,5 +1,11 @@
 # -*- coding:utf-8 -*-
 from util import constants
+import pandas as pd
+
+
+def pos_statistic():
+    total_df = pd.read_csv(constants.cus_train_path)
+    print len(total_df['positionID'].unique())
 
 
 # site * 3, type * 6
@@ -26,6 +32,7 @@ def build_position():
 
 
 if __name__ == '__main__':
-    pos = build_position()
-    for key in pos.keys()[:5]:
-        print pos[key]
+    pos_statistic()
+    # pos = build_position()
+    # for key in pos.keys()[:5]:
+    #     print pos[key]

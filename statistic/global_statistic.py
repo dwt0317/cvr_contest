@@ -49,5 +49,35 @@ def conversion_graph():
     img_path = constants.project_path + '/img/' + "conversion" + '.png'
     plt.savefig(img_path)
 
+
+
+def combine_feature_cvr():
+    file_path = constants.project_path+"/dataset/custom/split_online/b1/train_with_ad_info.csv"
+
+
+
+def user_num_graph():
+    # file_path = constants.project_path+"/dataset/custom/split_online/b1/train_with_ad_info.csv"
+    file_path = constants.cus_train_path
+    train_df = pd.read_csv(file_path)
+    x = []
+    y = []
+    for i in range(17, 31):
+        rbound = (i + 1) * 1440
+        lbound = i * 1440
+        day_df = train_df[(train_df['clickTime'] < rbound)
+                          & (train_df['clickTime'] >= lbound)]
+        x.append(i)
+        y.append(len(day_df[day_df['connectionType'] == 1])/float(len(day_df)))
+    plt.figure(figsize=(18, 5))
+    plt.xlabel("date")
+    plt.ylabel("connection 1 rate")
+    plt.xticks(np.arange(min(x), max(x) + 1, 1))
+    plt.plot(x, y, color="blue", label="connection 1 rate")
+    # plt.plot(x, y2_click, color="red", label="click")
+    # plt.show()
+    img_path = constants.project_path + '/img/' + "connection 1 rate" + '.png'
+    plt.savefig(img_path)
+
 if __name__ == "__main__":
-    conversion_graph()
+    user_num_graph()

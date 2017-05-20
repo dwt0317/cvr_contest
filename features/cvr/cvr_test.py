@@ -7,6 +7,8 @@ from util import constants
 用于生成线上test样本的统计类特征
 '''
 
+alpha = 0.0248  # for smoothing
+beta = 75
 
 # 处理cvr的统一方法
 def cvr_helper(total_df, header, dim, feature_map):
@@ -16,8 +18,6 @@ def cvr_helper(total_df, header, dim, feature_map):
         dim: 该维度的维数
         feature_map: 记录map
     '''
-    alpha = 0.0248  # for smoothing
-    beta = 75
     # [,..,] * dim
     feature = []
     max_click = 0
@@ -99,7 +99,6 @@ def userID_cvr():
 
 # {userID1:[cvr1, cvr2,..], userID2:[cvr1, cvr2,..], ...}
 def build_user_cvr(train_dir):
-    # 暂不加入userID转化率特征
     userID_feature = userID_cvr()
     user_pro_feature = user_profile_cvr(train_dir+"train_with_user_info.csv")
     user_cvr_features = {}
@@ -147,6 +146,113 @@ def build_pos_cvr(train_dir):
         pos_cvr_features[int(row[0])] = feature_list
         # print pos_cvr_features[int(row[0])]
     return pos_cvr_features
+
+
+'''
+处理广告相关cvr数据
+'''
+
+
+def getADFeature(filePath):
+    '''
+    :type filePath: string train_with_ad.csv的路径
+    :rtype: dict{creativeID:[ad_cl,ad_cv,ad_cvr,
+                            campaign_cl,campaign_cv,campaign_cvr
+                            advertiser_cl,advertisr_cv,advertiser_cvr
+                            app_cl,app_cv,app_cvr
+                            appPlatform_cl,appPlatform_cv,appPlatform_cvr]}
+    :Example: a = getADFeature('train_with_ad.csv')
+    '''
+    # ad_data = pd.read_csv(filePath)
+    ad_file = open(filePath, 'r')
+    # length = len(ad_data)
+    ad = {}
+    campaign = {}
+    advertiser = {}
+    app = {}
+    appPlatform = {}
+    creativeID_adFeature_map = {}
+
+    for line in ad_file:
+        row = line.strip().split(',')
+        adID_key = row[8]
+        campaignID_key = row[9]
+        advertiserID_key = row[10]
+        appID_key = row[11]
+        appPlatform_key = row[12]
+
+        # 更新adID的数据
+        if adID_key not in ad:
+            ad[adID_key] = [0, 0, 0]
+        if row[1] == '1':
+            ad[adID_key][0] += 1
+            ad[adID_key][1] += 1
+        else:
+            ad[adID_key][0] += 1
+        if ad[adID_key][0] != 0:
+            ad[adID_key][2] = round((float(ad[adID_key][1])+alpha * beta) / (float(ad[adID_key][0]) + beta), 5)
+
+        # 更新campaignID的数据
+        if campaignID_key not in campaign:
+            campaign[campaignID_key] = [0, 0, 0]
+        if row[1] == '1':
+            campaign[campaignID_key][0] += 1
+            campaign[campaignID_key][1] += 1
+        else:
+            campaign[campaignID_key][0] += 1
+        if campaign[campaignID_key][0] != 0:
+            campaign[campaignID_key][2] = round((float(campaign[campaignID_key][1]) + alpha * beta) /
+                                                (float(campaign[campaignID_key][0]) + beta), 5)
+
+        # 更新advertiserID的数据
+        if advertiserID_key not in advertiser:
+            advertiser[advertiserID_key] = [0, 0, 0]
+        if row[1] == '1':
+            advertiser[advertiserID_key][0] += 1
+            advertiser[advertiserID_key][1] += 1
+        else:
+            advertiser[advertiserID_key][0] += 1
+        if advertiser[advertiserID_key][0] != 0:
+            advertiser[advertiserID_key][2] = round((float(advertiser[advertiserID_key][1]) + alpha * beta) / (float(
+                advertiser[advertiserID_key][0]) + beta), 5)
+
+        # 更新appID的数据
+        if appID_key not in app:
+            app[appID_key] = [0, 0, 0]
+        if row[1] == '1':
+            app[appID_key][0] += 1
+            app[appID_key][1] += 1
+        else:
+            app[appID_key][0] += 1
+        if app[appID_key][0] != 0:
+            app[appID_key][2] = round((float(app[appID_key][1]) + alpha * beta) / (float(app[appID_key][0]) + beta), 5)
+
+        # 更新appID的数据
+        if appPlatform_key not in appPlatform:
+            appPlatform[appPlatform_key] = [0, 0, 0]
+        if row[1] == '1':
+            appPlatform[appPlatform_key][0] += 1
+            appPlatform[appPlatform_key][1] += 1
+        else:
+            appPlatform[appPlatform_key][0] += 1
+        if appPlatform[appPlatform_key][0] != 0:
+            appPlatform[appPlatform_key][2] = round((float(appPlatform[appPlatform_key][1]) + alpha * beta) / (float(
+                appPlatform[appPlatform_key][0]) + beta), 5)
+
+    # 获取最终的list
+    ad_file = open(filePath, 'r')
+    for line in ad_file:
+        row = line.strip().split(',')
+        adID_data = ad[row[8]]
+        campaignID_data = campaign[row[9]]
+        advertiserID_data = advertiser[row[10]]
+        appID_data = app[row[11]]
+        appPlatform_data = appPlatform[row[12]]
+
+        creativeData = adID_data + campaignID_data + advertiserID_data + appID_data + appPlatform_data
+        creativeID_adFeature_map[row[3]] = creativeData
+
+    return creativeID_adFeature_map
 
 
 if __name__ == "__main__":

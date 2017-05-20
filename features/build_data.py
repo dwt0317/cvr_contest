@@ -42,6 +42,7 @@ def build_x_hepler(from_path, to_path,
                    pos_features, pos_dim,
                    cvr_handler,
                    data_type="train",
+                   has_cvr=False,
                    has_gbdt=False,
                    ffm=False):
     from_file = open(from_path)
@@ -57,12 +58,14 @@ def build_x_hepler(from_path, to_path,
         offset = 0
         row = line.strip().split(',')
         field = 0
-        # user cvr feature
-        user_cvr = cvr_handler.get_user_cvr(data_type, int(row[4]))
-        for i in xrange(len(user_cvr)):
-            features[offset+i] = str(field) + "," + str(user_cvr[i]) if ffm else user_cvr[i]
-        offset += len(user_cvr)
-        field += 1
+
+        if has_cvr:
+            # user cvr feature
+            user_cvr = cvr_handler.get_user_cvr(data_type, int(row[4]))
+            for i in xrange(len(user_cvr)):
+                features[offset+i] = str(field) + "," + str(user_cvr[i]) if ffm else user_cvr[i]
+            offset += len(user_cvr)
+            field += 1
 
         # user feature
         user_f = user_features[int(row[4])]
@@ -78,12 +81,13 @@ def build_x_hepler(from_path, to_path,
             features[offset+i] = str(field) + "," + str(1) if ffm else 1
         offset += pos_dim
 
-        # position cvr feature
-        pos_cvr = cvr_handler.get_pos_cvr(data_type, int(row[5]))
-        for i in xrange(len(pos_cvr)):
-            features[offset + i] = str(field) + "," + str(pos_cvr[i]) if ffm else pos_cvr[i]
-        offset += len(pos_cvr)
-        field += 1
+        if has_cvr:
+            # position cvr feature
+            pos_cvr = cvr_handler.get_pos_cvr(data_type, int(row[5]))
+            for i in xrange(len(pos_cvr)):
+                features[offset + i] = str(field) + "," + str(pos_cvr[i]) if ffm else pos_cvr[i]
+            offset += len(pos_cvr)
+            field += 1
 
         # network feature connection*5, tele-operator*4
         features[offset+int(row[6])] = str(field) + "," + str(1) if ffm else 1
@@ -121,30 +125,35 @@ def build_x():
     user_features, user_dim = uf.build_user_profile()
     pos_features, pos_dim = pf.build_position()
 
-    src_dir_path = constants.project_path+"/dataset/custom/split_4/b1/"
-    des_dir_path = constants.project_path+"/dataset/x_y/split_4/b1/"
+    src_dir_path = constants.project_path+"/dataset/custom/split_5/"
+    des_dir_path = constants.project_path+"/dataset/x_y/split_5/"
     # 加载cvr特征
     cvr_handler = cvr.CVRHandler(src_dir_path)
-    cvr_handler.load_train_cvr()
-    cvr_handler.load_test_cvr()
+    # cvr_handler.load_train_cvr()
+    # cvr_handler.load_test_cvr()
 
-    build_x_hepler(constants.local_test_path, des_dir_path+"test_x.fm",
-                   ad_features, ad_dim,
-                   user_features, user_dim,
-                   pos_features, pos_dim,
-                   cvr_handler,
-                   data_type="test",
-                   has_gbdt=False,
-                   ffm=False)
+    for i in xrange(4):
+        test_des_file = des_dir_path + "test_x_onehot_" + str(i) + ".fm"
+        test_src_file = src_dir_path + "test_x_" + str(i)
+        build_x_hepler(test_src_file, test_des_file,
+                       ad_features, ad_dim,
+                       user_features, user_dim,
+                       pos_features, pos_dim,
+                       cvr_handler,
+                       data_type="test",
+                       has_gbdt=False,
+                       ffm=False)
 
-    build_x_hepler(constants.local_train_path, des_dir_path+"train_x.fm",
-                   ad_features, ad_dim,
-                   user_features, user_dim,
-                   pos_features, pos_dim,
-                   cvr_handler,
-                   data_type="train",
-                   has_gbdt=False,
-                   ffm=False)
+        train_src_file = src_dir_path + "train_x_" + str(i)
+        train_des_file = des_dir_path + "train_x_onehot_" + str(i) + ".fm"
+        build_x_hepler(train_src_file, train_des_file,
+                       ad_features, ad_dim,
+                       user_features, user_dim,
+                       pos_features, pos_dim,
+                       cvr_handler,
+                       data_type="test",
+                       has_gbdt=False,
+                       ffm=False)
 
 
 if __name__ == '__main__':

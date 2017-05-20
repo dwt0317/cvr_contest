@@ -41,7 +41,7 @@ def count_id_freq():
 
 # 生成用于统计ad ID类信息的训练集文件
 def build_ad_train(to_path):
-    train_f = open(constants.train_path)
+    train_f = open(constants.cus_train_path)
     train_f.readline()
     ad_f = open(constants.project_path + "/dataset/raw/" + "ad.csv")
     ad_f.readline()
@@ -141,14 +141,14 @@ def build_ad_feature(has_id=True):
         app_cate = int(category_dict[int(fields[4])])
         if app_cate >= 100:
             app_cate_1 = app_cate/100
-            app_cate_2 = app_cate - app_cate_1*100
+            # app_cate_2 = app_cate
         else:
             app_cate_1 = app_cate
-            app_cate_2 = 0
+            # app_cate_2 = app_cate_1 * 100
         line_feature.append(offset+app_cate_1)
         offset += 10
-        line_feature.append(offset+app_cate_2)
-        offset += 100
+        # line_feature.append(offset+app_cate_2)
+        # offset += 100
         ad_feature[int(fields[0])] = line_feature
 
     f.close()

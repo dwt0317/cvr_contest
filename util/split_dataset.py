@@ -66,6 +66,23 @@ def abandon_thirty(cus_train_path):
     clean_total.to_csv(constants.project_path + "/dataset/custom/train_clean.csv", index=False)
 
 
+# 按照时序进行交叉分割
+def split_by_date_kfold(start_date, to_dir):
+    total_df = pd.read_csv(constants.clean_train_path)
+    parital_df = total_df[total_df['clickTime'] >= start_date*1440]
+    del total_df
+    index = 0
+    for train_start in range(start_date, 25, 1):
+        test_start = train_start + 7
+        train_df = parital_df[(parital_df['clickTime'] >= train_start*1440) &
+                              (parital_df['clickTime'] < test_start*1440)]
+        test_df = parital_df[(parital_df['clickTime'] >= test_start * 1440) &
+                             (parital_df['clickTime'] < (test_start+1) * 1440)]
+        train_df.to_csv(to_dir + "train_x_" + str(index), index=False)
+        test_df.to_csv(to_dir + "test_x_" + str(index), index=False)
+        index += 1
+
+
 # 按日期进行分割
 def split_by_date(train_date_bound, to_dir):
     total_df = pd.read_csv(constants.clean_train_path)
@@ -127,23 +144,24 @@ def merge_by_ad(train_file, to_path):
 # 在train文件中merge pos信息
 def merge_by_pos(train_file, to_path):
     total_df = pd.read_csv(train_file)
-    ad_df = pd.read_csv(constants.project_path + "/dataset/raw/" + "position.csv")
-    merge_df = pd.merge(left=total_df, right=ad_df, how='left', on=['positionID'])
+    pos_df = pd.read_csv(constants.project_path + "/dataset/raw/" + "position.csv")
+    merge_df = pd.merge(left=total_df, right=pos_df, how='left', on=['positionID'])
     merge_df.to_csv(path_or_buf=to_path, index=False)
     print "Merging pos finished."
 
 
 if __name__ == '__main__':
+    dir_path = constants.project_path + "/dataset/custom/split_5/"
+    split_by_date_kfold(20, dir_path)
     # pass
     # split_dataset(0.8, 0.1, os.getcwd()+"/dataset/custom/split_3/")
     # abandon_thirty(constants.cus_train_path)
     # split_by_date(28, constants.project_path + "/dataset/custom/split_4/")
-    merge_by_ad(constants.clean_train_path,
-                constants.project_path + "/dataset/custom/split_online/train_with_ad_info.csv")
-    merge_by_pos(constants.clean_train_path,
-                 constants.project_path + "/dataset/custom/split_online/train_with_pos_info.csv")
-    merge_by_user(constants.clean_train_path,
-                  constants.project_path + "/dataset/custom/split_online/train_with_user_info.csv")
+    # merge_by_ad(constants.cus_test_path, dir_path+"test_with_ad_info.csv")
+    # merge_by_pos(constants.clean_train_path,
+    #              constants.project_path + "/dataset/custom/split_4/train_with_pos_info.csv")
+    # merge_by_user(constants.clean_train_path,
+    #               constants.project_path + "/dataset/custom/split_4/train_with_user_info.csv")
     # conversion_gap()
     # convert_data_time(constants.raw_train_path, constants.project_path + "/dataset/custom/train_re-time.csv", 0)
     # convert_data_time(constants.raw_test_path, constants.project_path  + "/dataset/custom/test_re-time.csv", 1)

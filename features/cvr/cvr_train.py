@@ -1,5 +1,5 @@
 # -*- coding:utf-8 -*-
-import copy
+import csv
 import pandas as pd
 from util import constants
 import numpy as np
@@ -56,11 +56,11 @@ def build_user_cvr_file(train_user_file, feature_file):
 
 
 # site * 3, type * 6
-def build_pos_cvr_file(pos_user_file, feature_file):
+def build_pos_cvr_file(train_pos_file, feature_file):
     pos_cvr_dict = {'sitesetID': np.zeros((3, 2)), 'positionType': np.zeros((6, 2))}
     headers = ['sitesetID', 'positionType']
     feature_fd = open(feature_file, 'w')
-    with open(pos_user_file, 'r') as f:
+    with open(train_pos_file, 'r') as f:
         f.readline()
         num = 0
         for row in f:
@@ -87,10 +87,104 @@ def build_pos_cvr_file(pos_user_file, feature_file):
     feature_fd.close()
 
 
+def build_ad_cvr_file(train_ad_file, feature_file):
+    '''
+    :type train_ad_file: string train_with_ad.csv的路径
+          outputPathFile: string AD五个属性的cvr,每一条数据只统计之前的历史数据
+    :rtype: null
+    :Example: ADFeature_ByLine('train_with_ad.csv','output.csv')
+    '''
+    # ad_data = pd.read_csv(train_ad_file)
+    ad_file = open(train_ad_file, 'r')
+    csvfile = file(feature_file, 'wb')
+    writer = csv.writer(csvfile)
+    # writer.writerow(['creativeID', 'adID', 'campaignID', 'advertiserID', 'appID', 'appPlatformID'])
+
+    ad = {}
+    campaign = {}
+    advertiser = {}
+    app = {}
+    appPlatform = {}
+    # creativeID_adFeature_map = {}
+    ad_file.readline()
+    for line in ad_file:
+        row = line.strip().split(',')
+
+        adID_key = row[8]
+        campaignID_key = row[9]
+        advertiserID_key = row[10]
+        appID_key = row[11]
+        appPlatform_key = row[12]
+        # creativeID_key = row[3]
+
+        # 更新adID的数据
+        if adID_key not in ad:
+            ad[adID_key] = [0, 0, 0]
+        if row[0] == '1':
+            ad[adID_key][0] += 1
+            ad[adID_key][1] += 1
+        else:
+            ad[adID_key][0] += 1
+        if ad[adID_key][0] != 0:
+            ad[adID_key][2] = round((float(ad[adID_key][1])+alpha * beta) / (float(ad[adID_key][0]) + beta), 5)
+
+        # 更新campaignID的数据
+        if campaignID_key not in campaign:
+            campaign[campaignID_key] = [0, 0, 0]
+        if row[0] == '1':
+            campaign[campaignID_key][0] += 1
+            campaign[campaignID_key][1] += 1
+        else:
+            campaign[campaignID_key][0] += 1
+        if campaign[campaignID_key][0] != 0:
+            campaign[campaignID_key][2] = round((float(campaign[campaignID_key][1]) + alpha * beta) /
+                                                (float(campaign[campaignID_key][0]) + beta), 5)
+
+        # 更新advertiserID的数据
+        if advertiserID_key not in advertiser:
+            advertiser[advertiserID_key] = [0, 0, 0]
+        if row[0] == '1':
+            advertiser[advertiserID_key][0] += 1
+            advertiser[advertiserID_key][1] += 1
+        else:
+            advertiser[advertiserID_key][0] += 1
+        if advertiser[advertiserID_key][0] != 0:
+            advertiser[advertiserID_key][2] = round((float(advertiser[advertiserID_key][1]) + alpha * beta) / (float(
+                advertiser[advertiserID_key][0]) + beta), 5)
+
+        # 更新appID的数据
+        if appID_key not in app:
+            app[appID_key] = [0, 0, 0]
+        if row[0] == '1':
+            app[appID_key][0] += 1
+            app[appID_key][1] += 1
+        else:
+            app[appID_key][0] += 1
+        if app[appID_key][0] != 0:
+            app[appID_key][2] = round((float(app[appID_key][1]) + alpha * beta) / (float(app[appID_key][0]) + beta), 5)
+
+        # 更新appID的数据
+        if appPlatform_key not in appPlatform:
+            appPlatform[appPlatform_key] = [0, 0, 0]
+        if row[0] == '1':
+            appPlatform[appPlatform_key][0] += 1
+            appPlatform[appPlatform_key][1] += 1
+        else:
+            appPlatform[appPlatform_key][0] += 1
+        if appPlatform[appPlatform_key][0] != 0:
+            appPlatform[appPlatform_key][2] = round((float(appPlatform[appPlatform_key][1]) + alpha * beta) / (float(
+                appPlatform[appPlatform_key][0]) + beta), 5)
+
+        writeData = [ad[adID_key][2], campaign[campaignID_key][2], advertiser[advertiserID_key][2],
+                     app[appID_key][2], appPlatform[appPlatform_key][2]]
+        writer.writerow(writeData)
+    csvfile.close()
+
 if __name__ == '__main__':
-    dir_path = constants.project_path+"/dataset/custom/split_online/b1/"
-    build_user_cvr_file(dir_path+"train_with_user_info.csv", dir_path+"user_cvr_feature")
-    build_pos_cvr_file(dir_path+"train_with_pos_info.csv", dir_path+"pos_cvr_feature")
+    dir_path = constants.project_path+"/dataset/custom/split_4/b1/"
+    # build_user_cvr_file(dir_path+"train_with_user_info.csv", dir_path+"user_cvr_feature")
+    # build_pos_cvr_file(dir_path+"train_with_pos_info.csv", dir_path+"pos_cvr_feature")
+    build_ad_cvr_file(dir_path+"train_with_ad_info.csv", dir_path+"ad_cvr_feature")
 
 
 

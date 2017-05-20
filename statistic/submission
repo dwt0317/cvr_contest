@@ -9,3 +9,5 @@
 0.117209 fm 90 pos k8 pos_id_no_number
 0.119976 gbdt new 400
 0.201177 ffm 0.0003 k16 25
+0.130534 ffm k4 t4
+0.116099 gbdt new parameter onehot

@@ -5,6 +5,25 @@ import pandas as pd
 from util import constants
 
 
+def user_app_feature():
+    user_app_dict = [0]
+    with open(constants.project_path+"/dataset/raw/user_installedapps.csv") as f:
+        pre_ID = -1
+        f.readline()
+        for line in f:
+            row = line.strip().split(',')
+            userID = int(row[0])
+            appID = int(row[1])
+            if userID == pre_ID:
+                user_app_dict[userID] += 1
+            else:
+                user_app_dict.append(1)
+            pre_ID = userID
+    df = pd.DataFrame(user_app_dict)
+    print df.shape
+    return user_app_dict
+
+
 # age * 9, gender * 3, education * 8, marriage * 4, baby * 7, residence * 35,
 def build_user_profile():
     # make user raw data
@@ -59,6 +78,7 @@ def count_user_freq():
     print "user 90%: " + str(np.percentile(a, 90))
     print "user 95%: " + str(np.percentile(a, 95))
 
+
 if __name__ == '__main__':
     # count_user()
-    pass
+    user_app_feature()

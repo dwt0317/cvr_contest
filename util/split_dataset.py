@@ -3,7 +3,8 @@ import os
 import numpy as np
 import pandas as pd
 import constants
-
+import random
+import csv
 
 # 统计训练集中正负样例的比例
 def count_positive():
@@ -83,6 +84,28 @@ def split_by_date_kfold(start_date, to_dir):
         index += 1
 
 
+# bootstrap采样线上的train数据
+def bootstrap_online_train(start_date, to_dir):
+    total_df = pd.read_csv(constants.clean_train_path)
+    partial_df = total_df[total_df['clickTime'] >= start_date*1440]
+    data_array = partial_df.as_matrix()
+    header = list(partial_df.columns.values)
+    for i in xrange(10):
+        train_file = to_dir + "train_x_" + str(i)
+        sample_index = []
+        n = len(data_array)
+        for j in xrange(n):
+            sample_index.append(random.randint(0, n-1))
+        sample_index.sort()
+        with open(train_file, 'w') as f:
+            f.write(','.join(header))
+            f.write('\n')
+            for j in sample_index:
+                f.write(','.join(str(x) for x in data_array[j]))
+                f.write('\n')
+        print str(i) + " finished."
+
+
 # 按日期进行分割
 def split_by_date(train_date_bound, to_dir):
     total_df = pd.read_csv(constants.clean_train_path)
@@ -151,8 +174,9 @@ def merge_by_pos(train_file, to_path):
 
 
 if __name__ == '__main__':
-    dir_path = constants.project_path + "/dataset/custom/split_5/"
-    split_by_date_kfold(20, dir_path)
+    dir_path = constants.project_path + "/dataset/custom/split_online/b2/"
+    bootstrap_online_train(24, dir_path)
+    # split_by_date_kfold(20, dir_path)
     # pass
     # split_dataset(0.8, 0.1, os.getcwd()+"/dataset/custom/split_3/")
     # abandon_thirty(constants.cus_train_path)

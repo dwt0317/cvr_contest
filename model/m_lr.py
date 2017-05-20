@@ -83,13 +83,13 @@ def time_k_fold_lr():
         print train_x.shape, test_x.shape
         print "Loading data completed."
         print "Read time: " + str(datetime.datetime.now() - begin)
-        classifier = LogisticRegression(solver='sag', random_state=8, max_iter=120)
+        classifier = LogisticRegression(solver='sag', random_state=8, max_iter=160)
         classifier.fit(train_x, train_y)
         prob_test = classifier.predict_proba(test_x)[:, 1]
 
         auc_local = metrics.roc_auc_score(test_y, prob_test)
         logloss_local = metrics.log_loss(test_y, prob_test)
-        print auc_local, logloss_local
+        print str(i) + ": " + str(auc_local) + " " + str(logloss_local)
         logloss += logloss_local
         auc += auc_local
 

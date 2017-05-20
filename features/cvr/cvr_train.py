@@ -96,7 +96,7 @@ def build_ad_cvr_file(train_ad_file, feature_file):
     '''
     # ad_data = pd.read_csv(train_ad_file)
     ad_file = open(train_ad_file, 'r')
-    csvfile = file(feature_file, 'wb')
+    csvfile = file(feature_file, 'w')
     writer = csv.writer(csvfile)
     # writer.writerow(['creativeID', 'adID', 'campaignID', 'advertiserID', 'appID', 'appPlatformID'])
 

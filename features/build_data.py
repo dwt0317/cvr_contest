@@ -132,7 +132,7 @@ def build_x():
     # cvr_handler.load_train_cvr()
     # cvr_handler.load_test_cvr()
 
-    for i in xrange(4):
+    for i in xrange(5):
         test_des_file = des_dir_path + "test_x_onehot_" + str(i) + ".fm"
         test_src_file = src_dir_path + "test_x_" + str(i)
         build_x_hepler(test_src_file, test_des_file,

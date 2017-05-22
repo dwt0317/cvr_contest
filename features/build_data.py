@@ -89,7 +89,7 @@ def build_x_hepler(from_path, to_path,
             offset += len(pos_cvr)
             field += 1
 
-        # network feature connection*5, tele-operator*4
+        # network feature connection * 5, tele-operator * 4
         features[offset+int(row[6])] = str(field) + "," + str(1) if ffm else 1
         features[offset+int(row[7])] = str(field) + "," + str(1) if ffm else 1
         offset += 9
@@ -125,24 +125,36 @@ def build_x():
     user_features, user_dim = uf.build_user_profile()
     pos_features, pos_dim = pf.build_position()
 
-    src_dir_path = constants.project_path+"/dataset/custom/split_5/"
-    des_dir_path = constants.project_path+"/dataset/x_y/split_5/"
+    src_dir_path = constants.project_path+"/dataset/custom/split_online/b2/"
+    des_dir_path = constants.project_path+"/dataset/x_y/split_online/b3/"
     # 加载cvr特征
     cvr_handler = cvr.CVRHandler(src_dir_path)
     # cvr_handler.load_train_cvr()
     # cvr_handler.load_test_cvr()
 
-    for i in xrange(5):
-        test_des_file = des_dir_path + "test_x_onehot_" + str(i) + ".fm"
-        test_src_file = src_dir_path + "test_x_" + str(i)
-        build_x_hepler(test_src_file, test_des_file,
-                       ad_features, ad_dim,
-                       user_features, user_dim,
-                       pos_features, pos_dim,
-                       cvr_handler,
-                       data_type="test",
-                       has_gbdt=False,
-                       ffm=False)
+    # # generate online test dataset
+    test_des_file = des_dir_path + "test_x_onehot.ffm"
+    test_src_file = constants.project_path+"/dataset/raw/test.csv"
+    build_x_hepler(test_src_file, test_des_file,
+                   ad_features, ad_dim,
+                   user_features, user_dim,
+                   pos_features, pos_dim,
+                   cvr_handler,
+                   data_type="test",
+                   has_gbdt=False,
+                   ffm=False)
+
+    for i in xrange(10):
+        # test_des_file = des_dir_path + "test_x_onehot_" + str(i) + ".fm"
+        # test_src_file = src_dir_path + "test_x_" + str(i)
+        # build_x_hepler(test_src_file, test_des_file,
+        #                ad_features, ad_dim,
+        #                user_features, user_dim,
+        #                pos_features, pos_dim,
+        #                cvr_handler,
+        #                data_type="test",
+        #                has_gbdt=False,
+        #                ffm=False)
 
         train_src_file = src_dir_path + "train_x_" + str(i)
         train_des_file = des_dir_path + "train_x_onehot_" + str(i) + ".fm"
@@ -154,7 +166,6 @@ def build_x():
                        data_type="test",
                        has_gbdt=False,
                        ffm=False)
-
 
 if __name__ == '__main__':
     build_x()

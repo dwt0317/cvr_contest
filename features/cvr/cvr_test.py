@@ -7,8 +7,8 @@ from util import constants
 用于生成线上test样本的统计类特征
 '''
 
-alpha = 0.0248  # for smoothing
-beta = 75
+alpha = 135  # for smoothing
+beta = 5085
 
 # 处理cvr的统一方法
 def cvr_helper(total_df, header, dim, feature_map):

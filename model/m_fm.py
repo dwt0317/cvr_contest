@@ -7,7 +7,7 @@ from sklearn import metrics
 
 from util import utils
 
-data_dir_path = constants.project_path + "/dataset/x_y/split_4/b1/"
+data_dir_path = constants.project_path + "/dataset/x_y/split_5/b2/"
 
 train_x_file = data_dir_path + "train_x_onehot.fm"
 train_y_file = data_dir_path + "train_y"

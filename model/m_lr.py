@@ -8,11 +8,11 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.datasets import load_svmlight_file
 import time
 from sklearn.model_selection import StratifiedKFold
-
+import pandas as pd
 
 def lr():
-    train_x_file = constants.project_path + "/dataset/x_y/split_online/b1/train_x_onehot.fm"
-    test_x_file = constants.project_path + "/dataset/x_y/split_online/b1/test_x_onehot.fm"
+    train_x_file = constants.project_path + "/dataset/x_y/split_4/b1/train_x_onehot.fm"
+    test_x_file = constants.project_path + "/dataset/x_y/split_4/b1/test_x_onehot.fm"
 
     begin = datetime.datetime.now()
 
@@ -21,7 +21,7 @@ def lr():
     print train_x.shape, test_x.shape
     print "Loading data completed."
     print "Read time: " + str(datetime.datetime.now() - begin)
-    classifier = LogisticRegression(solver='sag', random_state=8, max_iter=120)
+    classifier = LogisticRegression(random_state=8)
 
     grid = False
     if grid:
@@ -34,7 +34,7 @@ def lr():
 
     if not grid:
         # traditional k-fold
-        split = 5
+        split = 3
         if split != 0:
             skf = StratifiedKFold(n_splits=split)
             prob_test = np.zeros(len(test_y))
@@ -53,8 +53,8 @@ def lr():
             prob_test = classifier.predict_proba(test_x)[:, 1]
 
         prob_test /= split
-        prob_test = round(prob_test, 5)
-        np.savetxt(constants.project_path+"/out/lr.out", prob_test)
+        # prob_test = np.around(prob_test, 6)
+        np.savetxt(constants.project_path + "/out/lr_k-fold_boot.out", prob_test, fmt="%s")
         # auc_test = metrics.roc_auc_score(test_y, prob_test)
         # logloss = metrics.log_loss(test_y, prob_test)
         # end = datetime.datetime.now()
@@ -72,42 +72,62 @@ def lr():
 
 def time_k_fold_lr():
     begin = datetime.datetime.now()
-    dir_path = constants.project_path + "/dataset/x_y/split_5/"
+    dir_path = constants.project_path + "/dataset/x_y/split_5/b2/"
     logloss = 0
     auc = 0
+    online = False
+    if online:
+        prob_test = np.zeros(338489)
     for i in xrange(4):
         train_x_file = dir_path + "train_x_onehot_" + str(i) + ".fm"
-        test_x_file = dir_path + "test_x_onehot_" + str(i) + ".fm"
+
+        if online:
+            test_x_file = dir_path + "test_x_onehot.fm"
+        else:
+            test_x_file = dir_path + "test_x_onehot_" + str(i) + ".fm"
+
         train_x, train_y = load_svmlight_file(train_x_file)
         test_x, test_y = load_svmlight_file(test_x_file)
-        print train_x.shape, test_x.shape
-        print "Loading data completed."
+        # print "Loading data completed."
         print "Read time: " + str(datetime.datetime.now() - begin)
-        classifier = LogisticRegression(solver='sag', random_state=8, max_iter=160)
+        classifier = LogisticRegression(max_iter=20, penalty='l2')
         classifier.fit(train_x, train_y)
-        prob_test = classifier.predict_proba(test_x)[:, 1]
+        if online:
+            prob_test += classifier.predict_proba(test_x)[:, 1]
+            print pd.DataFrame(prob_test).mean()
+        else:
+            prob_test = classifier.predict_proba(test_x)[:, 1]
+            print pd.DataFrame(prob_test).mean()
+        if not online:
+            auc_local = metrics.roc_auc_score(test_y, prob_test)
+            logloss_local = metrics.log_loss(test_y, prob_test)
+            print str(i) + ": " + str(auc_local) + " " + str(logloss_local)
+            logloss += logloss_local
+            auc += auc_local
+    if online:
+        prob_test /= 10
+        np.savetxt(constants.project_path + "/out/lr_k-fold_re.out", prob_test, fmt="%s")
 
-        auc_local = metrics.roc_auc_score(test_y, prob_test)
-        logloss_local = metrics.log_loss(test_y, prob_test)
-        print str(i) + ": " + str(auc_local) + " " + str(logloss_local)
-        logloss += logloss_local
-        auc += auc_local
+    if not online:
+        end = datetime.datetime.now()
+        rcd = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())) + '\n'
+        rcd += "lr k-fold position:" + '\n'
+        # rcd += "score: " + str(score) + '\n'
+        rcd += "auc_test: " + str(float(auc)/4) + '\n'
+        rcd += "logloss: " + str(logloss/4) + '\n'
+        rcd += "time: " + str(end - begin) + '\n' + '\n'
 
-    # prob_test /= 4
-    # prob_test = round(prob_test, 5)
-    # np.savetxt(constants.project_path + "/out/lr_k-fold.out", prob_test)
+        log_file = open(constants.result_path, "a")
+        log_file.write(rcd)
+        log_file.close()
 
-    end = datetime.datetime.now()
-    rcd = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())) + '\n'
-    rcd += "lr k-fold:" + '\n'
-    # rcd += "score: " + str(score) + '\n'
-    rcd += "auc_test: " + str(float(auc)/4) + '\n'
-    rcd += "logloss: " + str(logloss/4) + '\n'
-    rcd += "time: " + str(end - begin) + '\n' + '\n'
 
-    log_file = open(constants.result_path, "a")
-    log_file.write(rcd)
-    log_file.close()
+def sci2float():
+    prob_test = np.loadtxt(constants.project_path + "/out/lr_k-fold_boot.out")
+    prob_test = np.around(prob_test, 6)
+    np.savetxt(constants.project_path + "/out/lr_k-fold_boots.out", prob_test, fmt="%s")
 
 if __name__ == '__main__':
+    # lr()
     time_k_fold_lr()
+    # sci2float()

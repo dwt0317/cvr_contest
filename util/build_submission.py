@@ -2,6 +2,7 @@
 import io
 import constants
 import numpy as np
+import pandas as pd
 
 
 # 规则的hit
@@ -54,11 +55,17 @@ def build_submission(from_path, to_path):
     to_file.close()
 
 
+def check_submission_cvr():
+    sub_df = pd.read_csv(constants.project_path+"/out/lr_k-fold_re.out", header=None)
+    print sub_df.mean()
+
+
 if __name__ == "__main__":
-    dir_path = constants.project_path+"/dataset/custom/split_5/"
+    # dir_path = constants.project_path+"/dataset/custom/split_5/"
     # revise_submission(constants.project_path+"/submission/ini_sub.csv", dir_path+"train_with_ad_info.csv",
     #                   dir_path+"test_with_ad_info.csv", constants.project_path+"/submission/submission.csv")
     # revise_submission(constants.project_path+"/out/fm_pos_id_no_number.out",
     #                   constants.project_path + "/submission/submission.csv")
-    build_submission(constants.project_path + "/out/lr.out",
+    build_submission(constants.project_path + "/out/lr_k-fold_re.out",
                      constants.project_path + "/submission/submission.csv")
+    check_submission_cvr()

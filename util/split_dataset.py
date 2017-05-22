@@ -87,10 +87,12 @@ def split_by_date_kfold(start_date, to_dir):
 # bootstrap采样线上的train数据
 def bootstrap_online_train(start_date, to_dir):
     total_df = pd.read_csv(constants.clean_train_path)
-    partial_df = total_df[total_df['clickTime'] >= start_date*1440]
+    partial_df = total_df[(total_df['clickTime'] >= start_date*1440)
+                          & (total_df['clickTime'] < 30*1440)]
     data_array = partial_df.as_matrix()
     header = list(partial_df.columns.values)
     for i in xrange(10):
+        random.seed()
         train_file = to_dir + "train_x_" + str(i)
         sample_index = []
         n = len(data_array)
@@ -107,14 +109,15 @@ def bootstrap_online_train(start_date, to_dir):
 
 
 # 按日期进行分割
-def split_by_date(train_date_bound, to_dir):
+def split_by_date_online(left_bound, right_bound, to_dir):
     total_df = pd.read_csv(constants.clean_train_path)
-    train_df = total_df[(total_df['clickTime'] < (train_date_bound+1)*1440)]
-    test_df = total_df[(total_df['clickTime'] >= (train_date_bound+1)*1440)]
+    train_df = total_df[(total_df['clickTime'] >= left_bound*1440)
+                        & (total_df['clickTime'] < right_bound*1440)]
+    # test_df = total_df[(total_df['clickTime'] < right_bound*1440)]
     train_df.to_csv(to_dir + "train_x.csv", index=False)
     print train_df.shape
-    test_df.to_csv(to_dir + "test_x.csv", index=False)
-    print test_df.shape
+    # test_df.to_csv(to_dir + "test_x.csv", index=False)
+    # print test_df.shape
 
 
 # 随机按量切分数据集
@@ -174,13 +177,13 @@ def merge_by_pos(train_file, to_path):
 
 
 if __name__ == '__main__':
-    dir_path = constants.project_path + "/dataset/custom/split_online/b2/"
-    bootstrap_online_train(24, dir_path)
+    dir_path = constants.project_path + "/dataset/custom/split_online/b3/"
+    # bootstrap_online_train(23, dir_path)
     # split_by_date_kfold(20, dir_path)
     # pass
     # split_dataset(0.8, 0.1, os.getcwd()+"/dataset/custom/split_3/")
     # abandon_thirty(constants.cus_train_path)
-    # split_by_date(28, constants.project_path + "/dataset/custom/split_4/")
+    split_by_date_online(22, 30, dir_path)
     # merge_by_ad(constants.cus_test_path, dir_path+"test_with_ad_info.csv")
     # merge_by_pos(constants.clean_train_path,
     #              constants.project_path + "/dataset/custom/split_4/train_with_pos_info.csv")

@@ -50,15 +50,33 @@ def conversion_graph():
     plt.savefig(img_path)
 
 
-
-def combine_feature_cvr():
-    file_path = constants.project_path+"/dataset/custom/split_online/b1/train_with_ad_info.csv"
+# alpha = [mean*(1-mean)/var - 1] * mean
+# beta = [mean*(1-mean)/var - 1] * (1-mean)
+# 134.673655423
+# 5084.73200722
+def compute_alpha_beta():
+    # file_path = constants.project_path+"/dataset/custom/split_online/b1/train_with_ad_info.csv"
+    train_df = pd.read_csv(constants.clean_train_path)
+    y = []
+    for i in range(17, 30):
+        rbound = (i+1) * 1440
+        lbound = i * 1440
+        click_df = train_df[(train_df['clickTime'] < rbound)
+                          & (train_df['clickTime'] >= lbound)]
+        conv_df = click_df[click_df['label'] == 1]
+        # print tmp_df.head(5)
+        y.append(len(conv_df)/float(len(click_df)))
+    y_df = pd.DataFrame(y)
+    mean = float(y_df.mean().values[0])
+    var = float(y_df.var().values[0])
+    print (mean*(1-mean)/var - 1) * mean
+    print (mean*(1-mean)/var - 1) * (1-mean)
 
 
 
 def user_num_graph():
-    # file_path = constants.project_path+"/dataset/custom/split_online/b1/train_with_ad_info.csv"
-    file_path = constants.cus_train_path
+    file_path = constants.project_path+"/dataset/custom/split_online/b1/train_with_ad_info.csv"
+    # file_path = constants.cus_train_path
     train_df = pd.read_csv(file_path)
     x = []
     y = []
@@ -68,16 +86,16 @@ def user_num_graph():
         day_df = train_df[(train_df['clickTime'] < rbound)
                           & (train_df['clickTime'] >= lbound)]
         x.append(i)
-        y.append(len(day_df[day_df['connectionType'] == 1])/float(len(day_df)))
+        y.append(len(day_df[day_df['appID'] == 14])/float(len(day_df)))
     plt.figure(figsize=(18, 5))
     plt.xlabel("date")
     plt.ylabel("connection 1 rate")
     plt.xticks(np.arange(min(x), max(x) + 1, 1))
     plt.plot(x, y, color="blue", label="connection 1 rate")
     # plt.plot(x, y2_click, color="red", label="click")
-    # plt.show()
-    img_path = constants.project_path + '/img/' + "connection 1 rate" + '.png'
-    plt.savefig(img_path)
+    plt.show()
+    # img_path = constants.project_path + '/img/' + "connection 1 rate" + '.png'
+    # plt.savefig(img_path)
 
 if __name__ == "__main__":
-    user_num_graph()
+    compute_alpha_beta()

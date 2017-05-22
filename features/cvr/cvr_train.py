@@ -4,7 +4,7 @@ import pandas as pd
 from util import constants
 import numpy as np
 
-alpha = 0.0248  # for smoothing
+alpha = 135  # for smoothing
 beta = 75
 
 

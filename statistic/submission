@@ -11,3 +11,5 @@
 0.201177 ffm 0.0003 k16 25
 0.130534 ffm k4 t4
 0.116099 gbdt new parameter onehot
+0.135674 lr boot has_30 120
+0.137384 lr all_data 120

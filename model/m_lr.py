@@ -10,9 +10,11 @@ import time
 from sklearn.model_selection import StratifiedKFold
 import pandas as pd
 
+
 def lr():
-    train_x_file = constants.project_path + "/dataset/x_y/split_4/b1/train_x_onehot.fm"
-    test_x_file = constants.project_path + "/dataset/x_y/split_4/b1/test_x_onehot.fm"
+    dir_path = constants.project_path + "/dataset/x_y/split_online/b5/"
+    train_x_file = dir_path + "train_x_onehot_" + str(0) + ".fm"
+    test_x_file = dir_path + "test_x_onehot.fm"
 
     begin = datetime.datetime.now()
 
@@ -34,7 +36,7 @@ def lr():
 
     if not grid:
         # traditional k-fold
-        split = 3
+        split = 10
         if split != 0:
             skf = StratifiedKFold(n_splits=split)
             prob_test = np.zeros(len(test_y))
@@ -43,18 +45,19 @@ def lr():
                 fold_x = train_x[train_index]
                 fold_y = train_y[train_index]
                 classifier.fit(fold_x, fold_y)
-                y_pred = classifier.predict(test_x)
+                # y_pred = classifier.predict(test_x)
                 # score = metrics.accuracy_score(test_y, y_pred)
                 # prob_train = classifier.predict_proba(training_x)[:, 1]
                 # proba得到两行, 一行错的一行对的,对的是点击的概率，错的是不点的概率
                 prob_test += classifier.predict_proba(test_x)[:, 1]
+                print pd.DataFrame(prob_test).mean()
         else:
             classifier.fit(train_x, train_y)
             prob_test = classifier.predict_proba(test_x)[:, 1]
 
         prob_test /= split
         # prob_test = np.around(prob_test, 6)
-        np.savetxt(constants.project_path + "/out/lr_k-fold_boot.out", prob_test, fmt="%s")
+        np.savetxt(constants.project_path + "/out/lr_k-fold.out", prob_test, fmt="%s")
         # auc_test = metrics.roc_auc_score(test_y, prob_test)
         # logloss = metrics.log_loss(test_y, prob_test)
         # end = datetime.datetime.now()
@@ -72,13 +75,13 @@ def lr():
 
 def time_k_fold_lr():
     begin = datetime.datetime.now()
-    dir_path = constants.project_path + "/dataset/x_y/split_5/b2/"
+    dir_path = constants.project_path + "/dataset/x_y/split_5/b5/"
     logloss = 0
     auc = 0
     online = False
     if online:
         prob_test = np.zeros(338489)
-    for i in xrange(4):
+    for i in range(0, 4):
         train_x_file = dir_path + "train_x_onehot_" + str(i) + ".fm"
 
         if online:
@@ -90,7 +93,7 @@ def time_k_fold_lr():
         test_x, test_y = load_svmlight_file(test_x_file)
         # print "Loading data completed."
         print "Read time: " + str(datetime.datetime.now() - begin)
-        classifier = LogisticRegression(max_iter=20, penalty='l2')
+        classifier = LogisticRegression(max_iter=30, penalty='l2')
         classifier.fit(train_x, train_y)
         if online:
             prob_test += classifier.predict_proba(test_x)[:, 1]
@@ -106,12 +109,12 @@ def time_k_fold_lr():
             auc += auc_local
     if online:
         prob_test /= 10
-        np.savetxt(constants.project_path + "/out/lr_k-fold_re.out", prob_test, fmt="%s")
+        np.savetxt(constants.project_path + "/out/lr_app_cvr.out", prob_test, fmt="%s")
 
     if not online:
         end = datetime.datetime.now()
         rcd = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())) + '\n'
-        rcd += "lr k-fold position:" + '\n'
+        rcd += "lr k-fold app_cvr 30:" + '\n'
         # rcd += "score: " + str(score) + '\n'
         rcd += "auc_test: " + str(float(auc)/4) + '\n'
         rcd += "logloss: " + str(logloss/4) + '\n'

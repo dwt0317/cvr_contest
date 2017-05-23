@@ -59,13 +59,13 @@ def build_x_hepler(from_path, to_path,
         row = line.strip().split(',')
         field = 0
 
-        if has_cvr:
-            # user cvr feature
-            user_cvr = cvr_handler.get_user_cvr(data_type, int(row[4]))
-            for i in xrange(len(user_cvr)):
-                features[offset+i] = str(field) + "," + str(user_cvr[i]) if ffm else user_cvr[i]
-            offset += len(user_cvr)
-            field += 1
+        # if has_cvr:
+        #     # user cvr feature
+        #     user_cvr = cvr_handler.get_user_cvr(data_type, int(row[4]))
+        #     for i in xrange(len(user_cvr)):
+        #         features[offset+i] = str(field) + "," + str(user_cvr[i]) if ffm else user_cvr[i]
+        #     offset += len(user_cvr)
+        #     field += 1
 
         # user feature
         user_f = user_features[int(row[4])]
@@ -81,13 +81,13 @@ def build_x_hepler(from_path, to_path,
             features[offset+i] = str(field) + "," + str(1) if ffm else 1
         offset += pos_dim
 
-        if has_cvr:
-            # position cvr feature
-            pos_cvr = cvr_handler.get_pos_cvr(data_type, int(row[5]))
-            for i in xrange(len(pos_cvr)):
-                features[offset + i] = str(field) + "," + str(pos_cvr[i]) if ffm else pos_cvr[i]
-            offset += len(pos_cvr)
-            field += 1
+        # if has_cvr:
+        # position cvr feature
+        pos_cvr = cvr_handler.get_pos_cvr(data_type, int(row[5]))
+        for i in xrange(len(pos_cvr)):
+            features[offset + i] = str(field) + "," + str(pos_cvr[i]) if ffm else pos_cvr[i]
+        offset += len(pos_cvr)
+        field += 1
 
         # network feature connection * 5, tele-operator * 4
         features[offset+int(row[6])] = str(field) + "," + str(1) if ffm else 1
@@ -100,13 +100,33 @@ def build_x_hepler(from_path, to_path,
             for k in gbdt_feature[row_num]:
                 features[k + offset] = 1
             offset += 400
+            field += 1
 
-        field += 1
         # ad feature
         ad_f = ad_features[int(row[3])]
         for i in ad_f:
             features[offset+i] = str(field) + "," + str(1) if ffm else 1
         offset += ad_dim
+
+        # # ad cvr feature
+        # if has_cvr:
+        #     ad_cvr = cvr_handler.get_ad_cvr(data_type, int(row[3]))
+        #     for i in xrange(len(ad_cvr)):
+        #         features[offset+i] = str(field) + "," + str(ad_cvr[i]) if ffm else ad_cvr[i]
+        #     offset += len(ad_cvr)
+        #     field += 1
+
+        # app short cvr feature
+        if has_cvr:
+            if data_type == 'train':
+                day = int((float(row[1]) / 1440.0))
+            else:
+                day = int((float(row[2]) / 1440.0))
+            app_short_cvr = cvr_handler.get_app_short_cvr(int(row[3]), day)
+            for i in xrange(len(app_short_cvr)):
+                features[offset+i] = str(field) + "," + str(app_short_cvr[i]) if ffm else app_short_cvr[i]
+            offset += len(app_short_cvr)
+            field += 1
 
         if ffm:
             write_as_libffm(features, to_file, row[0])
@@ -115,6 +135,7 @@ def build_x_hepler(from_path, to_path,
         if row_num % 100000 == 0:
             print row_num
         row_num += 1
+        del features
     print "Building x finished."
     from_file.close()
     to_file.close()
@@ -125,36 +146,39 @@ def build_x():
     user_features, user_dim = uf.build_user_profile()
     pos_features, pos_dim = pf.build_position()
 
-    src_dir_path = constants.project_path+"/dataset/custom/split_online/b2/"
-    des_dir_path = constants.project_path+"/dataset/x_y/split_online/b3/"
+    src_dir_path = constants.project_path+"/dataset/custom/split_5/"
+    des_dir_path = constants.project_path+"/dataset/x_y/split_5/b5/"
+    cus_dir_path = constants.project_path+"/dataset/custom/"
     # 加载cvr特征
-    cvr_handler = cvr.CVRHandler(src_dir_path)
+    cvr_handler = cvr.CVRHandler(cus_dir_path)
     # cvr_handler.load_train_cvr()
-    # cvr_handler.load_test_cvr()
+    cvr_handler.load_test_cvr()
 
     # # generate online test dataset
-    test_des_file = des_dir_path + "test_x_onehot.ffm"
-    test_src_file = constants.project_path+"/dataset/raw/test.csv"
-    build_x_hepler(test_src_file, test_des_file,
-                   ad_features, ad_dim,
-                   user_features, user_dim,
-                   pos_features, pos_dim,
-                   cvr_handler,
-                   data_type="test",
-                   has_gbdt=False,
-                   ffm=False)
+    # test_des_file = des_dir_path + "test_x_onehot.fm"
+    # test_src_file = constants.project_path+"/dataset/custom/test_re-time.csv"
+    # build_x_hepler(test_src_file, test_des_file,
+    #                ad_features, ad_dim,
+    #                user_features, user_dim,
+    #                pos_features, pos_dim,
+    #                cvr_handler,
+    #                data_type="test",
+    #                has_gbdt=False,
+    #                ffm=False,
+    #                has_cvr=True)
 
-    for i in xrange(10):
-        # test_des_file = des_dir_path + "test_x_onehot_" + str(i) + ".fm"
-        # test_src_file = src_dir_path + "test_x_" + str(i)
-        # build_x_hepler(test_src_file, test_des_file,
-        #                ad_features, ad_dim,
-        #                user_features, user_dim,
-        #                pos_features, pos_dim,
-        #                cvr_handler,
-        #                data_type="test",
-        #                has_gbdt=False,
-        #                ffm=False)
+    for i in range(0, 4):
+        test_des_file = des_dir_path + "test_x_onehot_" + str(i) + ".fm"
+        test_src_file = src_dir_path + "test_x_" + str(i)
+        build_x_hepler(test_src_file, test_des_file,
+                       ad_features, ad_dim,
+                       user_features, user_dim,
+                       pos_features, pos_dim,
+                       cvr_handler,
+                       data_type="train",
+                       has_gbdt=False,
+                       ffm=False,
+                       has_cvr=True)
 
         train_src_file = src_dir_path + "train_x_" + str(i)
         train_des_file = des_dir_path + "train_x_onehot_" + str(i) + ".fm"
@@ -163,9 +187,10 @@ def build_x():
                        user_features, user_dim,
                        pos_features, pos_dim,
                        cvr_handler,
-                       data_type="test",
+                       data_type="train",
                        has_gbdt=False,
-                       ffm=False)
+                       ffm=False,
+                       has_cvr=True)
 
 if __name__ == '__main__':
     build_x()

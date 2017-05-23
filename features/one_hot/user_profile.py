@@ -6,28 +6,22 @@ from util import constants
 
 
 def user_app_feature():
-    user_app_dict = [0]
-    with open(constants.project_path+"/dataset/raw/user_installedapps.csv") as f:
-        pre_ID = -1
-        f.readline()
-        for line in f:
-            row = line.strip().split(',')
-            userID = int(row[0])
-            appID = int(row[1])
-            if userID == pre_ID:
-                user_app_dict[userID] += 1
-            else:
-                user_app_dict.append(1)
-            pre_ID = userID
-    df = pd.DataFrame(user_app_dict)
-    print df.shape
-    return user_app_dict
+    installedapp_file = constants.project_path+"/dataset/raw/user_installedapps.csv"
+    user_app_df = pd.read_csv(installedapp_file)
+    user_counts = user_app_df['userID'].value_counts()
+    max_app = user_counts.max()
+    min_app = user_counts.min()
+    median_app = user_counts.median()
+    user_app_dict = user_counts.to_dict()
+    print "Building user app dict finished."
+    return user_app_dict, max_app, min_app, median_app
 
 
 # age * 9, gender * 3, education * 8, marriage * 4, baby * 7, residence * 35,
 def build_user_profile():
     # make user raw data
     f = open(constants.project_path + "/dataset/raw/" + "user.csv")
+    user_app_dict, max_app, min_app, median_app = user_app_feature()
     # user编号从1开始的
     user_feature = [{0: 0}]
     offset = 0
@@ -58,6 +52,15 @@ def build_user_profile():
         # residence
         features[offset+int(fields[6])/100] = 1
         offset += 35
+
+        # installed app
+        user_id = int(fields[0])
+        if user_id in user_app_dict:
+            features[offset] = (user_app_dict[int(fields[0])] - min_app) / (max_app - min_app)
+        else:
+            features[offset] = (median_app - min_app) / (max_app - min_app)
+        offset += 1
+
         user_feature.append(features)
 
     print "Buliding user profile finished."
@@ -81,4 +84,6 @@ def count_user_freq():
 
 if __name__ == '__main__':
     # count_user()
-    user_app_feature()
+    u, m, n = user_app_feature()
+    for k in u.keys()[:30]:
+        print k, u[k]

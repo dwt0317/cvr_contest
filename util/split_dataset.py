@@ -37,8 +37,8 @@ def convert_data_time(file_path, to_path, offset):
     print narray[:5]
     for row in narray:
         row[offset+1] = time2num(int(row[offset + 1]))
-        if int(row[offset + 2]) != -1:
-            row[offset+2] = time2num(int(row[offset + 2]))
+        # if int(row[offset + 2]) != -1:
+        #     row[offset+2] = time2num(int(row[offset + 2]))
     file_header = ','.join(df.columns.values.tolist())
     with open(to_path, 'w') as f:
         np.savetxt(f, narray, fmt='%d', delimiter=',', header=file_header)
@@ -176,19 +176,24 @@ def merge_by_pos(train_file, to_path):
     print "Merging pos finished."
 
 
+def merge_with_all_data(to_dir):
+    merge_by_ad(constants.clean_train_path, to_dir+"train_with_ad_info.csv")
+    # merge_by_pos(constants.clean_train_path,
+    #              to_dir+"train_with_pos_info.csv")
+    # merge_by_user(constants.clean_train_path,
+    #               to_dir+"train_with_user_info.csv")
+
+
 if __name__ == '__main__':
-    dir_path = constants.project_path + "/dataset/custom/split_online/b3/"
+    dir_path = constants.project_path + "/dataset/custom/split_online/b3"
     # bootstrap_online_train(23, dir_path)
     # split_by_date_kfold(20, dir_path)
     # pass
     # split_dataset(0.8, 0.1, os.getcwd()+"/dataset/custom/split_3/")
     # abandon_thirty(constants.cus_train_path)
-    split_by_date_online(22, 30, dir_path)
-    # merge_by_ad(constants.cus_test_path, dir_path+"test_with_ad_info.csv")
-    # merge_by_pos(constants.clean_train_path,
-    #              constants.project_path + "/dataset/custom/split_4/train_with_pos_info.csv")
-    # merge_by_user(constants.clean_train_path,
-    #               constants.project_path + "/dataset/custom/split_4/train_with_user_info.csv")
+    split_by_date_online(21, 31, dir_path)
+    # merge_with_all_data(constants.project_path + "/dataset/custom/")
     # conversion_gap()
     # convert_data_time(constants.raw_train_path, constants.project_path + "/dataset/custom/train_re-time.csv", 0)
-    # convert_data_time(constants.raw_test_path, constants.project_path  + "/dataset/custom/test_re-time.csv", 1)
+    # convert_data_time(constants.raw_test_path, constants.project_path +"/dataset/custom/test_re-time.csv", 1)
+    pass

@@ -37,8 +37,6 @@ def build_position():
             features.append(offset)
         offset += len(positionID_set) + 1
 
-
-
     print "Buliding position finished."
     return position, offset
 

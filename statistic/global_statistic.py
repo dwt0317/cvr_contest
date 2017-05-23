@@ -73,8 +73,7 @@ def compute_alpha_beta():
     print (mean*(1-mean)/var - 1) * (1-mean)
 
 
-
-def user_num_graph():
+def app_cvr_graph():
     file_path = constants.project_path+"/dataset/custom/split_online/b1/train_with_ad_info.csv"
     # file_path = constants.cus_train_path
     train_df = pd.read_csv(file_path)
@@ -98,4 +97,4 @@ def user_num_graph():
     # plt.savefig(img_path)
 
 if __name__ == "__main__":
-    compute_alpha_beta()
+    app_cvr_graph()

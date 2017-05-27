@@ -8,8 +8,18 @@ import math
 用于生成线上test样本的统计类特征
 '''
 
-alpha = 135  # for smoothing
-beta = 5085
+# alpha = 135  # for smoothing
+# beta = 5085
+
+alpha = 123  # for smoothing
+beta = 5000
+
+
+# alpha = 0  # for smoothing
+# beta = 0
+
+not_smooth = False
+
 
 # 处理cvr的统一方法
 def cvr_helper(total_df, header, dim, feature_map):
@@ -31,12 +41,15 @@ def cvr_helper(total_df, header, dim, feature_map):
         feature_list = []
         this_df = total_df[total_df[header] == category]
         click_num = len(this_df)
-        conversion_num = len(total_df[(total_df.label > 0) & (total_df[header] == category)])
-        conversion_rate = round(float(conversion_num + alpha) / float(click_num + alpha + beta), 5)
+        conversion_num = len(this_df[(this_df.label == 1)])
+        if click_num == 0 and not_smooth:
+            conversion_rate = 0
+        else:
+            conversion_rate = round(float(conversion_num + alpha) / float(click_num + alpha + beta), 5)
         # max_click = max(max_click, click_num)
         # min_click = min(min_click, click_num)
-        # max_cv = max(max_cv, conversion_num)
-        # min_cv = min(min_cv, conversion_num)
+        max_cv = max(max_cv, conversion_num)
+        min_cv = min(min_cv, conversion_num)
         max_cvr = max(conversion_rate, max_cvr)
         min_cvr = min(conversion_rate, min_cvr)
         # feature_list.append(int(click_num))
@@ -45,14 +58,14 @@ def cvr_helper(total_df, header, dim, feature_map):
         feature.append(feature_list)
     # 归一化
     for i in xrange(dim):
+        # feature[i][0] = round((feature[i][0] - min_click) / float(max_click - min_click), 5)
         feature[i][0] = round((feature[i][0] - min_cvr) / float(max_cvr - min_cvr), 5)
-    #     feature[i][0] = round((feature[i][0] - min_click) / float(max_click - min_click), 5)
-    #     feature[i][0] = round((feature[i][1] - min_cv) / float(max_cv - min_cv), 5)
+        # feature[i][0] = round((feature[i][0] - min_cv) / float(max_cv - min_cv), 5)
     feature_map[header] = feature
 
 
 # 统计ID维度的转化率
-def id_cvr_helper(raw_file, header):
+def id_cvr_helper(raw_file, header, id_index):
     stat = pd.read_csv(raw_file)
     stat_file = open(constants.clean_train_path, 'r')
     id_set = stat[header].values
@@ -64,9 +77,10 @@ def id_cvr_helper(raw_file, header):
     # 采用按行读取的方式，统计各个id的点击和转化
     for line in stat_file:
         row = line.strip().split(',')
-        click_set[row[4]] = 1 + click_set.setdefault(row[4], 0)
+        id = int(row[id_index])
+        click_set[id] = 1 + click_set.setdefault(id, 0)
         if int(row[0]) == 1:
-            cv_set[row[4]] = 1 + cv_set.setdefault(row[4], 0)
+            cv_set[id] = 1 + cv_set.setdefault(id, 0)
     stat_file.close()
 
     id_cvr = {}
@@ -74,7 +88,10 @@ def id_cvr_helper(raw_file, header):
     for id in id_set:
         click = float(click_set.setdefault(id, 0))
         cv = float(cv_set.setdefault(id, 0))
-        cvr = (cv + alpha) / (click + alpha + beta)
+        if click == 0 and not_smooth:
+            cvr = 0
+        else:
+            cvr = (cv + alpha) / (click + alpha + beta)
         id_cvr[id] = round(cvr, 5)
     print "Building " + header + " cvr finished."
     return id_cvr
@@ -102,16 +119,16 @@ def user_profile_cvr(file_path):
 
 # {userID1:[cvr1, cvr2,..], userID2:[cvr1, cvr2,..], ...}
 def build_user_cvr(train_dir):
-    # userID_feature = id_cvr_helper(constants.project_path+"/dataset/raw/user.csv", 'userID')
+    userID_feature = id_cvr_helper(constants.project_path+"/dataset/raw/user.csv", 'userID', 4)
     user_pro_feature = user_profile_cvr(train_dir+"train_with_user_info.csv")
     user_cvr_features = {}
     user_file = open(constants.project_path + "/dataset/raw/user.csv", 'r')
     user_file.readline()
     for line in user_file:
         row = line.strip().split(',')
-        # feature_list = [userID_feature[int(row[0])]]
-        feature_list = copy.copy(user_pro_feature['gender'][int(row[2])])
-        # feature_list.extend(user_pro_feature['gender'][int(row[2])])
+        feature_list = [userID_feature[int(row[0])]]
+        # feature_list = copy.copy(user_pro_feature['gender'][int(row[2])])
+        feature_list.extend(user_pro_feature['gender'][int(row[2])])
         feature_list.extend(user_pro_feature['education'][int(row[3])])
         feature_list.extend(user_pro_feature['marriageStatus'][int(row[4])])
         feature_list.extend(user_pro_feature['haveBaby'][int(row[5])])
@@ -133,12 +150,13 @@ def pos_info_cvr(pos_info_file):
     pos_features = {}
     cvr_helper(total_df, 'sitesetID', 3, pos_features)
     cvr_helper(total_df, 'positionType', 6, pos_features)
+    print pos_features
     return pos_features
 
 
 # 按positionID处理cvr数据
 def build_pos_cvr(train_dir):
-    positionID_feature = id_cvr_helper(constants.project_path + "/dataset/raw/position.csv", 'positionID')
+    positionID_feature = id_cvr_helper(constants.project_path + "/dataset/raw/position.csv", 'positionID', 5)
     pos_info_feature = pos_info_cvr(train_dir+"train_with_pos_info.csv")
     pos_file = open(constants.project_path + "/dataset/raw/position.csv", 'r')
     pos_file.readline()
@@ -146,8 +164,9 @@ def build_pos_cvr(train_dir):
     i = 1
     for line in pos_file:
         row = line.strip().split(',')
-        feature_list = [positionID_feature[int(row[0])]]
-        feature_list.extend(pos_info_feature['sitesetID'][int(row[1])])
+        # feature_list = [positionID_feature[int(row[0])]]
+        feature_list = copy.copy(pos_info_feature['sitesetID'][int(row[1])])
+        # feature_list.extend(pos_info_feature['sitesetID'][int(row[1])])
         feature_list.extend(pos_info_feature['positionType'][int(row[2])])
         pos_cvr_features[int(row[0])] = feature_list
         # print pos_cvr_features[int(row[0])]
@@ -186,8 +205,8 @@ def build_ad_cvr(train_dir):
         adID_key = int(row[8])
         campaignID_key = int(row[9])
         advertiserID_key = int(row[10])
-        # appID_key = row[11]
-        # appPlatform_key = row[12]
+        # appID_key = int(row[11])
+        # appPlatform_key = int(row[12])
 
         # 更新adID的数据
         if adID_key not in ad:
@@ -197,7 +216,11 @@ def build_ad_cvr(train_dir):
             ad[adID_key][1] += 1
         else:
             ad[adID_key][0] += 1
-        ad[adID_key][2] = round((float(ad[adID_key][1])+alpha) / (float(ad[adID_key][0]) + beta + alpha), 5)
+
+        if int(ad[adID_key][0]) == 0 and not_smooth:
+            ad[adID_key][2] = 0
+        else:
+            ad[adID_key][2] = round((float(ad[adID_key][1])+alpha) / (float(ad[adID_key][0]) + beta + alpha), 5)
 
         # 更新campaignID的数据
         if campaignID_key not in campaign:
@@ -207,7 +230,10 @@ def build_ad_cvr(train_dir):
             campaign[campaignID_key][1] += 1
         else:
             campaign[campaignID_key][0] += 1
-        campaign[campaignID_key][2] = round((float(campaign[campaignID_key][1]) + alpha) /
+        if float(campaign[campaignID_key][0]) == 0 and not_smooth:
+            campaign[campaignID_key][2] = 0
+        else:
+            campaign[campaignID_key][2] = round((float(campaign[campaignID_key][1]) + alpha) /
                                             (float(campaign[campaignID_key][0]) + beta + alpha), 5)
 
         # 更新advertiserID的数据
@@ -218,10 +244,14 @@ def build_ad_cvr(train_dir):
             advertiser[advertiserID_key][1] += 1
         else:
             advertiser[advertiserID_key][0] += 1
-        advertiser[advertiserID_key][2] = round((float(advertiser[advertiserID_key][1]) + alpha) / (float(
-            advertiser[advertiserID_key][0]) + beta + alpha), 5)
+        if float(advertiser[advertiserID_key][0]) == 0 and not_smooth:
+            advertiser[advertiserID_key][2] = 0
+        else:
+            advertiser[advertiserID_key][2] = round((float(advertiser[advertiserID_key][1]) + alpha) / (float(
+                advertiser[advertiserID_key][0]) + beta + alpha), 5)
 
-        # 更新appID的数据
+        # no use
+        # # 更新appID的数据
         # if appID_key not in app:
         #     app[appID_key] = [0, 0, 0]
         # if row[1] == '1':
@@ -229,9 +259,12 @@ def build_ad_cvr(train_dir):
         #     app[appID_key][1] += 1
         # else:
         #     app[appID_key][0] += 1
-        # app[appID_key][2] = round((float(app[appID_key][1]) + alpha) / (float(app[appID_key][0]) + beta + alpha), 5)
-
-        # 更新appPlatform的数据
+        # if float(app[appID_key][0]) == 0 and not_smooth:
+        #     app[appID_key][2] = 0
+        # else:
+        #     app[appID_key][2] = round((float(app[appID_key][1]) + alpha) / (float(app[appID_key][0]) + beta + alpha), 5)
+        #
+        # # 更新appPlatform的数据
         # if appPlatform_key not in appPlatform:
         #     appPlatform[appPlatform_key] = [0, 0, 0]
         # if row[1] == '1':
@@ -239,8 +272,11 @@ def build_ad_cvr(train_dir):
         #     appPlatform[appPlatform_key][1] += 1
         # else:
         #     appPlatform[appPlatform_key][0] += 1
-        # appPlatform[appPlatform_key][2] = round((float(appPlatform[appPlatform_key][1]) + alpha) / (float(
-        #         appPlatform[appPlatform_key][0]) + beta + alpha), 5)
+        # if float(appPlatform[appPlatform_key][0]) == 0 and not_smooth:
+        #     appPlatform[appPlatform_key][2] = 0
+        # else:
+        #     appPlatform[appPlatform_key][2] = round((float(appPlatform[appPlatform_key][1]) + alpha) / (float(
+        #             appPlatform[appPlatform_key][0]) + beta + alpha), 5)
 
     # 获取最终的list
     ad_file = open(ad_file_path, 'r')
@@ -251,8 +287,8 @@ def build_ad_cvr(train_dir):
         adID_data = ad[int(row[8])][2:]
         campaignID_data = campaign[int(row[9])][2:]
         advertiserID_data = advertiser[int(row[10])][2:]
-        # appID_data = app[int(row[11])]
-        # appPlatform_data = appPlatform[int(row[12])]
+        # appID_data = app[int(row[11])][2:]
+        # appPlatform_data = appPlatform[int(row[12])][2:]
         # creativeData = adID_data + campaignID_data + advertiserID_data + appID_data + appPlatform_data
         creativeData = adID_data + campaignID_data + advertiserID_data
         creativeID_adFeature_map[int(row[3])] = creativeData
@@ -313,34 +349,51 @@ def build_short_cvr(train_dir):
             if appID in appID_day_map and beforeYesterday in appID_day_map[appID]:
                 clickBeforeYes, converBeforeYes = appID_day_map[appID][beforeYesterday][0], \
                                                   appID_day_map[appID][beforeYesterday][1]
-            cvr_yes = (alpha + converYes) / (float(clickYes) + alpha + beta)
-            cvr_before_yes = (alpha + converBeforeYes) / (float(clickBeforeYes) + alpha + beta)
-            avg_conversion = (converYes + converBeforeYes) / 2
-            cvr = (cvr_yes + cvr_before_yes) / 2
-            max_conversion = max(max_conversion, avg_conversion)
-            min_conversion = min(min_conversion, avg_conversion)
-            max_cvr = max(max_cvr, cvr_yes)
-            min_cvr = min(min_cvr, cvr_yes)
+
+            if clickYes == 0 and not_smooth:
+                cvr_yes = 0
+            else:
+                cvr_yes = (alpha + converYes) / (float(clickYes) + alpha + beta)
+            # cvr_before_yes = (alpha + converBeforeYes) / (float(clickBeforeYes) + alpha + beta)
+            # avg_conversion = (converYes + converBeforeYes) / 2
+            # cvr = (cvr_yes + cvr_before_yes) / 2
+            # max_conversion = max(max_conversion, avg_conversion)
+            # min_conversion = min(min_conversion, avg_conversion)
+            # max_cvr = max(max_cvr, cvr_yes)
+            # min_cvr = min(min_cvr, cvr_yes)
             # appID_twoDay_map[appID][day] = [avg_conversion, cvr]
             appID_twoDay_map[appID][day] = [cvr_yes]
 
     for k, v in appID_twoDay_map.iteritems():
         for day in range(20, 32):
             if day in v:
+                pass
                 # v[day][0] = round((v[day][0] - min_conversion) / float(max_conversion - min_conversion), 5)
-                v[day][0] = round((v[day][0] - min_cvr) / float(max_cvr - min_cvr), 5)
+                # v[day][0] = round((v[day][0] - min_cvr) / float(max_cvr - min_cvr), 5)
             else:
+                v[day] = [0]
                 # v[day] = [0, float(alpha)/(alpha+beta)]
-                v[day] = [float(alpha) / (alpha + beta)]
+                # v[day] = [float(alpha) / (alpha + beta)]
     print "Building app short cvr finished."
     return appID_twoDay_map
 
 
+# build connection feature
+def build_conn_cvr(train_dir):
+    total_df = pd.read_csv(train_dir+"train_with_pos_info.csv")
+    # {header:[[3],[3],...,[3]], }
+    connection_features = {}
+    cvr_helper(total_df, 'connectionType', 5, connection_features)
+    cvr_helper(total_df, 'telecomsOperator', 4, connection_features)
+    return connection_features
+
+
 if __name__ == "__main__":
-    userID_feature = id_cvr_helper(constants.project_path + "/dataset/raw/user.csv", 'userID')
-    from features.one_hot.user_profile import user_app_feature
-    user_app_cvr = user_app_feature()[0]
-    id_df = pd.DataFrame().from_dict(userID_feature, orient='index')
-    app_df = pd.DataFrame().from_dict(user_app_cvr, orient='index')
-    merge_df = pd.merge(left=app_df, right=id_df)
-    print merge_df
+    pos_info_cvr(constants.project_path+"/dataset/custom/train_with_pos_info.csv")
+    # userID_feature = id_cvr_helper(constants.project_path + "/dataset/raw/user.csv", 'userID')
+    # from features.one_hot.user_profile import user_app_feature
+    # user_app_cvr = user_app_feature()[0]
+    # id_df = pd.DataFrame().from_dict(userID_feature, orient='index')
+    # app_df = pd.DataFrame().from_dict(user_app_cvr, orient='index')
+    # merge_df = pd.merge(left=app_df, right=id_df)
+    # print merge_df

@@ -12,7 +12,7 @@ import pandas as pd
 
 
 def lr():
-    dir_path = constants.project_path + "/dataset/x_y/split_online/b5/"
+    dir_path = constants.project_path + "/dataset/x_y/split_online/b7/"
     train_x_file = dir_path + "train_x_onehot_" + str(0) + ".fm"
     test_x_file = dir_path + "test_x_onehot.fm"
 
@@ -23,7 +23,7 @@ def lr():
     print train_x.shape, test_x.shape
     print "Loading data completed."
     print "Read time: " + str(datetime.datetime.now() - begin)
-    classifier = LogisticRegression(random_state=8)
+    classifier = LogisticRegression()
 
     grid = False
     if grid:
@@ -36,10 +36,10 @@ def lr():
 
     if not grid:
         # traditional k-fold
-        split = 10
+        split = 8
         if split != 0:
             skf = StratifiedKFold(n_splits=split)
-            prob_test = np.zeros(len(test_y))
+            prob_test = np.zeros(338489)
             for train_index, test_index in skf.split(train_x, train_y):
                 # print("TRAIN:", train_index.shape, "TEST:", test_index.shape)
                 fold_x = train_x[train_index]
@@ -57,7 +57,7 @@ def lr():
 
         prob_test /= split
         # prob_test = np.around(prob_test, 6)
-        np.savetxt(constants.project_path + "/out/lr_k-fold.out", prob_test, fmt="%s")
+        np.savetxt(constants.project_path + "/out/lr_8-fold_all-data.out", prob_test, fmt="%s")
         # auc_test = metrics.roc_auc_score(test_y, prob_test)
         # logloss = metrics.log_loss(test_y, prob_test)
         # end = datetime.datetime.now()
@@ -75,13 +75,13 @@ def lr():
 
 def time_k_fold_lr():
     begin = datetime.datetime.now()
-    dir_path = constants.project_path + "/dataset/x_y/split_5/b5/"
+    dir_path = constants.project_path + "/dataset/x_y/split_5/b8/"
     logloss = 0
     auc = 0
     online = False
     if online:
         prob_test = np.zeros(338489)
-    for i in range(0, 4):
+    for i in range(1, 2):
         train_x_file = dir_path + "train_x_onehot_" + str(i) + ".fm"
 
         if online:
@@ -109,7 +109,7 @@ def time_k_fold_lr():
             auc += auc_local
     if online:
         prob_test /= 10
-        np.savetxt(constants.project_path + "/out/lr_app_cvr.out", prob_test, fmt="%s")
+        np.savetxt(constants.project_path + "/out/lr_no-short_no-install.out", prob_test, fmt="%s")
 
     if not online:
         end = datetime.datetime.now()

@@ -13,3 +13,4 @@
 0.116099 gbdt new parameter onehot
 0.135674 lr boot has_30 120
 0.137384 lr all_data 120
+0.103254 gbdt all cvr 185 10

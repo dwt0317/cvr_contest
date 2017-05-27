@@ -42,7 +42,7 @@ def revise_submission(sub_file, train_ad_file, test_file, revise_file):
 
 def build_submission(from_path, to_path):
     to_file = io.open(to_path, 'w', newline='\n')
-    to_file.write(unicode("lr all data 0.025798"))
+    to_file.write(unicode("lr multi_Cvr all"))
     to_file.write(unicode('\n'))
 
     with open(from_path) as f:
@@ -66,6 +66,6 @@ if __name__ == "__main__":
     #                   dir_path+"test_with_ad_info.csv", constants.project_path+"/submission/submission.csv")
     # revise_submission(constants.project_path+"/out/fm_pos_id_no_number.out",
     #                   constants.project_path + "/submission/submission.csv")
-    build_submission(constants.project_path + "/out/lr_k-fold.out",
+    build_submission(constants.project_path + "/out/lr_multi_cvr.out",
                      constants.project_path + "/submission/submission.csv")
-    check_submission_cvr(constants.project_path + "/out/lr_k-fold.out")
+    check_submission_cvr(constants.project_path + "/out/lr_multi_cvr.out")

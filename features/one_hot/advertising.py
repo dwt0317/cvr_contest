@@ -141,14 +141,17 @@ def build_ad_feature(has_id=True):
         app_cate = int(category_dict[int(fields[4])])
         if app_cate >= 100:
             app_cate_1 = app_cate/100
-            # app_cate_2 = app_cate
+            app_cate_2 = app_cate
         else:
             app_cate_1 = app_cate
-            # app_cate_2 = app_cate_1 * 100
+            app_cate_2 = app_cate_1 * 100
         line_feature.append(offset+app_cate_1)
         offset += 10
-        # line_feature.append(offset+app_cate_2)
-        # offset += 100
+
+        if has_id:
+            line_feature.append(offset+app_cate_2)
+            offset += 1000
+
         ad_feature[int(fields[0])] = line_feature
 
     f.close()

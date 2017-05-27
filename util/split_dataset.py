@@ -183,6 +183,31 @@ def merge_with_all_data(to_dir):
     # merge_by_user(constants.clean_train_path,
     #               to_dir+"train_with_user_info.csv")
 
+# merge user actions with ad info
+def install_merge_by_app(raw_file, to_path):
+    total_df = pd.read_csv(raw_file)
+    ad_df = pd.read_csv(constants.project_path + "/dataset/raw/" + "app_categories.csv")
+    merge_df = pd.merge(left=total_df, right=ad_df, how='left', on=['appID'])
+    tmp_path = constants.project_path + "/dataset/raw/tmp.action"
+    merge_df.to_csv(path_or_buf=tmp_path, index=False)
+    #
+    user_action_file = tmp_path
+    to_f = open(to_path, 'w')
+    to_f.write('userID,' + 'appCategory' + '\n')
+    # to_f.write(",".join(merge_df.columns.values))
+    to_f.write('\n')
+    with open(user_action_file, 'r') as f:
+        f.readline()
+        for line in f:
+            row = line.strip().split(',')
+            app_cate = int(row[2])
+            if app_cate >= 100:
+                app_cate /= 100
+            row[1] = str(app_cate)
+            to_f.write(",".join(row[:2]))
+            to_f.write('\n')
+    to_f.close()
+
 
 if __name__ == '__main__':
     dir_path = constants.project_path + "/dataset/custom/split_online/b3"
@@ -191,9 +216,11 @@ if __name__ == '__main__':
     # pass
     # split_dataset(0.8, 0.1, os.getcwd()+"/dataset/custom/split_3/")
     # abandon_thirty(constants.cus_train_path)
-    split_by_date_online(21, 31, dir_path)
+    # split_by_date_online(21, 31, dir_path)
     # merge_with_all_data(constants.project_path + "/dataset/custom/")
     # conversion_gap()
     # convert_data_time(constants.raw_train_path, constants.project_path + "/dataset/custom/train_re-time.csv", 0)
     # convert_data_time(constants.raw_test_path, constants.project_path +"/dataset/custom/test_re-time.csv", 1)
+    install_merge_by_app(constants.project_path + "/dataset/raw/" + "user_installedapps.csv",
+                         constants.project_path + "/dataset/raw/" + "user_installedapps_with_category.csv")
     pass

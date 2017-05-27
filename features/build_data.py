@@ -59,27 +59,42 @@ def build_x_hepler(from_path, to_path,
         row = line.strip().split(',')
         field = 0
 
-        # if has_cvr:
-        #     # user cvr feature
-        #     user_cvr = cvr_handler.get_user_cvr(data_type, int(row[4]))
-        #     for i in xrange(len(user_cvr)):
-        #         features[offset+i] = str(field) + "," + str(user_cvr[i]) if ffm else user_cvr[i]
-        #     offset += len(user_cvr)
-        #     field += 1
+        if has_cvr:
+            # user cvr feature
+            user_cvr = cvr_handler.get_user_cvr(data_type, int(row[4]))
+            for i in xrange(len(user_cvr)):
+                features[offset+i] = str(field) + "," + str(user_cvr[i]) if ffm else user_cvr[i]
+            offset += len(user_cvr)
+            field += 1
 
         # user feature
         user_f = user_features[int(row[4])]
-        for i in user_f:
+        for i in xrange(len(user_f)-1):
             field += 1
-            features[offset+i] = str(field) + "," + str(1) if ffm else 1
+            features[offset+user_f[i]] = str(field) + "," + str(1) if ffm else 1
         offset += user_dim
-        field += 1
+        # # 用户安装APP特征 * 1
+        # features[offset] = str(field) + "," + str(user_f[len(user_f) - 1]) if ffm else user_f[len(user_f) - 1]
+        # offset += 1
+        # field += 1
 
         # position feature
         pos_f = pos_features[int(row[5])]
         for i in pos_f:
             features[offset+i] = str(field) + "," + str(1) if ffm else 1
         offset += pos_dim
+
+        # education, site (8*3), education, type (8*6)
+        education = user_features[int(row[4])][2]
+        site = pos_features[int(row[5])][0]
+        type = pos_features[int(row[5])][1]
+        edu_site = education * 3 + site
+        features[offset+edu_site] = str(field) + "," + str(1) if ffm else 1
+        offset += 24
+        edu_type = education * 6 + type
+        features[offset + edu_type] = str(field) + "," + str(1) if ffm else 1
+        offset += 48
+        field += 1
 
         # if has_cvr:
         # position cvr feature
@@ -91,8 +106,15 @@ def build_x_hepler(from_path, to_path,
 
         # network feature connection * 5, tele-operator * 4
         features[offset+int(row[6])] = str(field) + "," + str(1) if ffm else 1
+        offset += 5
         features[offset+int(row[7])] = str(field) + "," + str(1) if ffm else 1
-        offset += 9
+        offset += 4
+        # network cvr
+        if has_cvr:
+            conn_cvr = cvr_handler.get_conn_cvr(int(row[6]), int(row[7]))
+            features[offset] = conn_cvr[0][0]
+            features[offset+1] = conn_cvr[1][0]
+            offset += 2
         field += 1
 
         if has_gbdt:
@@ -108,25 +130,27 @@ def build_x_hepler(from_path, to_path,
             features[offset+i] = str(field) + "," + str(1) if ffm else 1
         offset += ad_dim
 
-        # # ad cvr feature
-        # if has_cvr:
-        #     ad_cvr = cvr_handler.get_ad_cvr(data_type, int(row[3]))
-        #     for i in xrange(len(ad_cvr)):
-        #         features[offset+i] = str(field) + "," + str(ad_cvr[i]) if ffm else ad_cvr[i]
-        #     offset += len(ad_cvr)
-        #     field += 1
+        # ad cvr feature
+        if has_cvr:
+            ad_cvr = cvr_handler.get_ad_cvr(data_type, int(row[3]))
+            for i in xrange(len(ad_cvr)):
+                features[offset+i] = str(field) + "," + str(ad_cvr[i]) if ffm else ad_cvr[i]
+            offset += len(ad_cvr)
+            field += 1
+
 
         # app short cvr feature
-        if has_cvr:
-            if data_type == 'train':
-                day = int((float(row[1]) / 1440.0))
-            else:
-                day = int((float(row[2]) / 1440.0))
-            app_short_cvr = cvr_handler.get_app_short_cvr(int(row[3]), day)
-            for i in xrange(len(app_short_cvr)):
-                features[offset+i] = str(field) + "," + str(app_short_cvr[i]) if ffm else app_short_cvr[i]
-            offset += len(app_short_cvr)
-            field += 1
+        # if has_cvr:
+        #     if data_type == 'train':
+        #         day = int((float(row[1]) / 1440.0))
+        #     else:
+        #         day = int((float(row[2]) / 1440.0))
+        #     app_short_cvr = cvr_handler.get_app_short_cvr(int(row[3]), day)
+        #     for i in xrange(len(app_short_cvr)):
+        #         features[offset+i] = str(field) + "," + str(app_short_cvr[i]) if ffm else app_short_cvr[i]
+        #     offset += len(app_short_cvr)
+        #     field += 1
+
 
         if ffm:
             write_as_libffm(features, to_file, row[0])
@@ -140,14 +164,17 @@ def build_x_hepler(from_path, to_path,
     from_file.close()
     to_file.close()
 
+# gbdt特征保留全部cvr特征，不做归一化，用户已安装app数特征
+#
+
 
 def build_x():
     ad_features, ad_dim = af.build_ad_feature(has_id=True)
-    user_features, user_dim = uf.build_user_profile()
+    user_features, user_dim = uf.build_user_profile(has_id=True)
     pos_features, pos_dim = pf.build_position()
 
     src_dir_path = constants.project_path+"/dataset/custom/split_5/"
-    des_dir_path = constants.project_path+"/dataset/x_y/split_5/b5/"
+    des_dir_path = constants.project_path+"/dataset/x_y/split_5/b8/"
     cus_dir_path = constants.project_path+"/dataset/custom/"
     # 加载cvr特征
     cvr_handler = cvr.CVRHandler(cus_dir_path)
@@ -167,7 +194,7 @@ def build_x():
     #                ffm=False,
     #                has_cvr=True)
 
-    for i in range(0, 4):
+    for i in range(1, 2):
         test_des_file = des_dir_path + "test_x_onehot_" + str(i) + ".fm"
         test_src_file = src_dir_path + "test_x_" + str(i)
         build_x_hepler(test_src_file, test_des_file,

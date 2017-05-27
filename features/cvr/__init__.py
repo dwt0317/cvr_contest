@@ -15,6 +15,7 @@ class CVRHandler:
         self._other_cvr_features = {}
         self._creative_app_dict = {}
         self._app_short_cvr_features = {}
+        self._conn_cvr_features = {}
 
         # for train
         self._pos_cvr_fd = None
@@ -27,9 +28,10 @@ class CVRHandler:
         import cvr_test
         self._user_cvr_features = cvr_test.build_user_cvr(self._dir_path)
         self._pos_cvr_features = cvr_test.build_pos_cvr(self._dir_path)
-        # self._ad_cvr_features = cvr_test.build_ad_cvr(self._dir_path)
+        self._ad_cvr_features = cvr_test.build_ad_cvr(self._dir_path)
         self._creative_app_dict = build_creative_app_dict(self._raw_path+"ad.csv")
         self._app_short_cvr_features = cvr_test.build_short_cvr(self._dir_path)
+        self._conn_cvr_features = cvr_test.build_conn_cvr(self._dir_path)
         print "Loading test cvr finished."
 
     # 读取train文件所需cvr数据
@@ -75,6 +77,13 @@ class CVRHandler:
     def get_app_short_cvr(self, creativeID, day):
         appID = self._creative_app_dict[creativeID]
         return self._app_short_cvr_features[appID][day]
+
+    # 获取网络转化率
+    def get_conn_cvr(self, connectionType, telecomsOperator):
+        conn_cvr = []
+        conn_cvr.append(self._conn_cvr_features['connectionType'][connectionType])
+        conn_cvr.append(self._conn_cvr_features['telecomsOperator'][telecomsOperator])
+        return conn_cvr
 
     def __del__(self):
         if self._ad_cvr_fd is not None:

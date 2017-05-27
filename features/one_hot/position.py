@@ -9,7 +9,7 @@ def pos_statistic():
 
 
 # positionID * 1, site * 3, type * 6
-def build_position():
+def build_position(has_id=False):
     f = open(constants.project_path + "/dataset/raw/" + "position.csv")
     position = {}
     f.readline()
@@ -28,15 +28,16 @@ def build_position():
         # type
         features.append(offset + int(fields[2]))
         offset += 6
+
+        if has_id:
+            # positionID
+            if int(fields[0]) in positionID_set:
+                features.append(offset + positionID_set[int(fields[0])])
+            else:
+                features.append(offset)
+            offset += len(positionID_set) + 1
+
         position[int(fields[0])] = features
-
-        # positionID
-        if int(fields[0]) in positionID_set:
-            features.append(offset + positionID_set[int(fields[0])])
-        else:
-            features.append(offset)
-        offset += len(positionID_set) + 1
-
     print "Buliding position finished."
     return position, offset
 

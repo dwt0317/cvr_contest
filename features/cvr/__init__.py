@@ -24,13 +24,13 @@ class CVRHandler:
         self._other_cvr_fd = None
 
     # 读取test文件所需cvr数据, test的统计数据只使用对应train的
-    def load_test_cvr(self):
+    def load_test_cvr(self, all_statistic=False):
         import cvr_test
         self._user_cvr_features = cvr_test.build_user_cvr(self._dir_path)
         self._pos_cvr_features = cvr_test.build_pos_cvr(self._dir_path)
         self._ad_cvr_features = cvr_test.build_ad_cvr(self._dir_path)
         self._creative_app_dict = build_creative_app_dict(self._raw_path+"ad.csv")
-        self._app_short_cvr_features = cvr_test.build_short_cvr(self._dir_path)
+        # self._app_short_cvr_features = cvr_test.build_short_cvr(self._dir_path)
         self._conn_cvr_features = cvr_test.build_conn_cvr(self._dir_path)
         print "Loading test cvr finished."
 

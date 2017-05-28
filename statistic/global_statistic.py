@@ -49,20 +49,42 @@ def conversion_graph():
     img_path = constants.project_path + '/img/' + "conversion" + '.png'
     plt.savefig(img_path)
 
+'''
+alpha = [mean*(1-mean)/var - 1] * mean
+beta = [mean*(1-mean)/var - 1] * (1-mean)
 
-# alpha = [mean*(1-mean)/var - 1] * mean
-# beta = [mean*(1-mean)/var - 1] * (1-mean)
-# 134.673655423
-# 5084.73200722
+global: 0.025
+134.673655423
+5084.73200722
+
+connection 0： 0.001
+9.1154384919
+2085.26585064
+
+1: 0.03
+225.507154404
+7246.05062482
+
+2: 0.008
+22.4405243699
+2527.52635529
+
+3: 0.009
+0.888821701803
+90.0274010898
+'''
+
+
 def compute_alpha_beta():
     # file_path = constants.project_path+"/dataset/custom/split_online/b1/train_with_ad_info.csv"
     train_df = pd.read_csv(constants.clean_train_path)
+    conn_df = train_df[train_df.connectionType == 3]
     y = []
     for i in range(17, 30):
         rbound = (i+1) * 1440
         lbound = i * 1440
-        click_df = train_df[(train_df['clickTime'] < rbound)
-                          & (train_df['clickTime'] >= lbound)]
+        click_df = conn_df[(conn_df['clickTime'] < rbound)
+                          & (conn_df['clickTime'] >= lbound)]
         conv_df = click_df[click_df['label'] == 1]
         # print tmp_df.head(5)
         y.append(len(conv_df)/float(len(click_df)))
@@ -71,6 +93,14 @@ def compute_alpha_beta():
     var = float(y_df.var().values[0])
     print (mean*(1-mean)/var - 1) * mean
     print (mean*(1-mean)/var - 1) * (1-mean)
+
+
+def app_cvr_connection(appID):
+    file_path = constants.project_path + "/dataset/custom/split_online/b1/train_with_ad_info.csv"
+    train_df = pd.read_csv(file_path)
+    print train_df[train_df.appID == appID]['connectionType'].value_counts()
+
+
 
 
 def app_cvr_graph():
@@ -97,4 +127,6 @@ def app_cvr_graph():
     # plt.savefig(img_path)
 
 if __name__ == "__main__":
-    app_cvr_graph()
+    # app_cvr_graph()
+    # compute_alpha_beta()
+    app_cvr_connection(391)

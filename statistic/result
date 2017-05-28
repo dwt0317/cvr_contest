@@ -355,3 +355,38 @@ time: 0:21:34.349000
 
 +userID
 1: 0.786286535767 0.106549645792
+
++category二级特征，diversity
+1: 0.796004288136 0.105275475821
+
++hometown bug，creative cvr
+1: 0.795256921732 0.105405058155
+
+-creative cvr,
+1: 0.795256921732 0.105405058155
+
++platform cvr, -detail hometown
+1: 0.79555692678 0.105344458387
+
+-platform cvr
+1: 0.79555692678 0.105344458387
+
+-detail residence
+1: 0.795763050017 0.105303376163
+
+-hometown, residence
+1: 0.795779318108 0.105277679935
+(hometown和residence目前来看hometown有微小提升，residence无作用，暂时只保留前者)
+
++before favorite, diversity
+1: 0.795938150807 0.105279107617
+
+- before diversity
+1: 0.795987030129 0.105275677652
+
++ COEC
+1: 0.795987030129 0.105275677652
+(线上成绩0.102733，线下有提升应该是泄露了, diversity效果很强)
+
+-recent favorite, diversity
+1: 0.786604803295 0.106495937573

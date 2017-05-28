@@ -75,19 +75,19 @@ def lr():
 
 def time_k_fold_lr():
     begin = datetime.datetime.now()
-    dir_path = constants.project_path + "/dataset/x_y/split_5/b8/"
+    dir_path = constants.project_path + "/dataset/x_y/split_5/b10/"
     logloss = 0
     auc = 0
     online = False
     if online:
         prob_test = np.zeros(338489)
     for i in range(1, 2):
-        train_x_file = dir_path + "train_x_onehot_" + str(i) + ".fm"
+        train_x_file = dir_path + "train_x_onehot_" + str(i) + ".gbdt"
 
         if online:
-            test_x_file = dir_path + "test_x_onehot.fm"
+            test_x_file = dir_path + "test_x_onehot.gbdt"
         else:
-            test_x_file = dir_path + "test_x_onehot_" + str(i) + ".fm"
+            test_x_file = dir_path + "test_x_onehot_" + str(i) + ".gbdt"
 
         train_x, train_y = load_svmlight_file(train_x_file)
         test_x, test_y = load_svmlight_file(test_x_file)
@@ -107,9 +107,12 @@ def time_k_fold_lr():
             print str(i) + ": " + str(auc_local) + " " + str(logloss_local)
             logloss += logloss_local
             auc += auc_local
+
+            np.savetxt(constants.project_path + "/dataset/custom/out.test", prob_test, fmt="%s")
+
     if online:
         prob_test /= 10
-        np.savetxt(constants.project_path + "/out/lr_no-short_no-install.out", prob_test, fmt="%s")
+        np.savetxt(constants.project_path + "/out/lr_favorite.out", prob_test, fmt="%s")
 
     if not online:
         end = datetime.datetime.now()
@@ -123,6 +126,18 @@ def time_k_fold_lr():
         log_file = open(constants.result_path, "a")
         log_file.write(rcd)
         log_file.close()
+
+
+def calibrate():
+    dir_path = constants.project_path + "/dataset/x_y/split_5/b9/"
+    test_x_file = test_x_file = dir_path + "test_x_onehot_0" + ".fm"
+    test_x, test_y = load_svmlight_file(test_x_file)
+    prob_test = np.loadtxt(constants.project_path + "/dataset/custom/out.test")
+    test_df = pd.read_csv(test_x_file)
+    conn_df = test_df[test_df.connectionType == 0].index
+
+    # 0:tmp[i] = max(0, tmp[i]-0.002)
+
 
 
 def sci2float():

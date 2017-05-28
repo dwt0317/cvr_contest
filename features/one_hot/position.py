@@ -9,7 +9,7 @@ def pos_statistic():
 
 
 # positionID * 1, site * 3, type * 6
-def build_position(has_id=False):
+def build_position(has_sparse=False):
     f = open(constants.project_path + "/dataset/raw/" + "position.csv")
     position = {}
     f.readline()
@@ -29,7 +29,7 @@ def build_position(has_id=False):
         features.append(offset + int(fields[2]))
         offset += 6
 
-        if has_id:
+        if has_sparse:
             # positionID
             if int(fields[0]) in positionID_set:
                 features.append(offset + positionID_set[int(fields[0])])

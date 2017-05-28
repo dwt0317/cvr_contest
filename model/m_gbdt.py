@@ -6,48 +6,44 @@ from sklearn.datasets import load_svmlight_file
 from sklearn.model_selection import GridSearchCV   #Perforing grid search
 from xgboost.sklearn import XGBClassifier
 import cPickle as pickle
-import constants
+from util import constants
 import xgboost as xgb
 import pandas as pd
 import os
-import Utils
 import time
 import datetime
 
 
 # 训练GBDT模型，并保存叶子结点特征
 def train_model():
-    train_x_file = constants.project_path + "/dataset/x_y/split_4/b1/train_x.fm"
-    train_y_file = constants.project_path + "/dataset/x_y/split_4/b1/train_y"
-    test_x_file = constants.project_path + "/dataset/x_y/split_4/b1/test_x.fm"
-    test_y_file = constants.project_path + "/dataset/x_y/split_4/b1/test_y"
-    valid_x_file = constants.project_path + "/dataset/x_y/split_4/b1/test_x.fm"
-    test_y = np.loadtxt(test_y_file, dtype=int)
+    # train_x_file = constants.project_path + "/dataset/x_y/split_4/b1/train_x.fm"
+    # train_y_file = constants.project_path + "/dataset/x_y/split_4/b1/train_y"
+    # test_x_file = constants.project_path + "/dataset/x_y/split_4/b1/test_x.fm"
+    # test_y_file = constants.project_path + "/dataset/x_y/split_4/b1/test_y"
+    # valid_x_file = constants.project_path + "/dataset/x_y/split_4/b1/test_x.fm"
+    # test_y = np.loadtxt(test_y_file, dtype=int)
     # svmlight格式自带label
-    train_data = load_svmlight_file(train_x_file)
-
-    rounds = 150
+    # train_data = load_svmlight_file(train_x_file)
+    rounds = 180
     grid = False
-    if grid:
-
-        classifier = XGBClassifier(learning_rate=0.1, n_estimators=rounds, gamma=4, subsample=0.8, max_depth=8,
-                                   min_child_weight=3,
-                                   objective='binary:logistic', nthread=4)
-        param_test1 = {
-            'reg_alpha':[0, 0.001, 0.005, 0.01, 0.05],
-        }
-        # 'colsample_bytree': [0.8, 0.9, 1],
-        # 'scale_pos_weight': [0.5, 0.7, 1]
-        gsearch = GridSearchCV(estimator=classifier, param_grid=param_test1, scoring='neg_log_loss', n_jobs=6, verbose=2)
-        gsearch.fit(train_data[0], train_data[1])
-        print gsearch.best_params_, gsearch.best_score_
+    # if grid:
+    #     classifier = XGBClassifier(learning_rate=0.1, n_estimators=rounds, gamma=4, subsample=0.8, max_depth=8,
+    #                                min_child_weight=3,
+    #                                objective='binary:logistic', nthread=4)
+    #     param_test1 = {
+    #         'reg_alpha':[0, 0.001, 0.005, 0.01, 0.05],
+    #     }
+    #     # 'colsample_bytree': [0.8, 0.9, 1],
+    #     # 'scale_pos_weight': [0.5, 0.7, 1]
+    #     gsearch = GridSearchCV(estimator=classifier, param_grid=param_test1, scoring='neg_log_loss', n_jobs=6, verbose=2)
+    #     gsearch.fit(train_data[0], train_data[1])
+    #     print gsearch.best_params_, gsearch.best_score_
 
     if not grid:
         begin = datetime.datetime.now()
-        dir_path = constants.project_path + "/dataset/x_y/split_online/b2/"
         logloss = 0
         auc = 0
-        online = False
+
         params = {"objective": 'binary:logistic',
                   "booster": "gbtree",
                   'reg_alpha': 0.01,
@@ -59,15 +55,18 @@ def train_model():
                   'subsample': 0.8,
                   'colsample_bytree': 0.8,
                   'gamma': 4,
-                  'nthread': 20,
+                  'nthread': 4,
                   }
+        online = True
+        build_feature = False
         if online:
             prob_test = np.zeros(338489)
 
-        for i in xrange(4):
-            train_x_file = dir_path + "train_x_onehot_" + str(i) + ".fm"
+        dir_path = constants.project_path + "/dataset/x_y/split_online/b9/"
+        for i in range(0, 5):
+            train_x_file = dir_path + "train_x_onehot_" + str(i) + ".gbdt_online"
             if online:
-                test_x_file = dir_path + "test_x_onehot.fm"
+                test_x_file = dir_path + "test_x_onehot.gbdt_online"
             else:
                 test_x_file = dir_path + "test_x_onehot_" + str(i) + ".fm"
 
@@ -78,7 +77,8 @@ def train_model():
             print "train done"
             validation_set = xgb.DMatrix(test_x)
             print "test done"
-            watchlist = [(train_set, 'train'), (validation_set, 'eval')]
+            # watchlist = [(train_set, 'train'), (validation_set, 'eval')]
+            watchlist = [(train_set, 'train')]
             print "Training model..."
             xgb_model = xgb.train(params, train_set, rounds, watchlist, verbose_eval=True)
             train_pred = xgb_model.predict(xgb.DMatrix(test_x_file))
@@ -97,8 +97,9 @@ def train_model():
                 auc += auc_local
 
         if online:
-            with open(constants.project_path+"/model/model_file/gbdt_re_200.out", 'w') as f:
-                np.savetxt(f, train_pred, fmt="%s")
+            prob_test /= 5
+            with open(constants.project_path+"/out/gbdt_all_statistic.out", 'w') as f:
+                np.savetxt(f, prob_test, fmt="%s")
         else:
             end = datetime.datetime.now()
             rcd = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())) + '\n'
@@ -112,18 +113,35 @@ def train_model():
             log_file.write(rcd)
             log_file.close()
 
+        if build_feature:
+            test_idx = xgb_model.predict(xgb.DMatrix(train_x_file), ntree_limit=xgb_model.best_ntree_limit,
+                                         pred_leaf=True)
+            train_idx = xgb_model.predict(xgb.DMatrix(test_x_file), ntree_limit=xgb_model.best_ntree_limit,
+                                          pred_leaf=True)
+            transform2feature(test_idx, train_idx)
+            # pickle.dump(xgb_model, open(os.getcwd()+"/gbdt_model", "wb"))
+            # print "dump model finished"
+            # cus_train_file = constants.project_path + "/dataset/x_y/cus_train_x_no_id"
+            # cus_test_file = constants.project_path + "/dataset/x_y/cus_test_x_no_id"
+
+            # pickle.dump(train_ind, open(constants.project_path + "/dataset/feature/cus_train_2.idx", "wb"))
+            # pickle.dump(test_ind, open(constants.project_path + "/dataset/feature/cus_test_2.idx", "wb"))
 
 
-        # pickle.dump(xgb_model, open(os.getcwd()+"/gbdt_model", "wb"))
-        # print "dump model finished"
-        # cus_train_file = constants.project_path + "/dataset/x_y/cus_train_x_no_id"
-        # cus_test_file = constants.project_path + "/dataset/x_y/cus_test_x_no_id"
-        #
-        # test_ind = xgb_model.predict(xgb.DMatrix(cus_test_file), ntree_limit=xgb_model.best_ntree_limit, pred_leaf=True)
-        # train_ind = xgb_model.predict(xgb.DMatrix(cus_train_file), ntree_limit=xgb_model.best_ntree_limit, pred_leaf=True)
-        #
-        # pickle.dump(train_ind, open(constants.project_path + "/dataset/feature/cus_train_2.idx", "wb"))
-        # pickle.dump(test_ind, open(constants.project_path + "/dataset/feature/cus_test_2.idx", "wb"))
+def transform2feature(test_idx, train_idx):
+    rows, cols = train_idx.shape
+    for i in xrange(rows):
+        k = 0
+        for j in xrange(cols):
+            train_idx[i][j] = train_idx[i][j] + k*30 - 1
+            k += 1
+    rows, cols = test_idx.shape
+    for i in xrange(rows):
+        k = 0
+        for j in xrange(cols):
+            test_idx[i][j] = test_idx[i][j] + k * 30 - 1
+            k += 1
+    print train_idx[:10, :10], test_idx[:10, :10]
 
 
 # 将叶子结点记录转化为onehot特征

@@ -14,11 +14,14 @@ import math
 alpha = 123  # for smoothing
 beta = 5000
 
+# connectionType cvr
+alphas = [9, 225, 22, 1]
+betas = [2085, 7246, 2527, 90]
 
-# alpha = 0  # for smoothing
-# beta = 0
+connection_bias = [0.00383, 0.02917, 0.00823, 0.00705, 0.00648]
 
 not_smooth = False
+has_number = True
 
 
 # 处理cvr的统一方法
@@ -52,15 +55,17 @@ def cvr_helper(total_df, header, dim, feature_map):
         min_cv = min(min_cv, conversion_num)
         max_cvr = max(conversion_rate, max_cvr)
         min_cvr = min(conversion_rate, min_cvr)
-        # feature_list.append(int(click_num))
-        # feature_list.append(int(conversion_num))
         feature_list.append(conversion_rate)
+        # feature_list.append(int(click_num))
+        if has_number:
+            feature_list.append(int(conversion_num))
+
         feature.append(feature_list)
     # 归一化
     for i in xrange(dim):
         # feature[i][0] = round((feature[i][0] - min_click) / float(max_click - min_click), 5)
         feature[i][0] = round((feature[i][0] - min_cvr) / float(max_cvr - min_cvr), 5)
-        # feature[i][0] = round((feature[i][0] - min_cv) / float(max_cv - min_cv), 5)
+        # feature[i][1] = round((feature[i][1] - min_cv) / float(max_cv - min_cv), 5)
     feature_map[header] = feature
 
 
@@ -164,9 +169,12 @@ def build_pos_cvr(train_dir):
     i = 1
     for line in pos_file:
         row = line.strip().split(',')
-        # feature_list = [positionID_feature[int(row[0])]]
-        feature_list = copy.copy(pos_info_feature['sitesetID'][int(row[1])])
-        # feature_list.extend(pos_info_feature['sitesetID'][int(row[1])])
+        if has_number:
+            feature_list = [positionID_feature[int(row[0])]]
+            feature_list.extend(pos_info_feature['sitesetID'][int(row[1])])
+        else:
+            feature_list = copy.copy(pos_info_feature['sitesetID'][int(row[1])])
+
         feature_list.extend(pos_info_feature['positionType'][int(row[2])])
         pos_cvr_features[int(row[0])] = feature_list
         # print pos_cvr_features[int(row[0])]
@@ -193,90 +201,134 @@ def build_ad_cvr(train_dir):
     ad_file_path = train_dir+"train_with_ad_info.csv"
     ad_file = open(ad_file_path, 'r')
     # length = len(ad_data)
+    creative = {}
     ad = {}
     campaign = {}
     advertiser = {}
-    # app = {}
-    # appPlatform = {}
+    app = {}
+    appPlatform = {}
     creativeID_adFeature_map = {}
     ad_file.readline()
     for line in ad_file:
+
+        # alpha = alphas[connectionType]
+        # beta = betas[connectionType]
         row = line.strip().split(',')
+        connectionType = int(row[6])
+        # creativeID_key = int(row[3])
         adID_key = int(row[8])
         campaignID_key = int(row[9])
         advertiserID_key = int(row[10])
-        # appID_key = int(row[11])
-        # appPlatform_key = int(row[12])
+        appID_key = int(row[11])
+        appPlatform_key = int(row[12])
+
+        # 更新creativeID的数据
+        # if creativeID_key not in creative:
+        #     creative[creativeID_key] = [0, 0, 0]
+        # if row[1] == '1':
+        #     creative[creativeID_key][0] += 1
+        #     creative[creativeID_key][1] += 1
+        # else:
+        #     creative[creativeID_key][0] += 1
+        #
+        # if int(creative[creativeID_key][0]) == 0 and not_smooth:
+        #     creative[creativeID_key][2] = 0
+        # else:
+        #     creative[creativeID_key][2] = round((float(creative[creativeID_key][1]) + alpha) /
+        #                                   (float(creative[creativeID_key][0]) + beta + alpha), 5)
 
         # 更新adID的数据
         if adID_key not in ad:
-            ad[adID_key] = [0, 0, 0]
+            ad[adID_key] = [0, 0, 0, 0]
         if row[1] == '1':
             ad[adID_key][0] += 1
             ad[adID_key][1] += 1
         else:
             ad[adID_key][0] += 1
-
-        if int(ad[adID_key][0]) == 0 and not_smooth:
-            ad[adID_key][2] = 0
-        else:
-            ad[adID_key][2] = round((float(ad[adID_key][1])+alpha) / (float(ad[adID_key][0]) + beta + alpha), 5)
+        ad[adID_key][3] += connection_bias[connectionType]
 
         # 更新campaignID的数据
         if campaignID_key not in campaign:
-            campaign[campaignID_key] = [0, 0, 0]
+            campaign[campaignID_key] = [0, 0, 0, 0]
         if row[1] == '1':
             campaign[campaignID_key][0] += 1
             campaign[campaignID_key][1] += 1
         else:
             campaign[campaignID_key][0] += 1
-        if float(campaign[campaignID_key][0]) == 0 and not_smooth:
-            campaign[campaignID_key][2] = 0
-        else:
-            campaign[campaignID_key][2] = round((float(campaign[campaignID_key][1]) + alpha) /
-                                            (float(campaign[campaignID_key][0]) + beta + alpha), 5)
+        campaign[campaignID_key][3] += connection_bias[connectionType]
 
         # 更新advertiserID的数据
         if advertiserID_key not in advertiser:
-            advertiser[advertiserID_key] = [0, 0, 0]
+            advertiser[advertiserID_key] = [0, 0, 0, 0]
         if row[1] == '1':
             advertiser[advertiserID_key][0] += 1
             advertiser[advertiserID_key][1] += 1
         else:
             advertiser[advertiserID_key][0] += 1
+        advertiser[advertiserID_key][3] += connection_bias[connectionType]
+
+        # no use
+        if has_number:
+        # 更新appID的数据
+            if appID_key not in app:
+                app[appID_key] = [0, 0, 0]
+            if row[1] == '1':
+                app[appID_key][0] += 1
+                app[appID_key][1] += 1
+            else:
+                app[appID_key][0] += 1
+
+
+            # 更新appPlatform的数据
+            if appPlatform_key not in appPlatform:
+                appPlatform[appPlatform_key] = [0, 0, 0]
+            if row[1] == '1':
+                appPlatform[appPlatform_key][0] += 1
+                appPlatform[appPlatform_key][1] += 1
+            else:
+                appPlatform[appPlatform_key][0] += 1
+
+    for adID_key in ad.keys():
+        if int(ad[adID_key][0]) == 0 and not_smooth:
+            ad[adID_key][2] = 0
+        else:
+            ad[adID_key][2] = round((float(ad[adID_key][1])+alpha) / (float(ad[adID_key][0]) + beta + alpha), 5)
+        # COEC
+        ad[adID_key][3] = round((ad[adID_key][1]/ad[adID_key][3]), 5)
+
+    for campaignID_key in campaign:
+        if float(campaign[campaignID_key][0]) == 0 and not_smooth:
+            campaign[campaignID_key][2] = 0
+        else:
+            campaign[campaignID_key][2] = round((float(campaign[campaignID_key][1]) + alpha) /
+                                                (float(campaign[campaignID_key][0]) + beta + alpha), 5)
+        campaign[campaignID_key][3] = round((campaign[campaignID_key][1] / campaign[campaignID_key][3]), 5)
+
+    for advertiserID_key in advertiser:
         if float(advertiser[advertiserID_key][0]) == 0 and not_smooth:
             advertiser[advertiserID_key][2] = 0
         else:
             advertiser[advertiserID_key][2] = round((float(advertiser[advertiserID_key][1]) + alpha) / (float(
                 advertiser[advertiserID_key][0]) + beta + alpha), 5)
+        advertiser[advertiserID_key][3] = round((advertiser[advertiserID_key][1] / advertiser[advertiserID_key][3]), 5)
 
-        # no use
-        # # 更新appID的数据
-        # if appID_key not in app:
-        #     app[appID_key] = [0, 0, 0]
-        # if row[1] == '1':
-        #     app[appID_key][0] += 1
-        #     app[appID_key][1] += 1
-        # else:
-        #     app[appID_key][0] += 1
-        # if float(app[appID_key][0]) == 0 and not_smooth:
-        #     app[appID_key][2] = 0
-        # else:
-        #     app[appID_key][2] = round((float(app[appID_key][1]) + alpha) / (float(app[appID_key][0]) + beta + alpha), 5)
-        #
-        # # 更新appPlatform的数据
-        # if appPlatform_key not in appPlatform:
-        #     appPlatform[appPlatform_key] = [0, 0, 0]
-        # if row[1] == '1':
-        #     appPlatform[appPlatform_key][0] += 1
-        #     appPlatform[appPlatform_key][1] += 1
-        # else:
-        #     appPlatform[appPlatform_key][0] += 1
-        # if float(appPlatform[appPlatform_key][0]) == 0 and not_smooth:
-        #     appPlatform[appPlatform_key][2] = 0
-        # else:
-        #     appPlatform[appPlatform_key][2] = round((float(appPlatform[appPlatform_key][1]) + alpha) / (float(
-        #             appPlatform[appPlatform_key][0]) + beta + alpha), 5)
+    if has_number:
+        for appID_key in app:
+            if float(app[appID_key][0]) == 0 and not_smooth:
+                app[appID_key][2] = 0
+            else:
+                app[appID_key][2] = round((float(app[appID_key][1]) + alpha) / (float(app[appID_key][0]) + beta + alpha), 5)
+
+        for appPlatform_key in appPlatform:
+            if float(appPlatform[appPlatform_key][0]) == 0 and not_smooth:
+                appPlatform[appPlatform_key][2] = 0
+            else:
+                appPlatform[appPlatform_key][2] = round((float(appPlatform[appPlatform_key][1]) + alpha) / (float(
+                        appPlatform[appPlatform_key][0]) + beta + alpha), 5)
+
+    bound = 2
+    if has_number:
+        bound = 0
 
     # 获取最终的list
     ad_file = open(ad_file_path, 'r')
@@ -284,13 +336,14 @@ def build_ad_cvr(train_dir):
     for line in ad_file:
         row = line.strip().split(',')
         # 只取转化率特征
-        adID_data = ad[int(row[8])][2:]
-        campaignID_data = campaign[int(row[9])][2:]
-        advertiserID_data = advertiser[int(row[10])][2:]
-        # appID_data = app[int(row[11])][2:]
-        # appPlatform_data = appPlatform[int(row[12])][2:]
-        # creativeData = adID_data + campaignID_data + advertiserID_data + appID_data + appPlatform_data
-        creativeData = adID_data + campaignID_data + advertiserID_data
+        # creative_data = creative[int(row[3])][2:]
+        adID_data = ad[int(row[8])][bound:]
+        campaignID_data = campaign[int(row[9])][bound:]
+        advertiserID_data = advertiser[int(row[10])][bound:]
+        appID_data = app[int(row[11])][2:]
+        appPlatform_data = appPlatform[int(row[12])][2:]
+        creativeData = adID_data + campaignID_data + advertiserID_data + appID_data + appPlatform_data
+        # creativeData = adID_data + campaignID_data + advertiserID_data
         creativeID_adFeature_map[int(row[3])] = creativeData
     print "Building ad cvr finished."
     return creativeID_adFeature_map

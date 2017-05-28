@@ -65,7 +65,7 @@ def build_ad_train(to_path):
 
 
 # 生成广告特征 return {creativeID:(adID,campaignID,advertiserID), appID,appPlatform,appCategory}
-def build_ad_feature(has_id=True):
+def build_ad_feature(has_sparse=True):
     train_df = pd.read_csv(constants.project_path + "/dataset/raw/" + "ad.csv")
 
     ad_id_lens = [0, 0, 0, 0, 0]
@@ -75,7 +75,7 @@ def build_ad_feature(has_id=True):
     ad_id_lens[2] = len(campID_set) + 1
     ad_id_lens[3] = len(adverID_set) + 1
     ad_id_lens[4] = len(appID_set) + 1
-    if has_id:
+    if has_sparse:
         # 将list转为dict{id:index}
         creativeID_set = list2dict(train_df['creativeID'].unique())
         adID_set = list2dict(train_df['adID'].unique())
@@ -102,7 +102,7 @@ def build_ad_feature(has_id=True):
         line_feature = []
         fields = line.strip().split(',')
         offset = 0
-        if has_id:
+        if has_sparse:
             if int(fields[0]) in creativeID_set:
                 line_feature.append(offset+creativeID_set[int(fields[0])])
             else:
@@ -148,7 +148,7 @@ def build_ad_feature(has_id=True):
         line_feature.append(offset+app_cate_1)
         offset += 10
 
-        if has_id:
+        if has_sparse:
             line_feature.append(offset+app_cate_2)
             offset += 1000
 
@@ -161,7 +161,7 @@ def build_ad_feature(has_id=True):
 
 if __name__ == '__main__':
     # build_ad_train(constants.project_path + "/dataset/custom/train_ad_label.csv")
-    pos, lent = build_ad_feature(has_id=True)
+    pos, lent = build_ad_feature(has_sparse=True)
     print lent
     for key in pos.keys()[:10]:
         print pos[key]

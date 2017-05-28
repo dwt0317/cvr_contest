@@ -8,7 +8,7 @@ class CVRHandler:
     def __init__(self, dir_path):
         self._dir_path = dir_path
         self._raw_path = constants.project_path+"/dataset/raw/"
-        # for test
+        # for average
         self._pos_cvr_features = {}
         self._user_cvr_features = {}
         self._ad_cvr_features = {}
@@ -17,22 +17,35 @@ class CVRHandler:
         self._app_short_cvr_features = {}
         self._conn_cvr_features = {}
 
+        # for time
+        self._user_action_features = {}
+
         # for train
         self._pos_cvr_fd = None
         self._user_cvr_fd = None
         self._ad_cvr_fd = None
         self._other_cvr_fd = None
 
-    # 读取test文件所需cvr数据, test的统计数据只使用对应train的
-    def load_test_cvr(self, all_statistic=False):
-        import cvr_test
-        self._user_cvr_features = cvr_test.build_user_cvr(self._dir_path)
-        self._pos_cvr_features = cvr_test.build_pos_cvr(self._dir_path)
-        self._ad_cvr_features = cvr_test.build_ad_cvr(self._dir_path)
-        self._creative_app_dict = build_creative_app_dict(self._raw_path+"ad.csv")
+        # for mapping
+        self._creative_app_dict = build_creative_app_dict(self._raw_path + "ad.csv")
+        self._app_category_dict = build_app_category_dict(self._raw_path + "app_categories.csv")
+
+    # 读取平均cvr特征
+    def load_avg_cvr(self):
+        import avg_cvr
+        self._user_cvr_features = avg_cvr.build_user_cvr(self._dir_path)
+        self._pos_cvr_features = avg_cvr.build_pos_cvr(self._dir_path)
+        self._ad_cvr_features = avg_cvr.build_ad_cvr(self._dir_path)
         # self._app_short_cvr_features = cvr_test.build_short_cvr(self._dir_path)
-        self._conn_cvr_features = cvr_test.build_conn_cvr(self._dir_path)
-        print "Loading test cvr finished."
+        self._conn_cvr_features = avg_cvr.build_conn_cvr(self._dir_path)
+        print "Loading average cvr finished."
+
+    # 读取时序cvr特征
+    def load_time_cvr(self):
+        import time_cvr
+        self._user_action_features = time_cvr.build_user_action()
+        print "Loading time cvr finished."
+
 
     # 读取train文件所需cvr数据
     def load_train_cvr(self):
@@ -78,6 +91,20 @@ class CVRHandler:
         appID = self._creative_app_dict[creativeID]
         return self._app_short_cvr_features[appID][day]
 
+    # 获取user action category喜好
+    def get_user_action(self, userID, creativeID, day):
+        appID = self._creative_app_dict[creativeID]
+        category = self._app_category_dict[appID]
+        d = day - 1
+        features = [0, 0, 0]
+        if d in self._user_action_features:
+            if userID in self._user_action_features[d]:
+                diversity = len(self._user_action_features[d][userID])
+                num = self._user_action_features[d][userID].get(category, 0)
+                rate = num / float(diversity)
+                features = [diversity, num, rate]
+        return features
+
     # 获取网络转化率
     def get_conn_cvr(self, connectionType, telecomsOperator):
         conn_cvr = []
@@ -102,5 +129,8 @@ def build_creative_app_dict(raw_file):
             creativeID = int(row[0])
             appID = int(row[4])
             app_creative_dict[creativeID] = appID
-
     return app_creative_dict
+
+def build_app_category_dict(raw_file):
+    df = pd.read_csv(raw_file)
+    return df.to_dict()

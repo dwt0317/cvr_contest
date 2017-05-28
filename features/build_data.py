@@ -169,34 +169,35 @@ def build_x_hepler(from_path, to_path,
 
 
 def build_x():
-    ad_features, ad_dim = af.build_ad_feature(has_sparse=False)
-    user_features, user_dim = uf.build_user_profile(has_sparse=False)
-    pos_features, pos_dim = pf.build_position(has_sparse=False)
+    has_sparse = True
+    ad_features, ad_dim = af.build_ad_feature(has_sparse=has_sparse)
+    user_features, user_dim = uf.build_user_profile(has_sparse=has_sparse)
+    pos_features, pos_dim = pf.build_position(has_sparse=has_sparse)
 
-    src_dir_path = constants.project_path+"/dataset/custom/split_online/"
-    des_dir_path = constants.project_path+"/dataset/x_y/split_online/b9/"
+    src_dir_path = constants.project_path+"/dataset/custom/split_5/sample/"
+    des_dir_path = constants.project_path+"/dataset/x_y/split_5/b11/"
     cus_dir_path = constants.project_path+"/dataset/custom/"
     # 加载cvr特征
     cvr_handler = cvr.CVRHandler(cus_dir_path)
     # cvr_handler.load_train_cvr()
-    cvr_handler.load_test_cvr()
+    cvr_handler.load_avg_cvr()
 
     # # generate online test dataset
-    test_des_file = des_dir_path + "test_x_onehot.gbdt_online"
-    test_src_file = constants.project_path+"/dataset/custom/test_re-time.csv"
-    build_x_hepler(test_src_file, test_des_file,
-                   ad_features, ad_dim,
-                   user_features, user_dim,
-                   pos_features, pos_dim,
-                   cvr_handler,
-                   data_type="test",
-                   has_gbdt=False,
-                   ffm=False,
-                   has_cvr=True)
+    # test_des_file = des_dir_path + "test_x_onehot.gbdt_online"
+    # test_src_file = constants.project_path+"/dataset/custom/test_re-time.csv"
+    # build_x_hepler(test_src_file, test_des_file,
+    #                ad_features, ad_dim,
+    #                user_features, user_dim,
+    #                pos_features, pos_dim,
+    #                cvr_handler,
+    #                data_type="test",
+    #                has_gbdt=False,
+    #                ffm=False,
+    #                has_cvr=True)
 
-    for i in range(0, 5):
-        # test_des_file = des_dir_path + "test_x_onehot_" + str(i) + ".gbdt_online"
-        # test_src_file = src_dir_path + "test_x_" + str(i)
+    for i in range(1, 2):
+        # test_des_file = des_dir_path + "test_x_onehot_" + str(i) + ".fms"
+        # test_src_file = src_dir_path + "test_x_" + str(i) + '_sample'
         # build_x_hepler(test_src_file, test_des_file,
         #                ad_features, ad_dim,
         #                user_features, user_dim,
@@ -207,8 +208,8 @@ def build_x():
         #                ffm=False,
         #                has_cvr=True)
 
-        train_src_file = src_dir_path + "train_x_" + str(i)
-        train_des_file = des_dir_path + "train_x_onehot_" + str(i) + ".gbdt_online"
+        train_src_file = src_dir_path + "train_x_" + str(i) + '_sample'
+        train_des_file = des_dir_path + "train_x_onehot_" + str(i) + ".fms"
         build_x_hepler(train_src_file, train_des_file,
                        ad_features, ad_dim,
                        user_features, user_dim,

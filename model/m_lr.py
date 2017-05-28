@@ -75,19 +75,19 @@ def lr():
 
 def time_k_fold_lr():
     begin = datetime.datetime.now()
-    dir_path = constants.project_path + "/dataset/x_y/split_5/b10/"
+    dir_path = constants.project_path + "/dataset/x_y/split_5/b11/"
     logloss = 0
     auc = 0
     online = False
     if online:
         prob_test = np.zeros(338489)
     for i in range(1, 2):
-        train_x_file = dir_path + "train_x_onehot_" + str(i) + ".gbdt"
+        train_x_file = dir_path + "train_x_onehot_" + str(i) + ".fms"
 
         if online:
             test_x_file = dir_path + "test_x_onehot.gbdt"
         else:
-            test_x_file = dir_path + "test_x_onehot_" + str(i) + ".gbdt"
+            test_x_file = dir_path + "test_x_onehot_" + str(i) + ".fm"
 
         train_x, train_y = load_svmlight_file(train_x_file)
         test_x, test_y = load_svmlight_file(test_x_file)
@@ -95,11 +95,14 @@ def time_k_fold_lr():
         print "Read time: " + str(datetime.datetime.now() - begin)
         classifier = LogisticRegression(max_iter=30, penalty='l2')
         classifier.fit(train_x, train_y)
+        p = classifier.predict_proba(test_x)[:, 1]
+        ones = np.ones(len(p))
+        p = p / ( p + (ones - p) / 0.1)
         if online:
-            prob_test += classifier.predict_proba(test_x)[:, 1]
+            prob_test += p
             print pd.DataFrame(prob_test).mean()
         else:
-            prob_test = classifier.predict_proba(test_x)[:, 1]
+            prob_test = p
             print pd.DataFrame(prob_test).mean()
         if not online:
             auc_local = metrics.roc_auc_score(test_y, prob_test)

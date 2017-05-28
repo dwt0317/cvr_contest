@@ -19,32 +19,6 @@ def user_before_app_feature():
     return user_app_dict, max_app, min_app, median_app
 
 
-# user最常装的app类别
-def user_recent_app_category():
-    # 将用户favorite category写入文件
-    # user_category_file = constants.project_path + "/dataset/custom/" + "user_app_actions_with_category.csv"
-    # user_category_df = pd.read_csv(user_category_file)
-    # favorite = pd.read_csv(constants.project_path + "/dataset/custom/" + "user_app_favorite.csv")
-    # diversity = user_category_df.groupby(['userID']).agg(lambda x: len(x['appCategory'].unique()))
-    # df_fi = diversity.to_frame()
-    # df_fi['userID'] = diversity.index
-    # f_d = pd.merge(favorite, df_fi, on=['userID'])
-    # f_d.columns = ['userID', 'appCategory', 'diversity']
-    # f_d.astype(int).to_csv(constants.project_path + "/dataset/custom/favorite/" + "user_app_favorite_more.csv",
-    #                        index=False)
-
-    # 读取favorite文件
-    user_category_file = constants.project_path + "/dataset/custom/favorite/" + "user_app_favorite_more.csv"
-    user_favorite_dict = {}
-    with open(user_category_file, 'r') as f:
-        f.readline()
-        for line in f:
-            row = line.strip().split(',')
-            l = [int(row[1]), int(row[2])]
-            user_favorite_dict[int(row[0])] = l
-    return user_favorite_dict
-
-
 # 30天前用户app类别特征
 def user_before_app_category():
     user_before_category_file = constants.project_path + \
@@ -71,7 +45,6 @@ def user_before_app_category():
                 diversity = 0
             preID = userID
     #         diversity += 1
-
     print "Building user before app favorite finished."
     return user_before_favorite_dict
 

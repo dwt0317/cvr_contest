@@ -66,6 +66,6 @@ if __name__ == "__main__":
     #                   dir_path+"test_with_ad_info.csv", constants.project_path+"/submission/submission.csv")
     # revise_submission(constants.project_path+"/out/fm_pos_id_no_number.out",
     #                   constants.project_path + "/submission/submission.csv")
-    build_submission(constants.project_path + "/out/lr_favorite.out",
+    build_submission(constants.project_path + "/out/gbdt_all_statistic.out",
                      constants.project_path + "/submission/submission.csv")
-    check_submission_cvr(constants.project_path + "/out/lr_favorite.out")
+    check_submission_cvr(constants.project_path + "/out/gbdt_all_statistic.out")

@@ -5,7 +5,7 @@ from util import constants
 import math
 
 '''
-用于生成线上test样本的统计类特征
+用于生成平均cvr特征特征
 '''
 
 # alpha = 135  # for smoothing
@@ -21,7 +21,7 @@ betas = [2085, 7246, 2527, 90]
 connection_bias = [0.00383, 0.02917, 0.00823, 0.00705, 0.00648]
 
 not_smooth = False
-has_number = True
+has_number = False
 
 
 # 处理cvr的统一方法
@@ -340,10 +340,13 @@ def build_ad_cvr(train_dir):
         adID_data = ad[int(row[8])][bound:]
         campaignID_data = campaign[int(row[9])][bound:]
         advertiserID_data = advertiser[int(row[10])][bound:]
-        appID_data = app[int(row[11])][2:]
-        appPlatform_data = appPlatform[int(row[12])][2:]
-        creativeData = adID_data + campaignID_data + advertiserID_data + appID_data + appPlatform_data
-        # creativeData = adID_data + campaignID_data + advertiserID_data
+        creativeData = adID_data + campaignID_data + advertiserID_data
+
+        if has_number:
+            appID_data = app[int(row[11])][bound:]
+            appPlatform_data = appPlatform[int(row[12])][bound:]
+            creativeData += appID_data + appPlatform_data
+
         creativeID_adFeature_map[int(row[3])] = creativeData
     print "Building ad cvr finished."
     return creativeID_adFeature_map

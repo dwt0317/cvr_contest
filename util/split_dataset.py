@@ -208,5 +208,6 @@ if __name__ == '__main__':
     # install_merge_by_app(constants.project_path + "/dataset/raw/" + "user_installedapps.csv",
     #                      constants.project_path + "/dataset/raw/" + "user_installedapps_with_category.csv")
     # pass
-    merge_by_ad(constants.clean_train_path, constants.project_path+"/dataset/custom/train_with_ad_pos.csv")
-    merge_by_user(constants.clean_train_path, constants.project_path + "/dataset/custom/train_with_user_pos.csv")
+    # merge_by_ad(constants.clean_train_path, constants.project_path+"/dataset/custom/train_with_ad_pos_info.csv")
+    merge_by_user(constants.project_path+"/dataset/custom/train_with_ad_pos_info.csv",
+                  constants.project_path + "/dataset/custom/train_with_ad_pos_user.csv")

@@ -2,6 +2,7 @@
 from util import constants
 import pandas as pd
 from util import utils
+from util.utils import list2dict
 
 def pos_statistic():
     total_df = pd.read_csv(constants.cus_train_path)
@@ -14,9 +15,10 @@ def build_position(has_sparse=False):
     position = {}
     f.readline()
     postion_df = pd.read_csv(constants.project_path + "/dataset/raw/position.csv")
-    positionID_set = utils.list2dict(postion_df['positionID'].unique())
+    positionID_set = list2dict(postion_df['positionID'].unique())
     offset = 0
-
+    position_top = list2dict([299, 212, 444, 492, 106, 426, 158, 547, 84, 600, 689, 58, 201, 465, 126, 51, 603, 674,
+                              287, 64, 176, 455, 665, 521, 48, 17, 524, 458])
     for line in f:
         fields = line.strip().split(',')
         features = []
@@ -38,6 +40,8 @@ def build_position(has_sparse=False):
             offset += len(positionID_set) + 1
 
         position[int(fields[0])] = features
+
+
     print "Buliding position finished."
     return position, offset
 

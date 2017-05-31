@@ -12,6 +12,8 @@ import pandas as pd
 import os
 import time
 import datetime
+from matplotlib import pylab as plt
+import operator
 
 
 # 训练GBDT模型，并保存叶子结点特征
@@ -48,84 +50,91 @@ def train_model():
                   "booster": "gbtree",
                   'reg_alpha': 0.01,
                   'eval_metric': 'logloss',
-                  "eta": 0.04,
-                  "max_depth": 8,
+                  "eta": 0.1,
+                  "max_depth": 10,
                   'silent': 0,
                   'min_child_weight': 3,
                   'subsample': 0.8,
-                  'colsample_bytree': 0.8,
-                  'gamma': 4,
+                  'colsample_bytree': 0.9,
                   'nthread': 4,
+                  'gamma': 3,
+                  'scale_pos_weight': 0.1
                   }
-        online = True
-        build_feature = False
+        online = False
+
         if online:
             prob_test = np.zeros(338489)
 
-        dir_path = constants.project_path + "/dataset/x_y/split_online/b9/"
-        for i in range(0, 5):
-            train_x_file = dir_path + "train_x_onehot_" + str(i) + ".gbdt_online"
+        dir_path = constants.project_path + "/dataset/x_y/split_5/b13/"
+        for i in range(1, 2):
+            # train_x_file = dir_path + "train_x_onehot_" + str(i) + ".fm"
+            train_x_file = dir_path + "train_x_onehot_" + str(i) + ".fms"
             if online:
                 test_x_file = dir_path + "test_x_onehot.gbdt_online"
             else:
                 test_x_file = dir_path + "test_x_onehot_" + str(i) + ".fm"
 
-            train_x, train_y = load_svmlight_file(train_x_file)
+            # train_x, train_y = load_svmlight_file(train_x_file)
             test_x, test_y = load_svmlight_file(test_x_file)
 
-            train_set = xgb.DMatrix(train_x)
+            train_set = xgb.DMatrix(train_x_file)
             print "train done"
-            validation_set = xgb.DMatrix(test_x)
+            validation_set = xgb.DMatrix(test_x_file)
             print "test done"
-            # watchlist = [(train_set, 'train'), (validation_set, 'eval')]
-            watchlist = [(train_set, 'train')]
+            watchlist = [(train_set, 'train'), (validation_set, 'eval')]
+            # watchlist = [(train_set, 'train')]
             print "Training model..."
             xgb_model = xgb.train(params, train_set, rounds, watchlist, verbose_eval=True)
-            train_pred = xgb_model.predict(xgb.DMatrix(test_x_file))
+            pred = xgb_model.predict(xgb.DMatrix(test_x_file))
+            p = pred
+            # ones = np.ones(len(p))
+            # p = p / (p + (ones - p) / 0.1)
 
-            if online:
-                prob_test += train_pred
-                print pd.DataFrame(prob_test).mean()
-            else:
-                prob_test = train_pred
-                print pd.DataFrame(prob_test).mean()
+            # if online:
+            #     prob_test += pred
+            #     print pd.DataFrame(prob_test).mean()
+            # else:
+            #     prob_test = pred
+            #     print pd.DataFrame(prob_test).mean()
             if not online:
-                auc_local = metrics.roc_auc_score(test_y, prob_test)
-                logloss_local = metrics.log_loss(test_y, prob_test)
+                auc_local = metrics.roc_auc_score(test_y, p)
+                logloss_local = metrics.log_loss(test_y, p)
                 print str(i) + ": " + str(auc_local) + " " + str(logloss_local)
                 logloss += logloss_local
                 auc += auc_local
 
         if online:
             prob_test /= 5
-            with open(constants.project_path+"/out/gbdt_all_statistic.out", 'w') as f:
+            with open(constants.project_path + "/out/gbdt_all_statistic.out", 'w') as f:
                 np.savetxt(f, prob_test, fmt="%s")
         else:
             end = datetime.datetime.now()
-            rcd = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())) + '\n'
-            rcd += "lr k-fold:" + '\n'
+            rcd = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) + '\n'
+            rcd += "gbdt:" + '\n'
             # rcd += "score: " + str(score) + '\n'
-            rcd += "auc_test: " + str(float(auc)/4) + '\n'
-            rcd += "logloss: " + str(logloss/4) + '\n'
+            rcd += "auc_test: " + str(float(auc)) + '\n'
+            rcd += "logloss: " + str(logloss) + '\n'
             rcd += "time: " + str(end - begin) + '\n' + '\n'
 
             log_file = open(constants.result_path, "a")
             log_file.write(rcd)
             log_file.close()
+            feature_importance(xgb_model)
 
-        if build_feature:
-            test_idx = xgb_model.predict(xgb.DMatrix(train_x_file), ntree_limit=xgb_model.best_ntree_limit,
-                                         pred_leaf=True)
-            train_idx = xgb_model.predict(xgb.DMatrix(test_x_file), ntree_limit=xgb_model.best_ntree_limit,
-                                          pred_leaf=True)
-            transform2feature(test_idx, train_idx)
-            # pickle.dump(xgb_model, open(os.getcwd()+"/gbdt_model", "wb"))
-            # print "dump model finished"
-            # cus_train_file = constants.project_path + "/dataset/x_y/cus_train_x_no_id"
-            # cus_test_file = constants.project_path + "/dataset/x_y/cus_test_x_no_id"
+            build_feature = False
+            if build_feature:
+                test_idx = xgb_model.predict(xgb.DMatrix(train_x_file), ntree_limit=xgb_model.best_ntree_limit,
+                                             pred_leaf=True)
+                train_idx = xgb_model.predict(xgb.DMatrix(test_x_file), ntree_limit=xgb_model.best_ntree_limit,
+                                              pred_leaf=True)
+                transform2feature(test_idx, train_idx)
+                # pickle.dump(xgb_model, open(os.getcwd()+"/gbdt_model", "wb"))
+                # print "dump model finished"
+                # cus_train_file = constants.project_path + "/dataset/x_y/cus_train_x_no_id"
+                # cus_test_file = constants.project_path + "/dataset/x_y/cus_test_x_no_id"
 
-            # pickle.dump(train_ind, open(constants.project_path + "/dataset/feature/cus_train_2.idx", "wb"))
-            # pickle.dump(test_ind, open(constants.project_path + "/dataset/feature/cus_test_2.idx", "wb"))
+                # pickle.dump(train_ind, open(constants.project_path + "/dataset/feature/cus_train_2.idx", "wb"))
+                # pickle.dump(test_ind, open(constants.project_path + "/dataset/feature/cus_test_2.idx", "wb"))
 
 
 def transform2feature(test_idx, train_idx):
@@ -142,6 +151,20 @@ def transform2feature(test_idx, train_idx):
             test_idx[i][j] = test_idx[i][j] + k * 30 - 1
             k += 1
     print train_idx[:10, :10], test_idx[:10, :10]
+
+
+def feature_importance(xgb_model):
+    importance = xgb_model.get_fscore()
+    importance = sorted(importance.items(), key=operator.itemgetter(1))[:50]
+
+    df = pd.DataFrame(importance, columns=['feature', 'fscore'])
+    df['fscore'] = df['fscore'] / df['fscore'].sum()
+    plt.figure()
+    # df.plot()
+    df.plot(kind='barh', x='feature', y='fscore', legend=False, figsize=(10, 10))
+    plt.title('XGBoost Feature Importance')
+    plt.xlabel('relative importance')
+    plt.gcf().savefig(constants.project_path+'/img/feature_importance_xgb3.png')
 
 
 # 将叶子结点记录转化为onehot特征

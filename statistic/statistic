@@ -92,3 +92,20 @@ head: positionType
 5: 0.23024167211
 
 
+userID_cvr:  3
+positionID_cvr:  6
+creativeID 9
+adID 12
+appID 15
+campaignID 18
+advertiserID 21
+user_cvr:  25
+user_f:  118
+user_actions_f:  123
+user_before_actions_f:  128
+pos_cvr:  139
+connectionType:  148
+conn_site:  193
+conn_cvr:  195
+ad_f:  1072
+

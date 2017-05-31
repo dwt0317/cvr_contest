@@ -21,7 +21,7 @@ betas = [2085, 7246, 2527, 90]
 connection_bias = [0.00383, 0.02917, 0.00823, 0.00705, 0.00648]
 
 not_smooth = False
-has_number = False
+fine_feature = False
 
 
 # 处理cvr的统一方法
@@ -57,7 +57,7 @@ def cvr_helper(total_df, header, dim, feature_map):
         min_cvr = min(conversion_rate, min_cvr)
         feature_list.append(conversion_rate)
         # feature_list.append(int(click_num))
-        if has_number:
+        if fine_feature:
             feature_list.append(int(conversion_num))
 
         feature.append(feature_list)
@@ -124,16 +124,18 @@ def user_profile_cvr(file_path):
 
 # {userID1:[cvr1, cvr2,..], userID2:[cvr1, cvr2,..], ...}
 def build_user_cvr(train_dir):
-    userID_feature = id_cvr_helper(constants.project_path+"/dataset/raw/user.csv", 'userID', 4)
+    # userID_feature = id_cvr_helper(constants.project_path+"/dataset/raw/user.csv", 'userID', 4)
     user_pro_feature = user_profile_cvr(train_dir+"train_with_user_info.csv")
     user_cvr_features = {}
     user_file = open(constants.project_path + "/dataset/raw/user.csv", 'r')
     user_file.readline()
     for line in user_file:
         row = line.strip().split(',')
-        feature_list = [userID_feature[int(row[0])]]
-        # feature_list = copy.copy(user_pro_feature['gender'][int(row[2])])
-        feature_list.extend(user_pro_feature['gender'][int(row[2])])
+        # if fine_feature:
+        #     feature_list = [userID_feature[int(row[0])]]
+        #     feature_list.extend(user_pro_feature['gender'][int(row[2])])
+        # else:
+        feature_list = copy.copy(user_pro_feature['gender'][int(row[2])])
         feature_list.extend(user_pro_feature['education'][int(row[3])])
         feature_list.extend(user_pro_feature['marriageStatus'][int(row[4])])
         feature_list.extend(user_pro_feature['haveBaby'][int(row[5])])
@@ -161,7 +163,7 @@ def pos_info_cvr(pos_info_file):
 
 # 按positionID处理cvr数据
 def build_pos_cvr(train_dir):
-    positionID_feature = id_cvr_helper(constants.project_path + "/dataset/raw/position.csv", 'positionID', 5)
+    # positionID_feature = id_cvr_helper(constants.project_path + "/dataset/raw/position.csv", 'positionID', 5)
     pos_info_feature = pos_info_cvr(train_dir+"train_with_pos_info.csv")
     pos_file = open(constants.project_path + "/dataset/raw/position.csv", 'r')
     pos_file.readline()
@@ -169,11 +171,11 @@ def build_pos_cvr(train_dir):
     i = 1
     for line in pos_file:
         row = line.strip().split(',')
-        if has_number:
-            feature_list = [positionID_feature[int(row[0])]]
-            feature_list.extend(pos_info_feature['sitesetID'][int(row[1])])
-        else:
-            feature_list = copy.copy(pos_info_feature['sitesetID'][int(row[1])])
+        # if fine_feature:
+        #     feature_list = [positionID_feature[int(row[0])]]
+        #     feature_list.extend(pos_info_feature['sitesetID'][int(row[1])])
+        # else:
+        feature_list = copy.copy(pos_info_feature['sitesetID'][int(row[1])])
 
         feature_list.extend(pos_info_feature['positionType'][int(row[2])])
         pos_cvr_features[int(row[0])] = feature_list
@@ -268,7 +270,7 @@ def build_ad_cvr(train_dir):
         advertiser[advertiserID_key][3] += connection_bias[connectionType]
 
         # no use
-        if has_number:
+        if fine_feature:
         # 更新appID的数据
             if appID_key not in app:
                 app[appID_key] = [0, 0, 0]
@@ -277,7 +279,6 @@ def build_ad_cvr(train_dir):
                 app[appID_key][1] += 1
             else:
                 app[appID_key][0] += 1
-
 
             # 更新appPlatform的数据
             if appPlatform_key not in appPlatform:
@@ -312,22 +313,24 @@ def build_ad_cvr(train_dir):
                 advertiser[advertiserID_key][0]) + beta + alpha), 5)
         advertiser[advertiserID_key][3] = round((advertiser[advertiserID_key][1] / advertiser[advertiserID_key][3]), 5)
 
-    if has_number:
+    for appPlatform_key in appPlatform:
+        if float(appPlatform[appPlatform_key][0]) == 0 and not_smooth:
+            appPlatform[appPlatform_key][2] = 0
+        else:
+            appPlatform[appPlatform_key][2] = round((float(appPlatform[appPlatform_key][1]) + alpha) / (float(
+                appPlatform[appPlatform_key][0]) + beta + alpha), 5)
+
+    if fine_feature:
         for appID_key in app:
             if float(app[appID_key][0]) == 0 and not_smooth:
                 app[appID_key][2] = 0
             else:
                 app[appID_key][2] = round((float(app[appID_key][1]) + alpha) / (float(app[appID_key][0]) + beta + alpha), 5)
 
-        for appPlatform_key in appPlatform:
-            if float(appPlatform[appPlatform_key][0]) == 0 and not_smooth:
-                appPlatform[appPlatform_key][2] = 0
-            else:
-                appPlatform[appPlatform_key][2] = round((float(appPlatform[appPlatform_key][1]) + alpha) / (float(
-                        appPlatform[appPlatform_key][0]) + beta + alpha), 5)
+
 
     bound = 2
-    if has_number:
+    if fine_feature:
         bound = 0
 
     # 获取最终的list
@@ -342,7 +345,7 @@ def build_ad_cvr(train_dir):
         advertiserID_data = advertiser[int(row[10])][bound:]
         creativeData = adID_data + campaignID_data + advertiserID_data
 
-        if has_number:
+        if fine_feature:
             appID_data = app[int(row[11])][bound:]
             appPlatform_data = appPlatform[int(row[12])][bound:]
             creativeData += appID_data + appPlatform_data
@@ -418,7 +421,7 @@ def build_short_cvr(train_dir):
             # max_cvr = max(max_cvr, cvr_yes)
             # min_cvr = min(min_cvr, cvr_yes)
             # appID_twoDay_map[appID][day] = [avg_conversion, cvr]
-            appID_twoDay_map[appID][day] = [cvr_yes]
+            appID_twoDay_map[appID][day] = [cvr_yes, converYes]
 
     for k, v in appID_twoDay_map.iteritems():
         for day in range(20, 32):

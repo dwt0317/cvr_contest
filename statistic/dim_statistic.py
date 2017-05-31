@@ -69,5 +69,11 @@ def position():
     log_file.close()
 
 
+def appID_cvr():
+    train_df = pd.read_csv(constants.project_path+'/dataset/custom/train_with_ad_info.csv')
+    appID_list = train_df['appID'].unique()
+
+
+
 if __name__ == '__main__':
     position()

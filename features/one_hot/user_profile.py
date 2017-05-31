@@ -18,35 +18,7 @@ def user_before_app_feature():
     print "Building user app dict finished."
     return user_app_dict, max_app, min_app, median_app
 
-
-# 30天前用户app类别特征
-def user_before_app_category():
-    user_before_category_file = constants.project_path + \
-                                "/dataset/custom/favorite/user_installedapps_with_category_group.csv"
-    # to_file = open(constants.project_path+"/dataset/custom/favorite/user_before_app_favorite.csv", 'w')
-    # to_file.write('userID,appCategory,diversity\n')
-    user_before_favorite_dict = {}
-    with open(user_before_category_file, 'r') as f:
-        f.readline()
-        preID= -1
-        diversity = 0
-        # count, category
-        max_pair = [0, 0]
-        for line in f:
-            row = line.strip().split(',')
-            userID = int(row[0])
-            if userID == preID:
-                if int(row[2]) > max_pair[0]:
-                    max_pair = [int(row[2]), int(row[1])]
-            else:
-                user_before_favorite_dict[preID] = [max_pair[1], diversity]
-                # to_file.write(str(preID)+','+str(max_pair[1])+','+str(diversity)+'\n')
-                max_pair = [0, 0]
-                diversity = 0
-            preID = userID
-    #         diversity += 1
-    print "Building user before app favorite finished."
-    return user_before_favorite_dict
+one_hot = False
 
 
 # age * 9, gender * 3, education * 8, marriage * 4, baby * 7, residence * 35,
@@ -64,8 +36,6 @@ def build_user_profile(has_sparse=False):
             userlist.append(i)
     userIDset = utils.list2dict(userlist)
 
-    user_favorite_dict = user_recent_app_category()
-    user_before_favorite_dict = user_before_app_category()
     # user编号从1开始的, 0处补一个作为填充
     user_feature = [[0]]
     offset = 0
@@ -76,12 +46,18 @@ def build_user_profile(has_sparse=False):
         fields = line.strip().split(',')
 
         # age
+        age_bucket = [7, 12, 16, 21, 25, 32, 40, 48, 55, 65]
         age = int(fields[1])
         if age == 0:
             features.append(age)
         else:
-            features.append(((age-1) % 10)+1)
-        offset += 9
+            for i in xrange(len(age_bucket)):
+                if age < age_bucket[i]:
+                    features.append(i)
+            if age > age_bucket[9]:
+                features.append(10)
+        offset += 11
+
         # gender
         features.append(offset+int(fields[2]))
         offset += 3
@@ -102,8 +78,8 @@ def build_user_profile(has_sparse=False):
         #     features.append(offset + int(fields[6]))
         #     offset += 3500
         # residence
-        # features.append(offset + int(fields[7]) / 100)
-        # offset += 35
+        features.append(offset + int(fields[7]) / 100)
+        offset += 35
         # if has_sparse:
         #     # detail residence
         #     features.append(offset + int(fields[7]))
@@ -122,16 +98,7 @@ def build_user_profile(has_sparse=False):
         # offset += 10
 
         # before favorite category
-        if userID in user_before_favorite_dict:
-            features.append(offset+int(user_before_favorite_dict[userID][0]))
-            # offset += 10
-            # features.append(offset+int(user_before_favorite_dict[userID][1]))
-        else:
-            features.append(offset)
-            # offset += 10
-            # features.append(offset)
-        offset += 10
-
+        features = [0, 0, 0, 0, 0]      # diversity, num, most, medium, low
 
         if has_sparse:
             if userID in userIDset:
@@ -140,16 +107,6 @@ def build_user_profile(has_sparse=False):
                 features.append(0)
             offset += len(userIDset) + 1
 
-        # # installed app
-        # user_id = int(fields[0])
-        # if user_id in user_app_dict:
-        #     # features.append(round((user_app_dict[int(fields[0])] - min_app) / (max_app - min_app)), 5)
-        #     features.append(user_app_dict[int(fields[0])])
-        # else:
-        #     # features.append(round((median_app - min_app) / (max_app - min_app)), 5)
-        #     features.append(0)
-        # offset += 1
-        #
         user_feature.append(features)
 
     print "Buliding user profile finished."
@@ -172,8 +129,4 @@ def count_user_freq():
 
 
 if __name__ == '__main__':
-    # user_before_app_category()
-    # count_user()
-    u = user_before_app_category()
-    # for k in u.keys()[:30]:
-    #     print k, u[k]
+    pass

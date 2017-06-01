@@ -26,7 +26,7 @@ def train_model():
     # test_y = np.loadtxt(test_y_file, dtype=int)
     # svmlight格式自带label
     # train_data = load_svmlight_file(train_x_file)
-    rounds = 180
+    rounds = 140
     grid = False
     # if grid:
     #     classifier = XGBClassifier(learning_rate=0.1, n_estimators=rounds, gamma=4, subsample=0.8, max_depth=8,
@@ -51,31 +51,32 @@ def train_model():
                   'reg_alpha': 0.01,
                   'eval_metric': 'logloss',
                   "eta": 0.1,
-                  "max_depth": 10,
+                  "max_depth": 6,
                   'silent': 0,
                   'min_child_weight': 3,
                   'subsample': 0.8,
-                  'colsample_bytree': 0.9,
-                  'nthread': 4,
+                  'colsample_bytree': 0.8,
+                  'nthread': 6,
                   'gamma': 3,
                   'scale_pos_weight': 0.1
                   }
         online = False
 
-        if online:
-            prob_test = np.zeros(338489)
+        prob_test = np.zeros(338489)
 
-        dir_path = constants.project_path + "/dataset/x_y/split_5/b13/"
-        for i in range(1, 2):
+        dir_path = constants.project_path + "/dataset/x_y/split_5/b14/"
+        # dir_path = constants.project_path + "/dataset/x_y/split_online/b10/"
+        for i in range(0, 4):
             # train_x_file = dir_path + "train_x_onehot_" + str(i) + ".fm"
             train_x_file = dir_path + "train_x_onehot_" + str(i) + ".fms"
             if online:
-                test_x_file = dir_path + "test_x_onehot.gbdt_online"
+                test_x_file = dir_path + "test_x_onehot.fm"
             else:
                 test_x_file = dir_path + "test_x_onehot_" + str(i) + ".fm"
 
             # train_x, train_y = load_svmlight_file(train_x_file)
-            test_x, test_y = load_svmlight_file(test_x_file)
+            if not online:
+                test_x, test_y = load_svmlight_file(test_x_file)
 
             train_set = xgb.DMatrix(train_x_file)
             print "train done"
@@ -90,9 +91,9 @@ def train_model():
             # ones = np.ones(len(p))
             # p = p / (p + (ones - p) / 0.1)
 
-            # if online:
-            #     prob_test += pred
-            #     print pd.DataFrame(prob_test).mean()
+            if online:
+                prob_test += pred
+                print pd.DataFrame(prob_test).mean()
             # else:
             #     prob_test = pred
             #     print pd.DataFrame(prob_test).mean()
@@ -104,16 +105,16 @@ def train_model():
                 auc += auc_local
 
         if online:
-            prob_test /= 5
-            with open(constants.project_path + "/out/gbdt_all_statistic.out", 'w') as f:
+            prob_test /= 10
+            with open(constants.project_path + "/out/gbdt_combination.out", 'w') as f:
                 np.savetxt(f, prob_test, fmt="%s")
         else:
             end = datetime.datetime.now()
             rcd = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) + '\n'
             rcd += "gbdt:" + '\n'
             # rcd += "score: " + str(score) + '\n'
-            rcd += "auc_test: " + str(float(auc)) + '\n'
-            rcd += "logloss: " + str(logloss) + '\n'
+            rcd += "auc_test: " + str(float(auc/4)) + '\n'
+            rcd += "logloss: " + str(logloss/4) + '\n'
             rcd += "time: " + str(end - begin) + '\n' + '\n'
 
             log_file = open(constants.result_path, "a")

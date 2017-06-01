@@ -75,15 +75,15 @@ def lr():
 
 def time_k_fold_lr():
     begin = datetime.datetime.now()
-    dir_path = constants.project_path + "/dataset/x_y/split_5/b12/"
-    # dir_path = constants.project_path + "/dataset/x_y/split_online/b9/"
+    # dir_path = constants.project_path + "/dataset/x_y/split_5/b13/"
+    dir_path = constants.project_path + "/dataset/x_y/split_online/b11/"
     logloss = 0
     auc = 0
-    online = False
+    online = True
     if online:
         prob_test = np.zeros(338489)
-    for i in range(0, 4):
-        # train_x_file = dir_path + "train_x_onehot_" + str(i) + ".fms"
+    for i in range(0, 10):
+        train_x_file = dir_path + "train_x_onehot_" + str(i) + ".fms"
         train_x_file = dir_path + "train_x_onehot_" + str(i) + ".fm"
 
         if online:
@@ -102,8 +102,8 @@ def time_k_fold_lr():
             prob_test += p
             print pd.DataFrame(prob_test).mean()
         else:
-            # ones = np.ones(len(p))
-            # p = p / (p + (ones - p) / 0.1)
+            ones = np.ones(len(p))
+            p = p / (p + (ones - p) / 0.1)
             prob_test = p
             print pd.DataFrame(prob_test).mean()
         if not online:
@@ -117,12 +117,12 @@ def time_k_fold_lr():
 
     if online:
         prob_test /= 10
-        np.savetxt(constants.project_path + "/out/lr_cvr.out", prob_test, fmt="%s")
+        np.savetxt(constants.project_path + "/out/lr_combination.out", prob_test, fmt="%s")
 
     if not online:
         end = datetime.datetime.now()
         rcd = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())) + '\n'
-        rcd += "lr k-fold app_cvr 30:" + '\n'
+        rcd += "lr combination:" + '\n'
         # rcd += "score: " + str(score) + '\n'
         rcd += "auc_test: " + str(float(auc)/4) + '\n'
         rcd += "logloss: " + str(logloss/4) + '\n'

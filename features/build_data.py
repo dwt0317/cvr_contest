@@ -9,7 +9,7 @@ import one_hot.user_profile as uf
 from features.one_hot import advertising as af
 from util import constants
 import cvr
-
+import sys
 
 # 以libfm形式存储
 def write_as_libfm(features, file_write, label):
@@ -44,9 +44,25 @@ def build_y(from_path, to_path):
     y.to_csv(path=to_path, index=False, header=False)
 
 
+# 计算组合特征
+def get_combination_feature(connectionType, appPlatform, appCategory, sitesetID,
+                      positionType, age, gender, education,
+                      marriageStatus, haveBaby, hometown, residence):
+    from one_hot import combination
+    f_high = combination.build_high_combination(connectionType, appPlatform, appCategory, sitesetID,
+                      positionType, gender, education,
+                      marriageStatus, haveBaby, age, hometown, residence)
+    f_low = combination.build_low_combination(connectionType, appPlatform, appCategory, sitesetID,
+                      positionType, gender, education,
+                      marriageStatus, haveBaby, age, hometown, residence)
+    f_high.extend(f_low)
+    return f_high
+
+
+# 构造训练集
 def build_x_hepler(from_path, to_path,
-                   ad_features, ad_dim,
-                   user_features, user_dim,
+                   ad_features, ad_dim, ad_map,
+                   user_features, user_dim, user_map,
                    pos_features, pos_dim,
                    statistic_handler,
                    data_type="train",
@@ -75,6 +91,13 @@ def build_x_hepler(from_path, to_path,
         else:
             day = int((float(row[2]) / 1440.0))
 
+        # user feature
+        user_f = user_features[userID]
+        for i in xrange(len(user_f)):
+            field += 1
+            features[offset+user_f[i]] = str(field) + "," + str(1) if ffm else 1
+        offset += user_dim
+
         if has_cvr:
             userID_cvr = statistic_handler.get_id_cvr('userID', userID, day)
             offset = feed_cvr_feature(features, userID_cvr, offset, field, ffm)
@@ -92,84 +115,60 @@ def build_x_hepler(from_path, to_path,
                 id_cvr = statistic_handler.get_id_cvr(h, creativeID, day)
                 offset = feed_cvr_feature(features, id_cvr, offset, field, ffm)
                 field += 1
-                # print h, offset
 
-        if has_cvr:
-            # user cvr feature
-            user_cvr = statistic_handler.get_user_cvr(data_type, userID)
-            offset = feed_cvr_feature(features, user_cvr, offset, field, ffm)
-            field += 1
-            # print "user_cvr: ", offset
-            # for i in xrange(len(user_cvr)):
-            #     features[offset+i] = str(field) + "," + str(user_cvr[i]) if ffm else user_cvr[i]
-            # offset += len(user_cvr)
-            # field += 1
-
-        # user feature
-        user_f = user_features[userID]
-        for i in xrange(len(user_f)):
-            field += 1
-            features[offset+user_f[i]] = str(field) + "," + str(1) if ffm else 1
-        offset += user_dim
-        # print "user_f: ", offset
+        # if has_cvr:
+        #     # user cvr feature
+        #     user_cvr = statistic_handler.get_user_cvr(data_type, userID)
+        #     offset = feed_cvr_feature(features, user_cvr, offset, field, ffm)
+        #     field += 1
 
         # user actions
         user_actions_f = statistic_handler.get_user_action(userID, creativeID, day)
         offset = feed_cvr_feature(features, user_actions_f, offset, field, ffm)
-        # for i in xrange(len(user_actions_f)):
-        #     features[offset+i] = str(field) + "," + str(user_actions_f[i]) if ffm else user_actions_f[i]
-        # offset += len(user_actions_f)
-        # print "user_actions_f: ", offset
+
 
         user_before_actions_f = statistic_handler.get_user_before_action(userID, creativeID)
         offset = feed_cvr_feature(features, user_before_actions_f, offset, field, ffm)
-        # for i in xrange(len(user_before_actions_f)):
-        #     features[offset+i] = str(field) + "," + str(user_before_actions_f[i]) if ffm else user_before_actions_f[i]
-        # offset += len(user_before_actions_f)
         field += 1
-        # print "user_before_actions_f: ", offset
+
         # position feature
         pos_f = pos_features[positionID]
         for i in pos_f:
             features[offset+i] = str(field) + "," + str(1) if ffm else 1
         offset += pos_dim
-        # print "pos_f: ", offset
+
         # position cvr feature
-        if has_cvr:
-            pos_cvr = statistic_handler.get_pos_cvr(data_type, int(row[5]))
-            offset = feed_cvr_feature(features, pos_cvr, offset, field, ffm)
-            # for i in xrange(len(pos_cvr)):
-            #     features[offset + i] = str(field) + "," + str(pos_cvr[i]) if ffm else pos_cvr[i]
-            # offset += len(pos_cvr)
-            field += 1
-            # print "pos_cvr: ", offset
+        # if has_cvr:
+        #     pos_cvr = statistic_handler.get_pos_cvr(data_type, int(row[5]))
+        #     offset = feed_cvr_feature(features, pos_cvr, offset, field, ffm)
+        #     field += 1
+
         # network feature connection * 5, tele-operator * 4
         connectionType = int(row[6])
         features[offset+connectionType] = str(field) + "," + str(1) if ffm else 1
         offset += 5
-        teleOperator = int(row[7])
-        features[offset+teleOperator] = str(field) + "," + str(1) if ffm else 1
+        telecomsOperator = int(row[7])
+        features[offset+telecomsOperator] = str(field) + "," + str(1) if ffm else 1
         offset += 4
-        # print "connectionType: ", offset
-        # connection, site (5*3), connection, type (5*6)
-        site = pos_features[int(row[5])][0]
-        type = pos_features[int(row[5])][1]
-        conn_site = connectionType * 3 + site
-        features[offset + conn_site] = str(field) + "," + str(1) if ffm else 1
-        offset += 15
-        conn_type = connectionType * 6 + type
-        features[offset + conn_type] = str(field) + "," + str(1) if ffm else 1
-        offset += 30
-        field += 1
-        # print "conn_site: ", offset
+
+        # connection, sitesetID (5*3), connection, positionType (5*6)
+        sitesetID = pos_features[int(row[5])][0]
+        positionType = pos_features[int(row[5])][1]
+        # conn_site = connectionType * 3 + sitesetID
+        # features[offset + conn_site] = str(field) + "," + str(1) if ffm else 1
+        # offset += 15
+        # conn_type = connectionType * 6 + positionType
+        # features[offset + conn_type] = str(field) + "," + str(1) if ffm else 1
+        # offset += 30
+        # field += 1
+
         # network cvr
-        if has_cvr:
-            conn_cvr = statistic_handler.get_conn_cvr(int(row[6]), int(row[7]))
-            features[offset] = conn_cvr[0][0]
-            features[offset+1] = conn_cvr[1][0]
-            offset += 2
-            # print "conn_cvr: ", offset
-        field += 1
+        # if has_cvr:
+        #     conn_cvr = statistic_handler.get_conn_cvr(int(row[6]), int(row[7]))
+        #     features[offset] = conn_cvr[0][0]
+        #     features[offset+1] = conn_cvr[1][0]
+        #     offset += 2
+        # field += 1
 
         if has_gbdt:
             # GBDT feature
@@ -183,6 +182,7 @@ def build_x_hepler(from_path, to_path,
         for i in ad_f:
             features[offset+i] = str(field) + "," + str(1) if ffm else 1
         offset += ad_dim
+
         # print "ad_f: ", offset
         # ad cvr feature
         # if has_cvr:
@@ -190,16 +190,20 @@ def build_x_hepler(from_path, to_path,
         #     for i in xrange(len(ad_cvr)):
         #         features[offset+i] = str(field) + "," + str(ad_cvr[i]) if ffm else ad_cvr[i]
         #     offset += len(ad_cvr)
-        #     field += 1
+        field += 1
 
-        # app short cvr feature, 经gbdt和lr验证确实没用
-        # if has_cvr:
-        #     app_short_cvr = cvr_handler.get_app_short_cvr(int(row[3]), day)
-        #     for i in xrange(len(app_short_cvr)):
-        #         features[offset+i] = str(field) + "," + str(app_short_cvr[i]) if ffm else app_short_cvr[i]
-        #     offset += len(app_short_cvr)
-        #     field += 1
-        # return
+        age, gender, education, marriageStatus, haveBaby, hometown, residence = user_map[userID]
+        a_n = len(ad_map[creativeID])
+        appPlatform, appCategory = ad_map[creativeID][a_n-2], ad_map[creativeID][a_n-1]
+        comb_feature = get_combination_feature(connectionType, appPlatform, appCategory, sitesetID,
+                      positionType, age, gender, education,
+                      marriageStatus, haveBaby, hometown, residence)
+        for i in xrange(len(comb_feature)):
+            if comb_feature[i] == 1:
+                features[offset+i] = str(field) + "," + str(1) if ffm else 1
+        offset += len(comb_feature)
+
+
         if ffm:
             write_as_libffm(features, to_file, row[0])
         else:
@@ -218,27 +222,28 @@ def build_x_hepler(from_path, to_path,
 
 def build_x():
     has_sparse = False
-    ad_features, ad_dim = af.build_ad_feature(has_sparse=has_sparse)
-    user_features, user_dim = uf.build_user_profile(has_sparse=has_sparse)
+    ad_features, ad_map, ad_dim = af.build_ad_feature(has_sparse=has_sparse)
+    user_features, user_map, user_dim = uf.build_user_profile(has_sparse=has_sparse)
     pos_features, pos_dim = pf.build_position(has_sparse=has_sparse)
 
     src_dir_path = constants.project_path+"/dataset/custom/split_5/sample/"
     # src_dir_path = constants.project_path + "/dataset/custom/split_5/"
-    # des_dir_path = constants.project_path+"/dataset/x_y/split_5/b12/"
-    des_dir_path = constants.project_path + "/dataset/x_y/split_5/b13/"
+    # src_dir_path = constants.project_path + "/dataset/custom/split_online/"
+    # des_dir_path = constants.project_path+"/dataset/x_y/split_online/b11/"
+    des_dir_path = constants.project_path + "/dataset/x_y/split_5/b14/"
     cus_dir_path = constants.project_path+"/dataset/custom/"
     # 加载cvr特征
     cvr_handler = cvr.StatisticHandler(cus_dir_path)
     # cvr_handler.load_train_cvr()
-    cvr_handler.load_avg_cvr()
+    # cvr_handler.load_avg_cvr()
     cvr_handler.load_time_cvr()
 
     # # generate online test dataset
     # test_des_file = des_dir_path + "test_x_onehot.fm"
     # test_src_file = constants.project_path+"/dataset/custom/test_re-time.csv"
     # build_x_hepler(test_src_file, test_des_file,
-    #                ad_features, ad_dim,
-    #                user_features, user_dim,
+    #                ad_features, ad_dim, ad_map,
+    #                user_features, user_dim, user_map,
     #                pos_features, pos_dim,
     #                cvr_handler,
     #                data_type="test",
@@ -246,12 +251,12 @@ def build_x():
     #                ffm=False,
     #                has_cvr=True)
 
-    for i in range(1, 2):
-        test_des_file = des_dir_path + "test_x_onehot_" + str(i) + ".fm"
+    for i in range(0, 4):
+        test_des_file =des_dir_path + "test_x_onehot_" + str(i) + ".fm"
         test_src_file = src_dir_path + "test_x_" + str(i)
         build_x_hepler(test_src_file, test_des_file,
-                       ad_features, ad_dim,
-                       user_features, user_dim,
+                       ad_features, ad_dim, ad_map,
+                       user_features, user_dim, user_map,
                        pos_features, pos_dim,
                        cvr_handler,
                        data_type="train",
@@ -264,8 +269,8 @@ def build_x():
         # train_src_file = src_dir_path + "train_x_" + str(i)
         # train_des_file = des_dir_path + "train_x_onehot_" + str(i) + ".fm"
         build_x_hepler(train_src_file, train_des_file,
-                       ad_features, ad_dim,
-                       user_features, user_dim,
+                       ad_features, ad_dim, ad_map,
+                       user_features, user_dim, user_map,
                        pos_features, pos_dim,
                        cvr_handler,
                        data_type="train",

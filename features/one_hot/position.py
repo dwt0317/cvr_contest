@@ -14,11 +14,21 @@ def build_position(has_sparse=False):
     f = open(constants.project_path + "/dataset/raw/" + "position.csv")
     position = {}
     f.readline()
-    postion_df = pd.read_csv(constants.project_path + "/dataset/raw/position.csv")
-    positionID_set = list2dict(postion_df['positionID'].unique())
+    # postion_df = pd.read_csv(constants.project_path + "/dataset/raw/position.csv")
+    # positionID_set = list2dict(postion_df['positionID'].unique())
+
+    stat = pd.read_csv(constants.clean_train_path)
+    posdf = stat['positionID'].value_counts()
+    del stat
+    poslist = []
+    for i, row in posdf.iteritems():
+        if int(row) > 1000:
+            poslist.append(i)
+    positionID_set = utils.list2dict(poslist)
+
+    del poslist
     offset = 0
-    position_top = list2dict([299, 212, 444, 492, 106, 426, 158, 547, 84, 600, 689, 58, 201, 465, 126, 51, 603, 674,
-                              287, 64, 176, 455, 665, 521, 48, 17, 524, 458])
+
     for line in f:
         fields = line.strip().split(',')
         features = []
@@ -31,16 +41,15 @@ def build_position(has_sparse=False):
         features.append(offset + int(fields[2]))
         offset += 6
 
-        if has_sparse:
-            # positionID
-            if int(fields[0]) in positionID_set:
-                features.append(offset + positionID_set[int(fields[0])])
-            else:
-                features.append(offset)
-            offset += len(positionID_set) + 1
+        # if has_sparse:
+        # positionID
+        if int(fields[0]) in positionID_set:
+            features.append(offset + positionID_set[int(fields[0])])
+        else:
+            features.append(offset)
+        offset += len(positionID_set) + 1
 
         position[int(fields[0])] = features
-
 
     print "Buliding position finished."
     return position, offset

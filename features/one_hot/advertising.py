@@ -70,8 +70,8 @@ def build_ad_feature(has_sparse=True):
 
     ad_id_lens = [0, 0, 0, 0, 0]
     appID_set = list2dict(train_df['appID'].unique())
-    campID_set = list2dict(train_df['campaignID'].unique())
     adverID_set = list2dict(train_df['advertiserID'].unique())
+    campID_set = list2dict(train_df['campaignID'].unique())
     ad_id_lens[2] = len(campID_set) + 1
     ad_id_lens[3] = len(adverID_set) + 1
     ad_id_lens[4] = len(appID_set) + 1
@@ -82,7 +82,7 @@ def build_ad_feature(has_sparse=True):
         ad_id_lens = [len(creativeID_set) + 1, len(adID_set) + 1, len(campID_set) + 1, len(adverID_set) + 1,
                       len(appID_set) + 1]
     print "Building ID set finished."
-
+    del train_df
     # read APP category
     category_dict = {}
     with open(constants.project_path + "/dataset/raw/" + "app_categories.csv") as cate_f:
@@ -90,9 +90,9 @@ def build_ad_feature(has_sparse=True):
         for line in cate_f:
             fields = line.strip().split(',')
             category_dict[int(fields[0])] = int(fields[1])
-    # category = list2dict(list(set(category_dict.values())))
-    print "Building category set finished."
 
+    print "Building category set finished."
+    ad_map = {}
     # read feature file
     f = open(constants.project_path + "/dataset/raw/" + "ad.csv")
     ad_feature = {}
@@ -101,6 +101,7 @@ def build_ad_feature(has_sparse=True):
     for line in f:
         line_feature = []
         fields = line.strip().split(',')
+        line_map = fields[1:]
         offset = 0
         if has_sparse:
             if int(fields[0]) in creativeID_set:
@@ -148,16 +149,17 @@ def build_ad_feature(has_sparse=True):
             app_cate_2 = app_cate_1 * 100
         line_feature.append(offset+app_cate_1)
         offset += 10
-
+        line_map.append(app_cate_1)
         if has_sparse:
             line_feature.append(offset+app_cate_2)
             offset += 1000
 
         ad_feature[int(fields[0])] = line_feature
+        ad_map[int(fields[0])] = line_map
 
     f.close()
     print "Building ad feature finished."
-    return ad_feature, offset
+    return ad_feature, ad_map, offset
 
 
 def build_ad_spec_feature(has_sparse=True):
@@ -219,7 +221,7 @@ def build_ad_spec_feature(has_sparse=True):
 
         # 下面的id特征非常稠密，不与一般id类特征一同处理
         if int(fields[3]) in adver_top:
-            line_feature.append(offset + adver_top[int(fields[3])])
+            line_feature.append(offset + adverID_set[int(fields[3])])
         else:
             line_feature.append(offset)
         offset += len(adver_top) + 1
@@ -252,8 +254,9 @@ def build_ad_spec_feature(has_sparse=True):
 
 
 if __name__ == '__main__':
+    pass
     # build_ad_train(constants.project_path + "/dataset/custom/train_ad_label.csv")
-    pos, lent = build_ad_feature(has_sparse=True)
-    print lent
-    for key in pos.keys()[:10]:
-        print pos[key]
+    # pos, lent = build_ad_feature(has_sparse=True)
+    # print lent
+    # for key in pos.keys()[:10]:
+    #     print pos[key]

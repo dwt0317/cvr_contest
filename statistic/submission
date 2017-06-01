@@ -14,3 +14,4 @@
 0.135674 lr boot has_30 120
 0.137384 lr all_data 120
 0.103254 gbdt all cvr 185 10
+.107753 gbdt combination g2 regu 0.002 min 2 140

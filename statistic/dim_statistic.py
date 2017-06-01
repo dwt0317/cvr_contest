@@ -74,6 +74,10 @@ def appID_cvr():
     appID_list = train_df['appID'].unique()
 
 
+def consecutive():
+    train_df = pd.read_csv(constants.raw_train_path)
+
+
 
 if __name__ == '__main__':
     position()

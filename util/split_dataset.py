@@ -110,43 +110,44 @@ def bootstrap_online_train(start_date, to_dir):
 
 # 按日期进行分割
 def split_by_date_online(left_bound, right_bound, to_dir):
-    total_df = pd.read_csv(constants.clean_train_path)
-    train_df = total_df[(total_df['clickTime'] >= left_bound*1440)
-                        & (total_df['clickTime'] < right_bound*1440)]
-    # test_df = total_df[(total_df['clickTime'] < right_bound*1440)]
-    train_df.to_csv(to_dir + "train_x.csv", index=False)
+    total_df = pd.read_csv(constants.raw_train_path)
+    train_df = total_df[(total_df['clickTime'] >= left_bound)
+                        & (total_df['clickTime'] < right_bound)]
+    # test_df = total_df[(total_df['clickTime'] > right_bound*1440)]
+    train_df.to_csv(to_dir + "train_second_week.csv", index=False)
     print train_df.shape
     # test_df.to_csv(to_dir + "test_x.csv", index=False)
     # print test_df.shape
 
 
 # 随机按量切分数据集
-def random_split_dataset(train_percent, valid_percent, to_path):
+def random_split_dataset(train_percent, to_path):
     total_df = pd.read_csv(constants.cus_train_path)
     print total_df.shape
     # total_df = abandon_data(total_df, abandon_list)
     # shuffle原数据集
-    # random_df = total_df.sample(frac=1).reset_index(drop=True)
+    random_df = total_df.sample(frac=1).reset_index(drop=True)
     # print random_df.shape
     # random_df = total_df
-    n = len(total_df)
-    train_bound = int(n * train_percent)
-    train_df = total_df.ix[:train_bound, :]
-    train_df.to_csv(path_or_buf=to_path+"train_split_2.csv", index=False)
-    print train_df.shape
-    del train_df
+    n = len(random_df)
+    for i in xrange(5):
+        train_bound = int(n * train_percent)
+        train_df = random_df.ix[:train_bound, :]
+        train_df.to_csv(path_or_buf=to_path+"train_x_"+str(i)+".csv", index=False)
+        print train_df.shape
+        del train_df
 
-    valid_bound = train_bound + int(n * valid_percent)
-    print valid_bound
-    valid_df = total_df.ix[train_bound:valid_bound, :]
-    valid_df.to_csv(path_or_buf=to_path+"valid_split_2.csv", index=False)
-    print valid_df.shape
-    del valid_df
+        # valid_bound = train_bound + int(n * valid_percent)
+        # print valid_bound
+        # valid_df = random_df.ix[train_bound:valid_bound, :]
+        # valid_df.to_csv(path_or_buf=to_path+"valid_split_2.csv", index=False)
+        # print valid_df.shape
+        # del valid_df
 
-    test_df = total_df.ix[valid_bound:, :]
-    test_df.to_csv(path_or_buf=to_path+"test_split_2.csv", index=False)
-    print test_df.shape
-    del test_df
+        test_df = random_df.ix[train_bound:, :]
+        test_df.to_csv(path_or_buf=to_path+"test_x_"+str(i)+".csv", index=False)
+        print test_df.shape
+        del test_df
 
 
 # 在train文件中merge user信息
@@ -185,6 +186,13 @@ def merge_by_pos(train_file, to_path):
     print "Merging pos finished."
 
 
+def merge_by_category(train_file, to_path):
+    total_df = pd.read_csv(train_file)
+    cate_df = pd.read_csv(constants.project_path + "/dataset/raw/" + "app_categories.csv")
+    merge_df = pd.merge(left=total_df, right=cate_df, how='left', on=['appID'])
+    merge_df.to_csv(path_or_buf=to_path, index=False)
+
+
 def merge_with_all_data(to_dir):
     merge_by_ad(constants.clean_train_path, to_dir+"train_with_ad_info.csv")
     # merge_by_pos(constants.clean_train_path,
@@ -193,14 +201,15 @@ def merge_with_all_data(to_dir):
     #               to_dir+"train_with_user_info.csv")
 
 
+
 if __name__ == '__main__':
-    dir_path = constants.project_path + "/dataset/custom/split_online/b3"
+    dir_path = constants.project_path + "/dataset/custom/"
     # bootstrap_online_train(23, dir_path)
     # split_by_date_kfold(20, dir_path)
     # pass
     # split_dataset(0.8, 0.1, os.getcwd()+"/dataset/custom/split_3/")
     # abandon_thirty(constants.cus_train_path)
-    # split_by_date_online(21, 31, dir_path)
+    # split_by_date_online(240000, 310000, dir_path)
     # merge_with_all_data(constants.project_path + "/dataset/custom/")
     # conversion_gap()
     # convert_data_time(constants.raw_train_path, constants.project_path + "/dataset/custom/train_re-time.csv", 0)
@@ -209,5 +218,8 @@ if __name__ == '__main__':
     #                      constants.project_path + "/dataset/raw/" + "user_installedapps_with_category.csv")
     # pass
     # merge_by_ad(constants.clean_train_path, constants.project_path+"/dataset/custom/train_with_ad_pos_info.csv")
-    merge_by_user(constants.project_path+"/dataset/custom/train_with_ad_pos_info.csv",
-                  constants.project_path + "/dataset/custom/train_with_ad_pos_user.csv")
+    # merge_by_user(constants.project_path+"/dataset/custom/train_with_ad_pos_info.csv",
+    # #               constants.project_path + "/dataset/custom/train_with_ad_pos_user.csv")
+    # merge_by_category(constants.project_path+"/dataset/custom/train_with_ad_pos_user_re.csv",
+    #               constants.project_path + "/dataset/custom/train_with_ad_pos_user_re2.csv")
+    random_split_dataset(constants.project_path+"/dataset/custom/split_6/", 0.15)

@@ -21,7 +21,10 @@ betas = [2085, 7246, 2527, 90]
 connection_bias = [0.00383, 0.02917, 0.00823, 0.00705, 0.00648]
 
 not_smooth = False
-fine_feature = False
+fine_feature = True
+
+left_day = 17
+right_day = 24
 
 
 # 处理cvr的统一方法
@@ -42,23 +45,28 @@ def cvr_helper(total_df, header, dim, feature_map):
     min_cvr = 1.0
     for category in xrange(dim):
         feature_list = []
-        this_df = total_df[total_df[header] == category]
-        click_num = len(this_df)
-        conversion_num = len(this_df[(this_df.label == 1)])
-        if click_num == 0 and not_smooth:
+        this_df = total_df[(total_df[header] == category) & (total_df.clickTime >= left_day*10000)
+                           & (total_df.clickTime < right_day*10000)]
+        click = len(this_df)
+        cv = len(this_df[(this_df.label == 1)])
+        if click == 0 and not_smooth:
             conversion_rate = 0
         else:
-            conversion_rate = round(float(conversion_num + alpha) / float(click_num + alpha + beta), 5)
-        # max_click = max(max_click, click_num)
-        # min_click = min(min_click, click_num)
-        max_cv = max(max_cv, conversion_num)
-        min_cv = min(min_cv, conversion_num)
+            conversion_rate = round(float(cv + alpha) / float(click + alpha + beta), 5)
+        # max_click = max(max_click, click)
+        # min_click = min(min_click, click)
+        max_cv = max(max_cv, cv)
+        min_cv = min(min_cv, cv)
         max_cvr = max(conversion_rate, max_cvr)
         min_cvr = min(conversion_rate, min_cvr)
+        if cv != 0:
+            cv = math.log(cv, 2)
+        if click != 0:
+            click = math.log10(click)
+
+        feature_list.append(click)
+        feature_list.append(cv)
         feature_list.append(conversion_rate)
-        # feature_list.append(int(click_num))
-        if fine_feature:
-            feature_list.append(int(conversion_num))
 
         feature.append(feature_list)
     # 归一化
@@ -82,6 +90,9 @@ def id_cvr_helper(raw_file, header, id_index):
     # 采用按行读取的方式，统计各个id的点击和转化
     for line in stat_file:
         row = line.strip().split(',')
+        day = int(row[1])
+        if day < left_day * 10000 or day > right_day * 10000:
+            continue
         id = int(row[id_index])
         click_set[id] = 1 + click_set.setdefault(id, 0)
         if int(row[0]) == 1:
@@ -97,7 +108,11 @@ def id_cvr_helper(raw_file, header, id_index):
             cvr = 0
         else:
             cvr = (cv + alpha) / (click + alpha + beta)
-        id_cvr[id] = round(cvr, 5)
+        if cv != 0:
+            cv = math.log(cv, 2)
+        if click != 0:
+            click = math.log10(click)
+        id_cvr[id] = [click, cv, round(cvr, 5)]
     print "Building " + header + " cvr finished."
     return id_cvr
 
@@ -124,7 +139,7 @@ def user_profile_cvr(file_path):
 
 # {userID1:[cvr1, cvr2,..], userID2:[cvr1, cvr2,..], ...}
 def build_user_cvr(train_dir):
-    # userID_feature = id_cvr_helper(constants.project_path+"/dataset/raw/user.csv", 'userID', 4)
+    userID_feature = id_cvr_helper(constants.project_path+"/dataset/raw/user.csv", 'userID', 4)
     user_pro_feature = user_profile_cvr(train_dir+"train_with_user_info.csv")
     user_cvr_features = {}
     user_file = open(constants.project_path + "/dataset/raw/user.csv", 'r')
@@ -132,10 +147,10 @@ def build_user_cvr(train_dir):
     for line in user_file:
         row = line.strip().split(',')
         # if fine_feature:
-        #     feature_list = [userID_feature[int(row[0])]]
-        #     feature_list.extend(user_pro_feature['gender'][int(row[2])])
+        feature_list = copy.copy(userID_feature[int(row[0])])
+        feature_list.extend(user_pro_feature['gender'][int(row[2])])
         # else:
-        feature_list = copy.copy(user_pro_feature['gender'][int(row[2])])
+        # feature_list = copy.copy(user_pro_feature['gender'][int(row[2])])
         feature_list.extend(user_pro_feature['education'][int(row[3])])
         feature_list.extend(user_pro_feature['marriageStatus'][int(row[4])])
         feature_list.extend(user_pro_feature['haveBaby'][int(row[5])])
@@ -163,7 +178,7 @@ def pos_info_cvr(pos_info_file):
 
 # 按positionID处理cvr数据
 def build_pos_cvr(train_dir):
-    # positionID_feature = id_cvr_helper(constants.project_path + "/dataset/raw/position.csv", 'positionID', 5)
+    positionID_feature = id_cvr_helper(constants.project_path + "/dataset/raw/position.csv", 'positionID', 5)
     pos_info_feature = pos_info_cvr(train_dir+"train_with_pos_info.csv")
     pos_file = open(constants.project_path + "/dataset/raw/position.csv", 'r')
     pos_file.readline()
@@ -172,10 +187,10 @@ def build_pos_cvr(train_dir):
     for line in pos_file:
         row = line.strip().split(',')
         # if fine_feature:
-        #     feature_list = [positionID_feature[int(row[0])]]
-        #     feature_list.extend(pos_info_feature['sitesetID'][int(row[1])])
+        feature_list = copy.copy(positionID_feature[int(row[0])])
+        feature_list.extend(pos_info_feature['sitesetID'][int(row[1])])
         # else:
-        feature_list = copy.copy(pos_info_feature['sitesetID'][int(row[1])])
+        # feature_list = copy.copy(pos_info_feature['sitesetID'][int(row[1])])
 
         feature_list.extend(pos_info_feature['positionType'][int(row[2])])
         pos_cvr_features[int(row[0])] = feature_list
@@ -189,7 +204,6 @@ def build_pos_cvr(train_dir):
 
 
 def build_ad_cvr(train_dir):
-    # 暂只保留3个维度的数据
     '''
     :type train_dir: string train_with_ad.csv所在文件夹
     :rtype: dict{creativeID:[ad_cl,ad_cv,ad_cvr,
@@ -212,12 +226,15 @@ def build_ad_cvr(train_dir):
     creativeID_adFeature_map = {}
     ad_file.readline()
     for line in ad_file:
-
         # alpha = alphas[connectionType]
         # beta = betas[connectionType]
+
         row = line.strip().split(',')
+        day = int(row[1])
+        if day < left_day * 10000 or day > right_day * 100000:
+            continue
         connectionType = int(row[6])
-        # creativeID_key = int(row[3])
+        creativeID_key = int(row[3])
         adID_key = int(row[8])
         campaignID_key = int(row[9])
         advertiserID_key = int(row[10])
@@ -225,19 +242,19 @@ def build_ad_cvr(train_dir):
         appPlatform_key = int(row[12])
 
         # 更新creativeID的数据
-        # if creativeID_key not in creative:
-        #     creative[creativeID_key] = [0, 0, 0]
-        # if row[1] == '1':
-        #     creative[creativeID_key][0] += 1
-        #     creative[creativeID_key][1] += 1
-        # else:
-        #     creative[creativeID_key][0] += 1
-        #
-        # if int(creative[creativeID_key][0]) == 0 and not_smooth:
-        #     creative[creativeID_key][2] = 0
-        # else:
-        #     creative[creativeID_key][2] = round((float(creative[creativeID_key][1]) + alpha) /
-        #                                   (float(creative[creativeID_key][0]) + beta + alpha), 5)
+        if creativeID_key not in creative:
+            creative[creativeID_key] = [0, 0, 0]
+        if row[1] == '1':
+            creative[creativeID_key][0] += 1
+            creative[creativeID_key][1] += 1
+        else:
+            creative[creativeID_key][0] += 1
+
+        if int(creative[creativeID_key][0]) == 0 and not_smooth:
+            creative[creativeID_key][2] = 0
+        else:
+            creative[creativeID_key][2] = round((float(creative[creativeID_key][1]) + alpha) /
+                                          (float(creative[creativeID_key][0]) + beta + alpha), 5)
 
         # 更新adID的数据
         if adID_key not in ad:
@@ -269,25 +286,23 @@ def build_ad_cvr(train_dir):
             advertiser[advertiserID_key][0] += 1
         advertiser[advertiserID_key][3] += connection_bias[connectionType]
 
-        # no use
-        if fine_feature:
         # 更新appID的数据
-            if appID_key not in app:
-                app[appID_key] = [0, 0, 0]
-            if row[1] == '1':
-                app[appID_key][0] += 1
-                app[appID_key][1] += 1
-            else:
-                app[appID_key][0] += 1
+        if appID_key not in app:
+            app[appID_key] = [0, 0, 0]
+        if row[1] == '1':
+            app[appID_key][0] += 1
+            app[appID_key][1] += 1
+        else:
+            app[appID_key][0] += 1
 
-            # 更新appPlatform的数据
-            if appPlatform_key not in appPlatform:
-                appPlatform[appPlatform_key] = [0, 0, 0]
-            if row[1] == '1':
-                appPlatform[appPlatform_key][0] += 1
-                appPlatform[appPlatform_key][1] += 1
-            else:
-                appPlatform[appPlatform_key][0] += 1
+        # 更新appPlatform的数据
+        if appPlatform_key not in appPlatform:
+            appPlatform[appPlatform_key] = [0, 0, 0]
+        if row[1] == '1':
+            appPlatform[appPlatform_key][0] += 1
+            appPlatform[appPlatform_key][1] += 1
+        else:
+            appPlatform[appPlatform_key][0] += 1
 
     for adID_key in ad.keys():
         if int(ad[adID_key][0]) == 0 and not_smooth:
@@ -327,11 +342,7 @@ def build_ad_cvr(train_dir):
             else:
                 app[appID_key][2] = round((float(app[appID_key][1]) + alpha) / (float(app[appID_key][0]) + beta + alpha), 5)
 
-
-
-    bound = 2
-    if fine_feature:
-        bound = 0
+    bound = 0
 
     # 获取最终的list
     ad_file = open(ad_file_path, 'r')
@@ -339,7 +350,7 @@ def build_ad_cvr(train_dir):
     for line in ad_file:
         row = line.strip().split(',')
         # 只取转化率特征
-        # creative_data = creative[int(row[3])][2:]
+        creative_data = creative[int(row[3])][bound:]
         adID_data = ad[int(row[8])][bound:]
         campaignID_data = campaign[int(row[9])][bound:]
         advertiserID_data = advertiser[int(row[10])][bound:]
@@ -348,7 +359,7 @@ def build_ad_cvr(train_dir):
         if fine_feature:
             appID_data = app[int(row[11])][bound:]
             appPlatform_data = appPlatform[int(row[12])][bound:]
-            creativeData += appID_data + appPlatform_data
+            creativeData += appID_data + appPlatform_data + creative_data
 
         creativeID_adFeature_map[int(row[3])] = creativeData
     print "Building ad cvr finished."

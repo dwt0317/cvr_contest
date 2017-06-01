@@ -52,14 +52,14 @@ def abandon_data(total_df, abandon_list):
     return total_df
 
 
-# 丢弃第30天最后3个小时的负样本, 使得改天的转化率=平均值
+# 丢弃第30天最后1个小时的负样本
 def abandon_thirty(cus_train_path):
     total_df = pd.read_csv(cus_train_path)
-    front = total_df[(total_df['clickTime'] < 30*1440)]
-    partial_thirty = total_df[(total_df['clickTime'] < (30+1)*1440-180)
-                              & (total_df['clickTime'] >= 30*1440)]
-    remain_positive = total_df[(total_df['clickTime'] >= (30+1)*1440-180) &
-                               (total_df['clickTime'] < (30 + 1) * 1440) &
+    front = total_df[(total_df['clickTime'] < 300000)]
+    partial_thirty = total_df[(total_df['clickTime'] < 302300)
+                              & (total_df['clickTime'] >= 300000)]
+    remain_positive = total_df[(total_df['clickTime'] >= 302300) &
+                               (total_df['clickTime'] < 310000) &
                                (total_df['label'] == 1)]
     clean_thrity = partial_thirty.append(remain_positive)
     print len(clean_thrity[clean_thrity['label'] == 1]) / float(len(clean_thrity))
@@ -122,15 +122,16 @@ def split_by_date_online(left_bound, right_bound, to_dir):
 
 # 随机按量切分数据集
 def random_split_dataset(train_percent, to_path):
-    total_df = pd.read_csv(constants.cus_train_path)
+    total_df = pd.read_csv(constants.clean_train_path)
     print total_df.shape
     # total_df = abandon_data(total_df, abandon_list)
     # shuffle原数据集
-    random_df = total_df.sample(frac=1).reset_index(drop=True)
-    # print random_df.shape
-    # random_df = total_df
-    n = len(random_df)
+
     for i in xrange(5):
+        random_df = total_df.sample(frac=1).reset_index(drop=True)
+        # print random_df.shape
+        # random_df = total_df
+        n = len(random_df)
         train_bound = int(n * train_percent)
         train_df = random_df.ix[:train_bound, :]
         train_df.to_csv(path_or_buf=to_path+"train_x_"+str(i)+".csv", index=False)
@@ -207,9 +208,8 @@ if __name__ == '__main__':
     # bootstrap_online_train(23, dir_path)
     # split_by_date_kfold(20, dir_path)
     # pass
-    # split_dataset(0.8, 0.1, os.getcwd()+"/dataset/custom/split_3/")
-    # abandon_thirty(constants.cus_train_path)
-    # split_by_date_online(240000, 310000, dir_path)
+    abandon_thirty(constants.raw_train_path)
+    split_by_date_online(240000, 310000, dir_path)
     # merge_with_all_data(constants.project_path + "/dataset/custom/")
     # conversion_gap()
     # convert_data_time(constants.raw_train_path, constants.project_path + "/dataset/custom/train_re-time.csv", 0)
@@ -217,9 +217,9 @@ if __name__ == '__main__':
     # install_merge_by_app(constants.project_path + "/dataset/raw/" + "user_installedapps.csv",
     #                      constants.project_path + "/dataset/raw/" + "user_installedapps_with_category.csv")
     # pass
-    # merge_by_ad(constants.clean_train_path, constants.project_path+"/dataset/custom/train_with_ad_pos_info.csv")
-    # merge_by_user(constants.project_path+"/dataset/custom/train_with_ad_pos_info.csv",
-    # #               constants.project_path + "/dataset/custom/train_with_ad_pos_user.csv")
+    merge_by_ad(constants.clean_train_path, constants.project_path+"/dataset/custom/train_with_ad_info.csv")
+    merge_by_user(constants.clean_train_path, constants.project_path + "/dataset/custom/train_with_user_info.csv")
+    merge_by_pos(constants.clean_train_path, constants.project_path + "/dataset/custom/train_with_pos_info.csv")
     # merge_by_category(constants.project_path+"/dataset/custom/train_with_ad_pos_user_re.csv",
     #               constants.project_path + "/dataset/custom/train_with_ad_pos_user_re2.csv")
-    random_split_dataset(constants.project_path+"/dataset/custom/split_6/", 0.15)
+    random_split_dataset(0.85, constants.project_path+"/dataset/custom/split_6/")

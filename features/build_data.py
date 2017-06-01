@@ -87,9 +87,9 @@ def build_x_hepler(from_path, to_path,
         userID = int(row[4])
         positionID = int(row[5])
         if data_type == 'train':
-            day = int((float(row[1]) / 1440.0))
+            day = int(row[1]) / 10000
         else:
-            day = int((float(row[2]) / 1440.0))
+            day = int(row[2]) / 10000
 
         # user feature
         user_f = user_features[userID]
@@ -116,11 +116,11 @@ def build_x_hepler(from_path, to_path,
                 offset = feed_cvr_feature(features, id_cvr, offset, field, ffm)
                 field += 1
 
-        # if has_cvr:
-        #     # user cvr feature
-        #     user_cvr = statistic_handler.get_user_cvr(data_type, userID)
-        #     offset = feed_cvr_feature(features, user_cvr, offset, field, ffm)
-        #     field += 1
+        if has_cvr:
+            # user cvr feature
+            user_cvr = statistic_handler.get_user_cvr(data_type, userID)
+            offset = feed_cvr_feature(features, user_cvr, offset, field, ffm)
+            field += 1
 
         # user actions
         user_actions_f = statistic_handler.get_user_action(userID, creativeID, day)
@@ -138,10 +138,10 @@ def build_x_hepler(from_path, to_path,
         offset += pos_dim
 
         # position cvr feature
-        # if has_cvr:
-        #     pos_cvr = statistic_handler.get_pos_cvr(data_type, int(row[5]))
-        #     offset = feed_cvr_feature(features, pos_cvr, offset, field, ffm)
-        #     field += 1
+        if has_cvr:
+            pos_cvr = statistic_handler.get_pos_cvr(data_type, int(row[5]))
+            offset = feed_cvr_feature(features, pos_cvr, offset, field, ffm)
+            field += 1
 
         # network feature connection * 5, tele-operator * 4
         connectionType = int(row[6])
@@ -163,12 +163,12 @@ def build_x_hepler(from_path, to_path,
         # field += 1
 
         # network cvr
-        # if has_cvr:
-        #     conn_cvr = statistic_handler.get_conn_cvr(int(row[6]), int(row[7]))
-        #     features[offset] = conn_cvr[0][0]
-        #     features[offset+1] = conn_cvr[1][0]
-        #     offset += 2
-        # field += 1
+        if has_cvr:
+            conn_cvr = statistic_handler.get_conn_cvr(int(row[6]), int(row[7]))
+            features[offset] = conn_cvr[0][0]
+            features[offset+1] = conn_cvr[1][0]
+            offset += 2
+        field += 1
 
         if has_gbdt:
             # GBDT feature
@@ -185,11 +185,11 @@ def build_x_hepler(from_path, to_path,
 
         # print "ad_f: ", offset
         # ad cvr feature
-        # if has_cvr:
-        #     ad_cvr = cvr_handler.get_ad_cvr(data_type, int(row[3]))
-        #     for i in xrange(len(ad_cvr)):
-        #         features[offset+i] = str(field) + "," + str(ad_cvr[i]) if ffm else ad_cvr[i]
-        #     offset += len(ad_cvr)
+        if has_cvr:
+            ad_cvr = statistic_handler.get_ad_cvr(data_type, int(row[3]))
+            for i in xrange(len(ad_cvr)):
+                features[offset+i] = str(field) + "," + str(ad_cvr[i]) if ffm else ad_cvr[i]
+            offset += len(ad_cvr)
         field += 1
 
         age, gender, education, marriageStatus, haveBaby, hometown, residence = user_map[userID]
@@ -216,26 +216,24 @@ def build_x_hepler(from_path, to_path,
     from_file.close()
     to_file.close()
 
-# gbdt特征保留全部cvr特征，不做归一化，用户已安装app数特征
-#
 
-
+# build x file
 def build_x():
     has_sparse = False
     ad_features, ad_map, ad_dim = af.build_ad_feature(has_sparse=has_sparse)
     user_features, user_map, user_dim = uf.build_user_profile(has_sparse=has_sparse)
     pos_features, pos_dim = pf.build_position(has_sparse=has_sparse)
 
-    src_dir_path = constants.project_path+"/dataset/custom/split_5/sample/"
-    # src_dir_path = constants.project_path + "/dataset/custom/split_5/"
+    # src_dir_path = constants.project_path+"/dataset/custom/split_6/sample/"
+    src_dir_path = constants.project_path + "/dataset/custom/split_6/"
     # src_dir_path = constants.project_path + "/dataset/custom/split_online/"
     # des_dir_path = constants.project_path+"/dataset/x_y/split_online/b11/"
-    des_dir_path = constants.project_path + "/dataset/x_y/split_5/b14/"
+    des_dir_path = constants.project_path + "/dataset/x_y/split_6/b1/"
     cus_dir_path = constants.project_path+"/dataset/custom/"
     # 加载cvr特征
     cvr_handler = cvr.StatisticHandler(cus_dir_path)
     # cvr_handler.load_train_cvr()
-    # cvr_handler.load_avg_cvr()
+    cvr_handler.load_avg_cvr(17, 24)
     cvr_handler.load_time_cvr()
 
     # # generate online test dataset
@@ -251,7 +249,7 @@ def build_x():
     #                ffm=False,
     #                has_cvr=True)
 
-    for i in range(0, 4):
+    for i in range(0, 1):
         test_des_file =des_dir_path + "test_x_onehot_" + str(i) + ".fm"
         test_src_file = src_dir_path + "test_x_" + str(i)
         build_x_hepler(test_src_file, test_des_file,
@@ -264,10 +262,10 @@ def build_x():
                        ffm=False,
                        has_cvr=True)
 
-        train_src_file = src_dir_path + "train_x_" + str(i) + '_sample'
-        train_des_file = des_dir_path + "train_x_onehot_" + str(i) + ".fms"
-        # train_src_file = src_dir_path + "train_x_" + str(i)
-        # train_des_file = des_dir_path + "train_x_onehot_" + str(i) + ".fm"
+        # train_src_file = src_dir_path + "train_x_" + str(i) + '_sample'
+        # train_des_file = des_dir_path + "train_x_onehot_" + str(i) + ".fms"
+        train_src_file = src_dir_path + "train_x_" + str(i)
+        train_des_file = des_dir_path + "train_x_onehot_" + str(i) + ".fm"
         build_x_hepler(train_src_file, train_des_file,
                        ad_features, ad_dim, ad_map,
                        user_features, user_dim, user_map,
@@ -280,6 +278,9 @@ def build_x():
 
 
 if __name__ == '__main__':
+    # cvr_handler = cvr.StatisticHandler(constants.project_path+"/dataset/custom/")
+    # cvr_handler.load_train_cvr()
+    # cvr_handler.load_avg_cvr(17, 24)
     build_x()
     # build_y(constants.local_train_path, constants.project_path + "/dataset/x_y/split_4/b1/train_y")
     # build_y(constants.local_valid_path, constants.project_path + "/dataset/x_y/split_4/b1/valid_y")

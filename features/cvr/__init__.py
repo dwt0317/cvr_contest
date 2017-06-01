@@ -45,11 +45,13 @@ class StatisticHandler:
         self._app_category_dict = build_app_category_dict(self._raw_path + "app_categories.csv")
 
     # 读取平均cvr特征
-    def load_avg_cvr(self):
+    def load_avg_cvr(self, left_day, right_day):
         import avg_cvr
+        avg_cvr.left_day = left_day
+        avg_cvr.right_day = right_day
         self._user_cvr_features = avg_cvr.build_user_cvr(self._dir_path)
         self._pos_cvr_features = avg_cvr.build_pos_cvr(self._dir_path)
-        # self._ad_cvr_features = avg_cvr.build_ad_cvr(self._dir_path)
+        self._ad_cvr_features = avg_cvr.build_ad_cvr(self._dir_path)
         # self._app_short_cvr_features = avg_cvr.build_short_cvr(self._dir_path)
         self._conn_cvr_features = avg_cvr.build_conn_cvr(self._dir_path)
         print "Loading average cvr finished."
@@ -59,7 +61,7 @@ class StatisticHandler:
         import time_cvr
         self._user_action_features = time_cvr.build_user_action()
         self._user_before_action_feature = time_cvr.build_user_before_action()
-        self.load_id_cvr()
+        # self.load_id_cvr()
         print "Loading time cvr finished."
 
     def load_id_cvr(self):

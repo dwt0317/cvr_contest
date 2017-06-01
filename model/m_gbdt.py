@@ -64,11 +64,11 @@ def train_model():
 
         prob_test = np.zeros(338489)
 
-        dir_path = constants.project_path + "/dataset/x_y/split_5/b14/"
+        dir_path = constants.project_path + "/dataset/x_y/split_6/b1/"
         # dir_path = constants.project_path + "/dataset/x_y/split_online/b10/"
-        for i in range(0, 4):
-            # train_x_file = dir_path + "train_x_onehot_" + str(i) + ".fm"
-            train_x_file = dir_path + "train_x_onehot_" + str(i) + ".fms"
+        for i in range(0, 1):
+            train_x_file = dir_path + "train_x_onehot_" + str(i) + ".fm"
+            # train_x_file = dir_path + "train_x_onehot_" + str(i) + ".fms"
             if online:
                 test_x_file = dir_path + "test_x_onehot.fm"
             else:

@@ -64,7 +64,7 @@ def group_user_installedapp():
 
 # 对样本进行负采样
 def negative_down_sampling(src_dir_path):
-    for i in range(0, 4):
+    for i in range(0, 5):
         train_src_file = src_dir_path + "train_x_" + str(i)
         train_df = pd.read_csv(train_src_file)
         negative_df = train_df[train_df.label == 0]
@@ -72,6 +72,7 @@ def negative_down_sampling(src_dir_path):
 
         n = len(train_df)
         k = len(indexes)
+        train_df.fillna(-1, inplace=True)
         print n, k
         random_list = []
         for m in xrange(int(n * 0.1)):
@@ -83,7 +84,7 @@ def negative_down_sampling(src_dir_path):
         random_list.sort()
         print random_list[:10]
 
-        train_np = train_df.as_matrix()
+        train_np = train_df.as_matrix().astype(int)
         print train_np[:10, :]
 
         sample_f = open(src_dir_path + 'sample/' + "train_x_" + str(i) + '_sample', 'w')
@@ -96,4 +97,4 @@ def negative_down_sampling(src_dir_path):
 
 
 if __name__ == '__main__':
-    negative_down_sampling(constants.project_path+"/dataset/custom/split_5/")
+    negative_down_sampling(constants.project_path+"/dataset/custom/split_6/")

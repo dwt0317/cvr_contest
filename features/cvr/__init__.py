@@ -198,6 +198,15 @@ class StatisticHandler:
         conn_cvr.append(self._conn_cvr_features['telecomsOperator'][telecomsOperator])
         return conn_cvr
 
+    # 获取时间差特征
+    def load_time_gap_feature(self, train_file, test_file, dir_path):
+        from features.cvr import time_gap
+        # time_gap.build_user_click_time_gap(train_file, test_file, dir_path+"feature/")
+        train_array, test_array = time_gap.load_user_click_time_gap(train_file, test_file, dir_path)
+        return train_array, test_array
+
+
+
     def __del__(self):
         if self._ad_cvr_fd is not None:
             self._pos_cvr_fd.close()

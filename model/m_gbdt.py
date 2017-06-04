@@ -14,7 +14,7 @@ import time
 import datetime
 from matplotlib import pylab as plt
 import operator
-
+import m_principle
 
 # 训练GBDT模型，并保存叶子结点特征
 def train_model():
@@ -48,24 +48,25 @@ def train_model():
 
         params = {"objective": 'binary:logistic',
                   "booster": "gbtree",
-                  'reg_alpha': 0.01,
+                  'reg_alpha': 0.001,
                   'eval_metric': 'logloss',
                   "eta": 0.1,
-                  "max_depth": 6,
+                  "max_depth": 7,
                   'silent': 0,
-                  'min_child_weight': 3,
+                  'min_child_weight': 2,
                   'subsample': 0.8,
                   'colsample_bytree': 0.8,
                   'nthread': 6,
-                  'gamma': 3,
-                  'scale_pos_weight': 0.1
+                  'gamma': 1,
+                  # 'scale_pos_weight': 0.1
                   }
         online = False
 
         prob_test = np.zeros(338489)
 
-        dir_path = constants.project_path + "/dataset/x_y/split_6/b1/"
-        # dir_path = constants.project_path + "/dataset/x_y/split_online/b10/"
+        dir_path = constants.project_path + "/dataset/x_y/split_6/b2/"
+        # raw_dir_path = constants.project_path + "/dataset/custom/split_6/sample/"
+        # dir_path = constants.project_path + "/dataset/x_y/split_online/b12/"
         for i in range(0, 1):
             train_x_file = dir_path + "train_x_onehot_" + str(i) + ".fm"
             # train_x_file = dir_path + "train_x_onehot_" + str(i) + ".fms"
@@ -87,17 +88,18 @@ def train_model():
             print "Training model..."
             xgb_model = xgb.train(params, train_set, rounds, watchlist, verbose_eval=True)
             pred = xgb_model.predict(xgb.DMatrix(test_x_file))
+
             p = pred
-            # ones = np.ones(len(p))
-            # p = p / (p + (ones - p) / 0.1)
 
             if online:
-                prob_test += pred
+                prob_test += p
                 print pd.DataFrame(prob_test).mean()
             # else:
             #     prob_test = pred
             #     print pd.DataFrame(prob_test).mean()
             if not online:
+                # ones = np.ones(len(p))
+                # p = p / (p + (ones - p) / 0.1)
                 auc_local = metrics.roc_auc_score(test_y, p)
                 logloss_local = metrics.log_loss(test_y, p)
                 print str(i) + ": " + str(auc_local) + " " + str(logloss_local)
@@ -105,16 +107,16 @@ def train_model():
                 auc += auc_local
 
         if online:
-            prob_test /= 10
-            with open(constants.project_path + "/out/gbdt_combination.out", 'w') as f:
+            prob_test /= 5
+            with open(constants.project_path + "/out/gbdt_new_split.out", 'w') as f:
                 np.savetxt(f, prob_test, fmt="%s")
         else:
             end = datetime.datetime.now()
             rcd = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) + '\n'
             rcd += "gbdt:" + '\n'
             # rcd += "score: " + str(score) + '\n'
-            rcd += "auc_test: " + str(float(auc/4)) + '\n'
-            rcd += "logloss: " + str(logloss/4) + '\n'
+            rcd += "auc_test: " + str(float(auc)) + '\n'
+            rcd += "logloss: " + str(logloss) + '\n'
             rcd += "time: " + str(end - begin) + '\n' + '\n'
 
             log_file = open(constants.result_path, "a")

@@ -22,7 +22,7 @@ def build_position(has_sparse=False):
     del stat
     poslist = []
     for i, row in posdf.iteritems():
-        if int(row) > 1000:
+        if int(row) > 2000:
             poslist.append(i)
     positionID_set = utils.list2dict(poslist)
 

@@ -26,6 +26,9 @@ fine_feature = True
 left_day = 17
 right_day = 24
 
+# left_day = 24
+# right_day = 31
+
 
 # 处理cvr的统一方法
 def cvr_helper(total_df, header, dim, feature_map):
@@ -109,9 +112,9 @@ def id_cvr_helper(raw_file, header, id_index):
         else:
             cvr = (cv + alpha) / (click + alpha + beta)
         if cv != 0:
-            cv = math.log(cv, 2)
+            cv = round(math.log(cv, 2), 5)
         if click != 0:
-            click = math.log10(click)
+            click = round(math.log10(click), 5)
         id_cvr[id] = [click, cv, round(cvr, 5)]
     print "Building " + header + " cvr finished."
     return id_cvr
@@ -203,6 +206,14 @@ def build_pos_cvr(train_dir):
 '''
 
 
+def calibrate(map, key):
+    if map[key][1] != 0:
+        map[key][1] = round(math.log(map[key][1], 2), 5)
+    if map[key][0] != 0:
+        map[key][0] = round(math.log10(map[key][0]), 5)
+    map[key][2] = round((float(map[key][1]) + alpha) / (float(map[key][0]) + beta + alpha), 5)
+
+
 def build_ad_cvr(train_dir):
     '''
     :type train_dir: string train_with_ad.csv所在文件夹
@@ -231,7 +242,7 @@ def build_ad_cvr(train_dir):
 
         row = line.strip().split(',')
         day = int(row[1])
-        if day < left_day * 10000 or day > right_day * 100000:
+        if day < left_day * 10000 or day > right_day * 10000:
             continue
         connectionType = int(row[6])
         creativeID_key = int(row[3])
@@ -288,12 +299,13 @@ def build_ad_cvr(train_dir):
 
         # 更新appID的数据
         if appID_key not in app:
-            app[appID_key] = [0, 0, 0]
+            app[appID_key] = [0, 0, 0, 0]
         if row[1] == '1':
             app[appID_key][0] += 1
             app[appID_key][1] += 1
         else:
             app[appID_key][0] += 1
+        app[appID_key][3] += connection_bias[connectionType]
 
         # 更新appPlatform的数据
         if appPlatform_key not in appPlatform:
@@ -305,61 +317,45 @@ def build_ad_cvr(train_dir):
             appPlatform[appPlatform_key][0] += 1
 
     for adID_key in ad.keys():
-        if int(ad[adID_key][0]) == 0 and not_smooth:
-            ad[adID_key][2] = 0
-        else:
-            ad[adID_key][2] = round((float(ad[adID_key][1])+alpha) / (float(ad[adID_key][0]) + beta + alpha), 5)
+        calibrate(ad, adID_key)
         # COEC
         ad[adID_key][3] = round((ad[adID_key][1]/ad[adID_key][3]), 5)
 
     for campaignID_key in campaign:
-        if float(campaign[campaignID_key][0]) == 0 and not_smooth:
-            campaign[campaignID_key][2] = 0
-        else:
-            campaign[campaignID_key][2] = round((float(campaign[campaignID_key][1]) + alpha) /
-                                                (float(campaign[campaignID_key][0]) + beta + alpha), 5)
+        calibrate(campaign, campaignID_key)
         campaign[campaignID_key][3] = round((campaign[campaignID_key][1] / campaign[campaignID_key][3]), 5)
 
     for advertiserID_key in advertiser:
-        if float(advertiser[advertiserID_key][0]) == 0 and not_smooth:
-            advertiser[advertiserID_key][2] = 0
-        else:
-            advertiser[advertiserID_key][2] = round((float(advertiser[advertiserID_key][1]) + alpha) / (float(
-                advertiser[advertiserID_key][0]) + beta + alpha), 5)
+        calibrate(advertiser, advertiserID_key)
         advertiser[advertiserID_key][3] = round((advertiser[advertiserID_key][1] / advertiser[advertiserID_key][3]), 5)
 
     for appPlatform_key in appPlatform:
-        if float(appPlatform[appPlatform_key][0]) == 0 and not_smooth:
-            appPlatform[appPlatform_key][2] = 0
-        else:
-            appPlatform[appPlatform_key][2] = round((float(appPlatform[appPlatform_key][1]) + alpha) / (float(
-                appPlatform[appPlatform_key][0]) + beta + alpha), 5)
+        calibrate(appPlatform, appPlatform_key)
 
-    if fine_feature:
-        for appID_key in app:
-            if float(app[appID_key][0]) == 0 and not_smooth:
-                app[appID_key][2] = 0
-            else:
-                app[appID_key][2] = round((float(app[appID_key][1]) + alpha) / (float(app[appID_key][0]) + beta + alpha), 5)
+    # if fine_feature:
+    for appID_key in app:
+        calibrate(app, appID_key)
+        app[appID_key][3] = round((app[appID_key][1] / app[appID_key][3]), 5)
 
-    bound = 0
+    bound = 1
 
     # 获取最终的list
     ad_file = open(ad_file_path, 'r')
     ad_file.readline()
     for line in ad_file:
         row = line.strip().split(',')
-        # 只取转化率特征
+        day = int(row[1])
+        if day < left_day * 10000 or day > right_day * 10000:
+            continue
         creative_data = creative[int(row[3])][bound:]
         adID_data = ad[int(row[8])][bound:]
         campaignID_data = campaign[int(row[9])][bound:]
         advertiserID_data = advertiser[int(row[10])][bound:]
         creativeData = adID_data + campaignID_data + advertiserID_data
 
-        if fine_feature:
-            appID_data = app[int(row[11])][bound:]
-            appPlatform_data = appPlatform[int(row[12])][bound:]
-            creativeData += appID_data + appPlatform_data + creative_data
+        appID_data = app[int(row[11])][bound:]
+        appPlatform_data = appPlatform[int(row[12])][bound:]
+        creativeData += appID_data + appPlatform_data + creative_data
 
         creativeID_adFeature_map[int(row[3])] = creativeData
     print "Building ad cvr finished."
@@ -459,7 +455,12 @@ def build_conn_cvr(train_dir):
 
 
 if __name__ == "__main__":
-    pos_info_cvr(constants.project_path+"/dataset/custom/train_with_pos_info.csv")
+    from features import cvr
+    cvr_handler = cvr.StatisticHandler(constants.project_path+"/dataset/custom/")
+    # cvr_handler.load_train_cvr()
+    cvr_handler.load_avg_cvr(24, 31)
+    # build_ad_cvr(constants.project_path+"/dataset/custom/")
+    # pos_info_cvr(constants.project_path+"/dataset/custom/train_with_pos_info.csv")
     # userID_feature = id_cvr_helper(constants.project_path + "/dataset/raw/user.csv", 'userID')
     # from features.one_hot.user_profile import user_app_feature
     # user_app_cvr = user_app_feature()[0]

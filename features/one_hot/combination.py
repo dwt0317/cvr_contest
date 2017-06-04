@@ -1,7 +1,6 @@
 # -*- coding:utf-8 -*-
 
 
-# 生成统计类特征
 def build_high_combination(connectionType,  appPlatform, appCategory, sitesetID,
                       positionType, gender, education,
                       marriageStatus, haveBaby, age, hometown, residence):
@@ -49,6 +48,7 @@ def build_high_combination(connectionType,  appPlatform, appCategory, sitesetID,
             features[idx] = 1
         idx += 1
     return features
+
 
 def build_low_combination(connectionType, appPlatform, appCategory, sitesetID,
                       positionType, gender, education,

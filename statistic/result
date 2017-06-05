@@ -679,3 +679,59 @@ auc_test: 0.790840859081
 logloss: 0.10024371257
 time: 0:03:25.929000
 
+gamma 1 depth 7
+2017-06-04 16:27:54
+gbdt:
+auc_test: 0.787925183761
+logloss: 0.101998260815
+time: 0:00:36.613000
+
+child 1 depth 8
+2017-06-04 16:42:24
+gbdt:
+auc_test: 0.788577496952
+logloss: 0.101949999525
+time: 0:00:37.411000
+
+child 1 depth 8
+2017-06-04 17:20:25
+gbdt:
+auc_test: 0.78675
+logloss: 0.101629
+time: 0:02:32.983000
+
+child 2 depth 7
+2017-06-04 17:26:02
+gbdt:
+auc_test: 0.786131452193
+logloss: 0.10166905728
+time: 0:02:19.617000
+
+child 1 depth 8 iter 150
+2017-06-04 17:30:09
+gbdt:
+auc_test: 0.786943608457
+logloss: 0.101612073409
+time: 0:02:35.706000
+
+change id number
+2017-06-04 17:56:10
+gbdt:
+auc_test: 0.788704045391
+logloss: 0.101932389029
+time: 0:00:39.927000
+
++ time gap
+2017-06-04 22:33:49
+gbdt:
+auc_test: 0.792207160025
+logloss: 0.100057812017
+time: 0:04:52.790000
+
+sample time gap
+2017-06-05 15:55:30
+gbdt:
+auc_test: 0.790438991445
+logloss: 0.100443184899
+time: 0:00:40.707000
+

@@ -64,25 +64,46 @@ def build_ad_train(to_path):
         np.savetxt(f, a, delimiter=',', fmt="%s", header=file_header)
 
 
+# 根据频率筛选id
+def get_idset(header, stat, bound):
+    df = stat[header].value_counts()
+    idlist = []
+    for i, row in df.iteritems():
+        if int(row) > bound:
+            idlist.append(i)
+    return list2dict(idlist)
+
+
 # 生成广告特征 return {creativeID:(adID,campaignID,advertiserID), appID,appPlatform,appCategory}
 def build_ad_feature(has_sparse=True):
-    train_df = pd.read_csv(constants.project_path + "/dataset/raw/" + "ad.csv")
+    ad_info_df = pd.read_csv(constants.project_path + "/dataset/raw/" + "ad.csv")
+    stat = pd.read_csv(constants.project_path+'/dataset/custom/train_with_ad_info.csv')
 
     ad_id_lens = [0, 0, 0, 0, 0]
-    appID_set = list2dict(train_df['appID'].unique())
-    adverID_set = list2dict(train_df['advertiserID'].unique())
-    campID_set = list2dict(train_df['campaignID'].unique())
+    appID_set = list2dict(ad_info_df['appID'].unique())
+
+    campID_set = get_idset('campaignID', stat, 2000)
+    # adverID_set = list2dict(ad_info_df['advertiserID'].unique())
+    adverID_set = get_idset('advertiserID', stat, 2000)
+    adID_set = get_idset('adID', stat, 2000)
+    del stat
+
+    print "camp id:" + str(len(campID_set))
+    print "adver id:" + str(len(adverID_set))
+    print "adver id:" + str(len(adID_set))
+
+    ad_id_lens[1] = len(adID_set) + 1
     ad_id_lens[2] = len(campID_set) + 1
     ad_id_lens[3] = len(adverID_set) + 1
     ad_id_lens[4] = len(appID_set) + 1
     if has_sparse:
         # 将list转为dict{id:index}
-        creativeID_set = list2dict(train_df['creativeID'].unique())
-        adID_set = list2dict(train_df['adID'].unique())
+        creativeID_set = list2dict(ad_info_df['creativeID'].unique())
+        adID_set = list2dict(ad_info_df['adID'].unique())
         ad_id_lens = [len(creativeID_set) + 1, len(adID_set) + 1, len(campID_set) + 1, len(adverID_set) + 1,
                       len(appID_set) + 1]
     print "Building ID set finished."
-    del train_df
+    del ad_info_df
     # read APP category
     category_dict = {}
     with open(constants.project_path + "/dataset/raw/" + "app_categories.csv") as cate_f:
@@ -110,11 +131,11 @@ def build_ad_feature(has_sparse=True):
                 line_feature.append(offset)
             offset += ad_id_lens[0]
 
-            if int(fields[1]) in adID_set:
-                line_feature.append(offset+adID_set[int(fields[1])])
-            else:
-                line_feature.append(offset)
-            offset += ad_id_lens[1]
+        if int(fields[1]) in adID_set:
+            line_feature.append(offset+adID_set[int(fields[1])])
+        else:
+            line_feature.append(offset)
+        offset += ad_id_lens[1]
 
         if int(fields[2]) in campID_set:
             line_feature.append(offset+campID_set[int(fields[2])])

@@ -63,11 +63,11 @@ def cvr_helper(total_df, header, dim, feature_map):
         max_cvr = max(conversion_rate, max_cvr)
         min_cvr = min(conversion_rate, min_cvr)
         if cv != 0:
-            cv = math.log(cv, 2)
+            cv = round(math.log(cv, 2), 5)
         if click != 0:
-            click = math.log10(click)
+            click = round(math.log10(click), 5)
 
-        feature_list.append(click)
+        # feature_list.append(click)
         feature_list.append(cv)
         feature_list.append(conversion_rate)
 
@@ -115,9 +115,43 @@ def id_cvr_helper(raw_file, header, id_index):
             cv = round(math.log(cv, 2), 5)
         if click != 0:
             click = round(math.log10(click), 5)
-        id_cvr[id] = [click, cv, round(cvr, 5)]
+        # id_cvr[id] = [click, cv, round(cvr, 5)]
+        id_cvr[id] = [cv, round(cvr, 5)]
     print "Building " + header + " cvr finished."
     return id_cvr
+
+
+def build_combination_cvr(train_dir):
+    ad_file_path = train_dir + "train_with_ad_info.csv"
+    total_df = pd.read_csv(ad_file_path)
+    partial_df = total_df[(total_df.clickTime >= left_day*10000) & (total_df.clickTime < right_day*10000)]
+    headers = ['appID', 'connectionType', 'campaignID', 'adID']
+    combine_dict = {}
+    for header in headers:
+        groups = partial_df.groupby([header, 'positionID'], as_index=False)
+        clicks = groups.size()
+        positive_df = partial_df[partial_df.label == 1]
+        cv_groups = positive_df.groupby([header, 'positionID'], as_index=False)
+        cvs = cv_groups.size()
+        combine_dict[header] = {}
+        for k in clicks.keys():
+            x = k[0]
+            y = k[1]
+            if x not in cvs or y not in cvs[x]:
+                cv = 0
+            else:
+                cv = cvs[x][y]
+            click = clicks[x][y]
+            cvr = round((cv + alpha) / (float(click) + alpha + beta), 5)
+            x = int(x)
+            y = int(y)
+            if x in combine_dict[header]:
+                combine_dict[header][x][y] = [cv, cvr]
+            else:
+                combine_dict[header][x] = {y: [cv, cvr]}
+    return combine_dict
+
+
 
 
 '''

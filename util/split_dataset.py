@@ -87,6 +87,7 @@ def split_by_date_kfold(start_date, to_dir):
 # bootstrap采样线上的train数据
 def bootstrap_online_train(start_date, to_dir):
     total_df = pd.read_csv(constants.clean_train_path)
+    total_df['instance'] = total_df.index
     partial_df = total_df[(total_df['clickTime'] >= start_date*10000)
                           & (total_df['clickTime'] < 310000)]
     partial_df.fillna(-1, inplace=True)
@@ -100,7 +101,7 @@ def bootstrap_online_train(start_date, to_dir):
         for j in xrange(n):
             sample_index.append(random.randint(0, n-1))
         sample_index.sort()
-        np.savetxt(to_dir + "/index/train_x_" + str(i)+'_idx', sample_index, fmt="%s")
+        # np.savetxt(to_dir + "/index/train_x_" + str(i)+'_idx', sample_index, fmt="%s")
         with open(train_file, 'w') as f:
             f.write(','.join(header))
             f.write('\n')
@@ -131,7 +132,7 @@ def random_split_dataset(train_percent, to_path):
 
     for i in xrange(5):
         random_df = total_df.sample(frac=1)
-        random_df['old_index'] = random_df.index
+        random_df['instance'] = random_df.index
         random_df.reset_index(drop=True, inplace=True)
         # print random_df.head()
         # print random_df.shape
@@ -140,8 +141,8 @@ def random_split_dataset(train_percent, to_path):
         print n
         train_bound = int(n * train_percent)
         train_df = random_df.ix[:train_bound, :]
-        index = np.asarray(train_df['old_index'].tolist())
-        np.savetxt(to_path + "train_x_" + str(i)+'_idx', index, fmt="%s")
+        # index = np.asarray(train_df['instance'].tolist())
+        # np.savetxt(to_path + "train_x_" + str(i)+'_idx', index, fmt="%s")
         train_df.reset_index(drop=True, inplace=True)
         train_df.to_csv(path_or_buf=to_path + "train_x_" + str(i), index=False)
         print train_df.shape
@@ -155,8 +156,8 @@ def random_split_dataset(train_percent, to_path):
         # del valid_df
 
         test_df = random_df.ix[train_bound:, :]
-        index = np.asarray(test_df['old_index'].tolist())
-        np.savetxt(to_path + "test_x_" + str(i)+'_idx', index, fmt="%s")
+        # index = np.asarray(test_df['old_index'].tolist())
+        # np.savetxt(to_path + "test_x_" + str(i)+'_idx', index, fmt="%s")
         test_df.reset_index(drop=True, inplace=True)
         test_df.to_csv(path_or_buf=to_path + "test_x_" + str(i), index=False)
         print test_df.shape
@@ -230,10 +231,10 @@ if __name__ == '__main__':
     # install_merge_by_app(constants.project_path + "/dataset/raw/" + "user_installedapps.csv",
     #                      constants.project_path + "/dataset/raw/" + "user_installedapps_with_category.csv")
     # pass
-    # merge_by_ad(constants.clean_train_path, constants.project_path+"/dataset/custom/train_with_ad_info.csv")
+    merge_by_ad(constants.clean_train_path, constants.project_path+"/dataset/custom/train_with_ad_info.csv")
     # merge_by_user(constants.clean_train_path, constants.project_path + "/dataset/custom/train_with_user_info.csv")
-    # merge_by_pos(constants.clean_train_path, constants.project_path + "/dataset/custom/train_with_pos_info.csv")
+    merge_by_pos(constants.project_path+"/dataset/custom/train_with_ad_info.csv", constants.project_path + "/dataset/custom/train_with_ad_pos_info.csv")
     # merge_by_category(constants.project_path+"/dataset/custom/train_with_ad_pos_user_re.csv",
     #               constants.project_path + "/dataset/custom/train_with_ad_pos_user_re2.csv")
     # random_split_dataset(0.85, constants.project_path+"/dataset/custom/split_6/")
-    bootstrap_online_train(24, dir_path+"split_online/")
+    # bootstrap_online_train(24, dir_path+"split_online/")

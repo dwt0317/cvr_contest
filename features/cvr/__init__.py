@@ -147,7 +147,7 @@ class StatisticHandler:
         # id_feature[2] = round(numerator / (max_cvr-min_cvr), 5)
         return id_feature[2:]
 
-    # 获取app短期表现
+    # 获取app短期表现(deprecated)
     def get_app_short_cvr(self, creativeID, day):
         appID = self._creative_app_dict[creativeID]['appID']
         return self._app_short_cvr_features[appID][day]
@@ -199,13 +199,10 @@ class StatisticHandler:
         return conn_cvr
 
     # 获取时间差特征
-    def load_time_gap_feature(self, train_file, test_file, dir_path):
+    def load_time_gap_feature(self, dir_path):
         from features.cvr import time_gap
         # time_gap.build_user_click_time_gap(train_file, test_file, dir_path+"feature/")
-        train_array, test_array = time_gap.load_user_click_time_gap(train_file, test_file, dir_path)
-        return train_array, test_array
-
-
+        return time_gap.load_user_click_time_gap(dir_path)
 
     def __del__(self):
         if self._ad_cvr_fd is not None:

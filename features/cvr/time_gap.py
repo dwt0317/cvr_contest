@@ -11,7 +11,7 @@ def compute_time_gap(time_lower, time_upper):
     + ((time_upper % 10000) / 100 - (time_lower % 10000) / 100) * 60 \
     + (time_upper % 100 - time_lower % 100)
 
-
+# not tested
 def build_user_click_time_gap(train_file, test_file, dir_path):
     train_data = pd.read_csv(train_file)
     test_data = pd.read_csv(test_file)
@@ -29,13 +29,17 @@ def build_user_click_time_gap(train_file, test_file, dir_path):
     print groupnum
     threshold = 60
     flag = 0
+    header = ['instance', 'clickTime', 'continue_first_click', 'continue_not_first_click', 'time_delta']
+    to_file = open(dir_path + 'train_test_time_delta_fea.csv', 'w')
+    to_file.write(",".join(header) + '\n')
+
     for i, group in groups:
+        continue_first_click_a = np.zeros(len(group)).astype(int)
+        continue_not_first_click_a = np.zeros(len(group)).astype(int)
+        time_delta_a = np.zeros(len(group)).astype(int)
+        clickTime_a = np.asarray(group['clickTime'].tolist())
         # 不是单次点击的情况
         if len(group) != 1:
-            continue_first_click_a = np.zeros(len(group)).astype(int)
-            continue_not_first_click_a = np.zeros(len(group)).astype(int)
-            time_delta_a = np.zeros(len(group)).astype(int)
-            clickTime_a = np.asarray(group['clickTime'].tolist())
             time_delta_a[0] = compute_time_gap(clickTime_a[0], clickTime_a[1])
             if time_delta_a[0] < threshold:
                 continue_first_click_a[0] = 1
@@ -53,45 +57,66 @@ def build_user_click_time_gap(train_file, test_file, dir_path):
                                         'continue_first_click': pd.Series(continue_first_click_a),
                                         'continue_not_first_click': pd.Series(continue_not_first_click_a),
                                         'time_delta': pd.Series(time_delta_a)}).set_index(group.index)
-            if flag == 0:
-                time_gap_df.to_csv(dir_path + 'train_test_time_delta_fea.csv')
-                flag += 1
-            else:
-                time_gap_df.to_csv(dir_path + 'train_test_time_delta_fea.csv', mode='a', header=False)
-                flag += 1
-            if flag % 10000 == 0:
-                print float(flag) / groupnum
-            # print train_fea
-    # print train_fea
+            values = time_gap_df.values
+            indexes = list(time_gap_df.index)
+            value2write = ""
+            for j in xrange(len(values)):
+                value2write += str(indexes[j]) + ',' + ",".join(str(v) for v in values[j]) + '\n'
+            to_file.write(value2write)
+        flag += 1
+        if flag % 10000 == 0:
+            print float(flag) / groupnum
+    to_file.close()
     train_test_fea = pd.read_csv(dir_path+'train_test_time_delta_fea.csv')
 
     train_fea = train_test_fea[train_test_fea['clickTime'] < 310000]
     test_fea = train_test_fea[train_test_fea['clickTime'] >= 310000]
-    train_fea.sort_index(inplace=True)
-    test_fea.sort_index(inplace=True)
+    train_fea.sort('instance', inplace=True)
+    test_fea.sort('instance', inplace=True)
     train_fea = train_fea[['continue_first_click', 'continue_not_first_click', 'time_delta']]
     test_fea = test_fea[['continue_first_click', 'continue_not_first_click', 'time_delta']]
     train_fea.to_csv(dir_path + 'train_time_delta_fea.csv', index=False)
     test_fea.to_csv(dir_path + 'predict_time_delta_fea.csv', index=False)
 
 
-def load_user_click_time_gap(train_file, test_file, dir_path):
-    train_test_fea = pd.read_csv(dir_path + 'train_time_dalta_fea.csv')
-    train_test_fea.columns = ['first_click', 'time_delta']
-    train_test_fea['instance'] = train_test_fea.index
+def split_train_test(dir_path):
+    train_test_fea = pd.read_csv(dir_path+'train_test_time_delta_fea.csv')
+    print train_test_fea.head()
+    train_fea = train_test_fea[train_test_fea['clickTime'] < 310000]
+    test_fea = train_test_fea[train_test_fea['clickTime'] >= 310000]
+    train_fea.sort('instance', inplace=True)
+    test_fea.sort('instance', inplace=True)
+    train_fea.to_csv(dir_path + 'train_time_delta_fea.csv', index=False)
+    test_fea.to_csv(dir_path + 'predict_time_delta_fea.csv', index=False)
 
-    index_file = dir_path + "index/" + train_file + '_idx'
-    idx_df = pd.read_csv(index_file, header=None)
-    idx_df.columns = ['instance']
-    train_df = pd.merge(left=idx_df, right=train_test_fea, how='left', on=['instance'])[['first_click', 'time_delta']]
 
-    index_file = dir_path + "index/" + test_file + '_idx'
-    idx_df = pd.read_csv(index_file, header=None)
-    idx_df.columns = ['instance']
-    test_df = pd.merge(left=idx_df, right=train_test_fea, how='left', on=['instance'])[['first_click', 'time_delta']]
-    print len(train_df), len(test_df)
-    return train_df.as_matrix(), test_df.as_matrix()
+# 读取user time gap feature
+def load_user_click_time_gap(dir_path):
+    import copy
+    header = ['instance', 'continue_first_click', 'continue_not_first_click', 'time_delta']
+    # train_test_fea = pd.read_csv(dir_path + 'train_test_time_delta_fea.csv')
 
+    # idx_dir = dir_path+'split_6/'
+    # index_file = idx_dir + "index/" + train_file + '_idx'
+    # idx_df = pd.read_csv(index_file, header=None)
+    # idx_df.columns = ['instance']
+    # train_df = pd.merge(left=idx_df, right=train_test_fea, on=['instance'])[header]
+    train_df = pd.read_csv(dir_path + 'train_time_delta_fea.csv')
+    train_values = np.asarray(train_df.values).astype(int)
+    train_dict = {}
+    for row in train_values:
+        train_dict[int(row[0])] = copy.copy(list(row[2:]))
+
+    # index_file = idx_dir + "index/" + test_file + '_idx'
+    # idx_df = pd.read_csv(index_file, header=None)
+    # idx_df.columns = ['instance']
+    # test_df = pd.merge(left=idx_df, right=train_test_fea, on=['instance'])[header]
+    predict_df = pd.read_csv(dir_path + 'predict_time_delta_fea.csv')
+    predict_values = np.asarray(predict_df.values).astype(int)
+    predict_dict = {}
+    for row in predict_values:
+        predict_dict[int(row[0])] = copy.copy(list(row[2:]))
+    return train_dict, predict_dict
 
 
 if __name__ == '__main__':
@@ -100,6 +125,7 @@ if __name__ == '__main__':
     test_file = "test_x_0"
 
     build_user_click_time_gap(constants.clean_train_path, constants.raw_test_path, dir_path)
+    # split_train_test(dir_path)
     # a, b = load_user_click_time_gap(train_file, test_file, dir_path)
     # print len(a), len(b)
     # print a[:5, :]

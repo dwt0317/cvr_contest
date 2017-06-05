@@ -26,7 +26,7 @@ def train_model():
     # test_y = np.loadtxt(test_y_file, dtype=int)
     # svmlight格式自带label
     # train_data = load_svmlight_file(train_x_file)
-    rounds = 140
+    rounds = 150
     grid = False
     # if grid:
     #     classifier = XGBClassifier(learning_rate=0.1, n_estimators=rounds, gamma=4, subsample=0.8, max_depth=8,
@@ -51,25 +51,25 @@ def train_model():
                   'reg_alpha': 0.001,
                   'eval_metric': 'logloss',
                   "eta": 0.1,
-                  "max_depth": 7,
+                  "max_depth": 8,
                   'silent': 0,
                   'min_child_weight': 2,
                   'subsample': 0.8,
                   'colsample_bytree': 0.8,
                   'nthread': 6,
                   'gamma': 1,
-                  # 'scale_pos_weight': 0.1
+                  'scale_pos_weight': 0.1
                   }
         online = False
 
         prob_test = np.zeros(338489)
 
-        dir_path = constants.project_path + "/dataset/x_y/split_6/b2/"
+        dir_path = constants.project_path + "/dataset/x_y/split_6/b3/"
         # raw_dir_path = constants.project_path + "/dataset/custom/split_6/sample/"
-        # dir_path = constants.project_path + "/dataset/x_y/split_online/b12/"
+        # dir_path = constants.project_path + "/dataset/x_y/split_online/b13/"
         for i in range(0, 1):
-            train_x_file = dir_path + "train_x_onehot_" + str(i) + ".fm"
-            # train_x_file = dir_path + "train_x_onehot_" + str(i) + ".fms"
+            # train_x_file = dir_path + "train_x_onehot_" + str(i) + ".fm"
+            train_x_file = dir_path + "train_x_onehot_" + str(i) + ".fms"
             if online:
                 test_x_file = dir_path + "test_x_onehot.fm"
             else:
@@ -108,7 +108,7 @@ def train_model():
 
         if online:
             prob_test /= 5
-            with open(constants.project_path + "/out/gbdt_new_split.out", 'w') as f:
+            with open(constants.project_path + "/out/gbdt_time_gap_p2.out", 'w') as f:
                 np.savetxt(f, prob_test, fmt="%s")
         else:
             end = datetime.datetime.now()

@@ -4,6 +4,7 @@ import pandas as pd
 from util import constants
 import cPickle as pickle
 import math
+import numpy as np
 import sys
 
 alpha = 130  # for smoothing
@@ -26,6 +27,11 @@ class StatisticHandler:
         self._creative_app_dict = {}
         self._app_short_cvr_features = {}
         self._conn_cvr_features = {}
+        self._pos_combine_cvr_dict = {}
+        self._conn_combine_cvr_dict = {}
+        self._app_combine_cvr_dict = {}
+        self._train_installed_set = {}
+        self._predict_installed_set = {}
 
         # for time
         self._user_action_features = {}
@@ -49,11 +55,14 @@ class StatisticHandler:
         import avg_cvr
         avg_cvr.left_day = left_day
         avg_cvr.right_day = right_day
+        # self.load_installed_app_feature()
         self._user_cvr_features = avg_cvr.build_user_cvr(self._dir_path)
         self._pos_cvr_features = avg_cvr.build_pos_cvr(self._dir_path)
         self._ad_cvr_features = avg_cvr.build_ad_cvr(self._dir_path)
         # self._app_short_cvr_features = avg_cvr.build_short_cvr(self._dir_path)
-        self._conn_cvr_features = avg_cvr.build_conn_cvr(self._dir_path)
+        # self._conn_cvr_features = avg_cvr.build_conn_cvr(self._dir_path)
+        self._pos_combine_cvr_dict = avg_cvr.build_pos_combine_cvr(self._dir_path)
+        self._app_combine_cvr_dict = avg_cvr.build_app_combine_cvr(self._dir_path)
         print "Loading average cvr finished."
 
     # 读取时序cvr特征
@@ -203,6 +212,38 @@ class StatisticHandler:
         from features.cvr import time_gap
         # time_gap.build_user_click_time_gap(train_file, test_file, dir_path+"feature/")
         return time_gap.load_user_click_time_gap(dir_path)
+
+    # 获取最后点击特征
+    def load_last_click_feature(self, dir_path):
+        from features.cvr import last_creative
+        return last_creative.load_user_last_click(dir_path)
+
+    # 获取pos组合点击率特征
+    def get_pos_combine_cvr_feature(self, header, id, positionID):
+        if id in self._pos_combine_cvr_dict[header]:
+            if positionID in self._pos_combine_cvr_dict[header][id]:
+                return self._pos_combine_cvr_dict[header][id][positionID]
+        return [0, round(float(alpha)/(alpha+beta), 5)]
+
+    # 获取app组合点击率特征
+    def get_app_combine_cvr_feature(self, header, attr, appID):
+        if attr in self._pos_combine_cvr_dict[header]:
+            if appID in self._pos_combine_cvr_dict[header][attr]:
+                return self._pos_combine_cvr_dict[header][attr][appID]
+        return [0, round(float(alpha)/(alpha+beta), 5)]
+
+
+    # 获取已安装app特征
+    def load_installed_app_feature(self):
+        self._train_installed_set = set(np.loadtxt(constants.custom_path+'/train_installed_index', dtype=int).tolist())
+        self._predict_installed_set = set(
+            np.loadtxt(constants.custom_path + '/predict_installed_index', dtype=int).tolist())
+
+    def is_installed(self, instanceID, data_type):
+        if data_type == 'train':
+            return instanceID in self._train_installed_set
+        else:
+            return instanceID in self._predict_installed_set
 
     def __del__(self):
         if self._ad_cvr_fd is not None:

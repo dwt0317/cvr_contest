@@ -18,7 +18,7 @@ def user_before_app_feature():
     return user_app_dict, max_app, min_app, median_app
 
 
-# age * 9, gender * 3, education * 8, marriage * 4, baby * 7, residence * 35,
+# age * 11, gender * 3, education * 8, marriage * 4, baby * 7, residence * 35,
 def build_user_profile(has_sparse=False):
     # make user raw data
     f = open(constants.project_path + "/dataset/raw/" + "user.csv")
@@ -53,12 +53,13 @@ def build_user_profile(has_sparse=False):
         if age != 0:
             for i in xrange(len(age_bucket)):
                 if age < age_bucket[i]:
-                    age = i
+                    age = i+1
+                    break
             if age > age_bucket[9]:
-                age = 10
+                age = 11
         features.append(age)
         or_features.append(age)
-        offset += 11
+        offset += 12
 
         # gender
         features.append(offset+int(fields[2]))

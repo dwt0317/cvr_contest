@@ -64,7 +64,7 @@ def train_model():
 
         prob_test = np.zeros(338489)
 
-        dir_path = constants.project_path + "/dataset/x_y/split_6/b3/"
+        dir_path = constants.project_path + "/dataset/x_y/split_6/b4/"
         # raw_dir_path = constants.project_path + "/dataset/custom/split_6/sample/"
         # dir_path = constants.project_path + "/dataset/x_y/split_online/b13/"
         for i in range(0, 1):

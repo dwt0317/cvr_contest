@@ -735,3 +735,108 @@ auc_test: 0.790438991445
 logloss: 0.100443184899
 time: 0:00:40.707000
 
+no all click
+2017-06-05 17:01:45
+gbdt:
+auc_test: 0.789782407779
+logloss: 0.100540269169
+time: 0:00:35.471000
+
++ ad click (no use)
+2017-06-05 17:17:17
+gbdt:
+auc_test: 0.790438991445
+logloss: 0.100443184899
+time: 0:00:41.996000
+
++ combination cvr
+2017-06-05 17:53:08
+gbdt:
+auc_test: 0.790670124085
+logloss: 0.1004077686
+time: 0:00:45.461000
+
++ remove some combination
+2017-06-05 18:00:32
+gbdt:
+auc_test: 0.791091605591
+logloss: 0.10037912476
+time: 0:00:45.138000
+
++ connection cvr
+2017-06-05 18:22:41
+gbdt:
+auc_test: 0.790510214539
+logloss: 0.10043305647
+time: 0:00:48.397000
+
+- connection cvr - some combination
+2017-06-05 19:27:37
+gbdt:
+auc_test: 0.790615676248
+logloss: 0.100428719785
+time: 0:00:45.573000
+
+recover some combination
+2017-06-05 19:35:53
+gbdt:
+auc_test: 0.790650954328
+logloss: 0.100411892351
+time: 0:00:48.063000
+
+recover more combination(stop here, no more change)
+2017-06-05 19:45:18
+gbdt:
+auc_test: 0.791091605591
+logloss: 0.10037912476
+time: 0:00:45.074000
+
++ advertiser
+2017-06-05 20:02:12
+gbdt:
+auc_test: 0.790597285816
+logloss: 0.100444461063
+time: 0:00:46.492000
+
+-advertiser -ad
+2017-06-05 20:13:37
+gbdt:
+auc_test: 0.790550650224
+logloss: 0.100439697356
+time: 0:00:45.033000
+
++creative-pos
+2017-06-05 20:44:01
+gbdt:
+auc_test: 0.791656117069
+logloss: 0.100303571002
+time: 0:00:46.909000
+
+-all campaign
+2017-06-05 20:52:33
+gbdt:
+auc_test: 0.791479162307
+logloss: 0.100322245668
+time: 0:00:47.331000
+
++ last click(removed)
+2017-06-05 23:28:27
+gbdt:
+auc_test: 0.791320760345
+logloss: 0.100330478351
+time: 0:00:47.299000
+
++ if installed
+2017-06-06 20:50:14
+gbdt:
+auc_test: 0.79132621148
+logloss: 0.100330281826
+time: 0:00:48.098000
+
+re age remove age combination
+2017-06-06 21:24:25
+gbdt:
+auc_test: 0.791186040636
+logloss: 0.10034404977
+time: 0:00:46.485000
+

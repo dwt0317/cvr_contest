@@ -165,6 +165,19 @@ def random_split_dataset(train_percent, to_path):
         del random_df
 
 
+# 重新映射age
+def map_age(age):
+    age = int(age)
+    age_bucket = [7, 12, 16, 21, 25, 32, 40, 48, 55, 65]
+    if age != 0:
+        for i in xrange(len(age_bucket)):
+            if age < age_bucket[i]:
+                return i+1
+        if age > age_bucket[9]:
+            return 11
+    return age
+
+
 # 在train文件中merge user信息
 def merge_by_user(train_file, to_path):
     total_df = pd.read_csv(train_file)
@@ -173,7 +186,7 @@ def merge_by_user(train_file, to_path):
 
     # pos_df = pd.read_csv(constants.project_path + "/dataset/raw/" + "position.csv")
     # merge_df = pd.merge(left=merge_df, right=pos_df, how='left', on=['positionID'])
-
+    merge_df['age'] = merge_df['age'].apply(lambda x: map_age(x))
     merge_df.to_csv(path_or_buf=to_path, index=False)
     print "Merging user finished."
 
@@ -231,9 +244,9 @@ if __name__ == '__main__':
     # install_merge_by_app(constants.project_path + "/dataset/raw/" + "user_installedapps.csv",
     #                      constants.project_path + "/dataset/raw/" + "user_installedapps_with_category.csv")
     # pass
-    merge_by_ad(constants.clean_train_path, constants.project_path+"/dataset/custom/train_with_ad_info.csv")
-    # merge_by_user(constants.clean_train_path, constants.project_path + "/dataset/custom/train_with_user_info.csv")
-    merge_by_pos(constants.project_path+"/dataset/custom/train_with_ad_info.csv", constants.project_path + "/dataset/custom/train_with_ad_pos_info.csv")
+    # merge_by_ad(constants.clean_train_path, constants.project_path+"/dataset/custom/train_with_ad_info.csv")
+    merge_by_user(constants.project_path+"/dataset/custom/train_with_ad_info.csv", constants.project_path + "/dataset/custom/train_with_ad_user_info.csv")
+    # merge_by_pos(constants.project_path+"/dataset/custom/train_with_ad_info.csv", constants.project_path + "/dataset/custom/train_with_ad_pos_info.csv")
     # merge_by_category(constants.project_path+"/dataset/custom/train_with_ad_pos_user_re.csv",
     #               constants.project_path + "/dataset/custom/train_with_ad_pos_user_re2.csv")
     # random_split_dataset(0.85, constants.project_path+"/dataset/custom/split_6/")

@@ -16,5 +16,11 @@
 0.103254 gbdt all cvr 185 10
 .107753 gbdt combination g2 regu 0.002 min 2 140
 
-p2 child 2, gamma 1 depth 8, r ound 150
+p2 child 2, gamma 1 depth 8, round 150
 0.100746
+
+child 1 round 160 sub 0.9 col 0.9
+0.10082
+
+round 170
+0.100513

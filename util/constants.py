@@ -1,6 +1,7 @@
 import os
 
 project_path = "E:/Exchange/tencent_ads/project"
+custom_path = project_path+'/dataset/custom'
 
 cus_train_path = project_path + "/dataset/custom/train_second_week.csv"
 clean_train_path = project_path + "/dataset/custom/train_clean.csv"

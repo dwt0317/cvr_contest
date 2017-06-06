@@ -11,6 +11,7 @@ def compute_time_gap(time_lower, time_upper):
     + ((time_upper % 10000) / 100 - (time_lower % 10000) / 100) * 60 \
     + (time_upper % 100 - time_lower % 100)
 
+
 # not tested
 def build_user_click_time_gap(train_file, test_file, dir_path):
     train_data = pd.read_csv(train_file)
@@ -67,16 +68,6 @@ def build_user_click_time_gap(train_file, test_file, dir_path):
         if flag % 10000 == 0:
             print float(flag) / groupnum
     to_file.close()
-    train_test_fea = pd.read_csv(dir_path+'train_test_time_delta_fea.csv')
-
-    train_fea = train_test_fea[train_test_fea['clickTime'] < 310000]
-    test_fea = train_test_fea[train_test_fea['clickTime'] >= 310000]
-    train_fea.sort('instance', inplace=True)
-    test_fea.sort('instance', inplace=True)
-    train_fea = train_fea[['continue_first_click', 'continue_not_first_click', 'time_delta']]
-    test_fea = test_fea[['continue_first_click', 'continue_not_first_click', 'time_delta']]
-    train_fea.to_csv(dir_path + 'train_time_delta_fea.csv', index=False)
-    test_fea.to_csv(dir_path + 'predict_time_delta_fea.csv', index=False)
 
 
 def split_train_test(dir_path):
@@ -96,21 +87,12 @@ def load_user_click_time_gap(dir_path):
     header = ['instance', 'continue_first_click', 'continue_not_first_click', 'time_delta']
     # train_test_fea = pd.read_csv(dir_path + 'train_test_time_delta_fea.csv')
 
-    # idx_dir = dir_path+'split_6/'
-    # index_file = idx_dir + "index/" + train_file + '_idx'
-    # idx_df = pd.read_csv(index_file, header=None)
-    # idx_df.columns = ['instance']
-    # train_df = pd.merge(left=idx_df, right=train_test_fea, on=['instance'])[header]
     train_df = pd.read_csv(dir_path + 'train_time_delta_fea.csv')
     train_values = np.asarray(train_df.values).astype(int)
     train_dict = {}
     for row in train_values:
         train_dict[int(row[0])] = copy.copy(list(row[2:]))
 
-    # index_file = idx_dir + "index/" + test_file + '_idx'
-    # idx_df = pd.read_csv(index_file, header=None)
-    # idx_df.columns = ['instance']
-    # test_df = pd.merge(left=idx_df, right=train_test_fea, on=['instance'])[header]
     predict_df = pd.read_csv(dir_path + 'predict_time_delta_fea.csv')
     predict_values = np.asarray(predict_df.values).astype(int)
     predict_dict = {}

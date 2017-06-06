@@ -5,16 +5,16 @@ def build_high_combination(connectionType,  appPlatform, appCategory, sitesetID,
                       positionType, gender, education,
                       marriageStatus, haveBaby, age, hometown, residence):
     idx = 0
-    features = [0] * 11
-    if connectionType == 1:
-        if positionType == 5:
-            features[idx] = 1
-        idx += 1
+    features = [0] * 9
+    # if connectionType == 1:
+    #     if positionType == 5:
+    #         features[idx] = 1
+    #     idx += 1
 
     if sitesetID == 1:
-        if positionType == 5:
-            features[idx] = 1
-        idx += 1
+        # if positionType == 5:
+        #     features[idx] = 1
+        # idx += 1
         if education == 2:
             features[idx] = 1
         idx += 1
@@ -54,14 +54,14 @@ def build_low_combination(connectionType, appPlatform, appCategory, sitesetID,
                       positionType, gender, education,
                       marriageStatus, haveBaby, age, hometown, residence):
     idx = 0
-    features = [0] * 13
+    features = [0] * 9
     if connectionType != 1:
-        if sitesetID == 0:
-            features[idx] = 1
-        idx += 1
-        if positionType in [1, 2, 3]:
-            features[idx] = 1
-        idx += 1
+        # if sitesetID == 0:
+        #     features[idx] = 1
+        # idx += 1
+        # if positionType in [1, 2, 3]:
+        #     features[idx] = 1
+        # idx += 1
         if haveBaby in [0, 1]:
             features[idx] = 1
         idx += 1

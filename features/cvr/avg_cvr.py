@@ -67,7 +67,7 @@ def cvr_helper(total_df, header, dim, feature_map):
         if click != 0:
             click = round(math.log10(click), 5)
 
-        # feature_list.append(click)
+        feature_list.append(click)
         feature_list.append(cv)
         feature_list.append(conversion_rate)
 
@@ -115,23 +115,17 @@ def id_cvr_helper(raw_file, header, id_index):
             cv = round(math.log(cv, 2), 5)
         if click != 0:
             click = round(math.log10(click), 5)
-        # id_cvr[id] = [click, cv, round(cvr, 5)]
-        id_cvr[id] = [cv, round(cvr, 5)]
+        id_cvr[id] = [click, cv, round(cvr, 5)]
+        # id_cvr[id] = [cv, round(cvr, 5)]
     print "Building " + header + " cvr finished."
     return id_cvr
 
 
-def build_combination_cvr(train_dir):
-    ad_file_path = train_dir + "train_with_ad_info.csv"
-    total_df = pd.read_csv(ad_file_path)
-    partial_df = total_df[(total_df.clickTime >= left_day*10000) & (total_df.clickTime < right_day*10000)]
-    headers = ['appID', 'connectionType', 'campaignID', 'adID']
-    combine_dict = {}
+def combine_cvr_helper(partial_df, positive_df, headers, another_header, combine_dict):
     for header in headers:
-        groups = partial_df.groupby([header, 'positionID'], as_index=False)
+        groups = partial_df.groupby([header, another_header], as_index=False)
         clicks = groups.size()
-        positive_df = partial_df[partial_df.label == 1]
-        cv_groups = positive_df.groupby([header, 'positionID'], as_index=False)
+        cv_groups = positive_df.groupby([header, another_header], as_index=False)
         cvs = cv_groups.size()
         combine_dict[header] = {}
         for k in clicks.keys():
@@ -140,7 +134,7 @@ def build_combination_cvr(train_dir):
             if x not in cvs or y not in cvs[x]:
                 cv = 0
             else:
-                cv = cvs[x][y]
+                cv = round(math.log(cvs[x][y], 2), 5)
             click = clicks[x][y]
             cvr = round((cv + alpha) / (float(click) + alpha + beta), 5)
             x = int(x)
@@ -149,8 +143,46 @@ def build_combination_cvr(train_dir):
                 combine_dict[header][x][y] = [cv, cvr]
             else:
                 combine_dict[header][x] = {y: [cv, cvr]}
-    return combine_dict
 
+
+# 与positionID相关的组合cvr特征
+def build_pos_combine_cvr(train_dir):
+    ad_file_path = train_dir + "train_with_ad_info.csv"
+    total_df = pd.read_csv(ad_file_path)
+    partial_df = total_df[(total_df.clickTime >= left_day*10000) & (total_df.clickTime < right_day*10000)]
+
+    positive_df = partial_df[partial_df.label == 1]
+    pos_combine_dict = {}
+    headers = ['appID', 'connectionType', 'campaignID', 'adID', 'creativeID']
+    combine_cvr_helper(partial_df, positive_df, headers, 'positionID', pos_combine_dict)
+    # headers = ['appID', 'campaignID', 'adID']
+    # conn_combine_dict = {}
+    # combine_cvr_helper(partial_df, positive_df, headers, 'connectionType', conn_combine_dict)
+
+    del total_df, partial_df
+    print "Building combination cvr dict finished."
+    return pos_combine_dict
+
+
+# 与connectionType
+def build_conn_combine_cvr(train_dir):
+    pass
+
+
+# 与appID相关
+def build_app_combine_cvr(train_dir):
+    ad_file_path = train_dir + "train_with_ad_user_info.csv"
+    total_df = pd.read_csv(ad_file_path)
+    partial_df = total_df[(total_df.clickTime >= left_day*10000) & (total_df.clickTime < right_day*10000)]
+
+    positive_df = partial_df[partial_df.label == 1]
+    app_combine_dict = {}
+    headers = ['age', 'gender', 'education']
+    combine_cvr_helper(partial_df, positive_df, headers, 'appID', app_combine_dict)
+
+    del total_df, partial_df
+    print "Building combination cvr dict finished."
+    return app_combine_dict
 
 
 
@@ -192,6 +224,7 @@ def build_user_cvr(train_dir):
         feature_list.extend(user_pro_feature['marriageStatus'][int(row[4])])
         feature_list.extend(user_pro_feature['haveBaby'][int(row[5])])
         user_cvr_features[int(row[0])] = feature_list
+    del userID_feature, user_pro_feature
     print "Building user cvr feature finished."
     return user_cvr_features
 
@@ -232,6 +265,7 @@ def build_pos_cvr(train_dir):
         feature_list.extend(pos_info_feature['positionType'][int(row[2])])
         pos_cvr_features[int(row[0])] = feature_list
         # print pos_cvr_features[int(row[0])]
+    del positionID_feature, pos_info_feature
     return pos_cvr_features
 
 
@@ -393,6 +427,7 @@ def build_ad_cvr(train_dir):
 
         creativeID_adFeature_map[int(row[3])] = creativeData
     print "Building ad cvr finished."
+    del ad, campaign, advertiser, app, appPlatform, creative
     return creativeID_adFeature_map
 
 
@@ -491,8 +526,11 @@ def build_conn_cvr(train_dir):
 if __name__ == "__main__":
     from features import cvr
     cvr_handler = cvr.StatisticHandler(constants.project_path+"/dataset/custom/")
+    a = build_pos_combine_cvr(constants.project_path + "/dataset/custom/")
+    for k in a['appID'].keys()[:5]:
+        print a['appID'][k]
     # cvr_handler.load_train_cvr()
-    cvr_handler.load_avg_cvr(24, 31)
+    # cvr_handler.load_avg_cvr(24, 31)
     # build_ad_cvr(constants.project_path+"/dataset/custom/")
     # pos_info_cvr(constants.project_path+"/dataset/custom/train_with_pos_info.csv")
     # userID_feature = id_cvr_helper(constants.project_path + "/dataset/raw/user.csv", 'userID')

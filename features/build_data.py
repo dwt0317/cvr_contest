@@ -100,34 +100,44 @@ def build_x_hepler(from_path, to_path,
         offset = feed_cvr_feature(features, time_gap, offset, field, ffm)
         field += 1
 
+        # instance = int(row[8]) if data_type == "train" else row_num+1
+        # if statistic_handler.is_installed(instance, data_type):
+        #     features[offset] = 1
+        # else:
+        #     features[offset] = 0
+        # offset += 1
+
         # user feature
         user_f = user_features[userID]
         for i in xrange(len(user_f)):
             field += 1
             features[offset+user_f[i]] = str(field) + "," + str(1) if ffm else 1
         offset += user_dim
-
+        del user_f
 
         if has_cvr:
             # user cvr feature
             user_cvr = statistic_handler.get_user_cvr(data_type, userID)
             offset = feed_cvr_feature(features, user_cvr, offset, field, ffm)
             field += 1
+            del user_cvr
 
         # user actions
         user_actions_f = statistic_handler.get_user_action(userID, creativeID, day)
         offset = feed_cvr_feature(features, user_actions_f, offset, field, ffm)
-
+        del user_actions_f
 
         user_before_actions_f = statistic_handler.get_user_before_action(userID, creativeID)
         offset = feed_cvr_feature(features, user_before_actions_f, offset, field, ffm)
         field += 1
+        del user_before_actions_f
 
         # position feature
         pos_f = pos_features[positionID]
         for i in pos_f:
             features[offset+i] = str(field) + "," + str(1) if ffm else 1
         offset += pos_dim
+        del pos_f
 
         # position cvr feature
         if has_cvr:
@@ -146,7 +156,6 @@ def build_x_hepler(from_path, to_path,
         # connection, sitesetID (5*3), connection, positionType (5*6)
         sitesetID = pos_features[int(row[5])][0]
         positionType = pos_features[int(row[5])][1]
-
 
         # network cvr
         if has_cvr:
@@ -168,6 +177,7 @@ def build_x_hepler(from_path, to_path,
         for i in ad_f:
             features[offset+i] = str(field) + "," + str(1) if ffm else 1
         offset += ad_dim
+        del ad_f
 
         # ad cvr feature
         if has_cvr:
@@ -175,11 +185,14 @@ def build_x_hepler(from_path, to_path,
             for i in xrange(len(ad_cvr)):
                 features[offset+i] = str(field) + "," + str(ad_cvr[i]) if ffm else ad_cvr[i]
             offset += len(ad_cvr)
+            del ad_cvr
         field += 1
 
         age, gender, education, marriageStatus, haveBaby, hometown, residence = user_map[userID]
         a_n = len(ad_map[creativeID])
-        appPlatform, appCategory = ad_map[creativeID][a_n-2], ad_map[creativeID][a_n-1]
+        appPlatform, appCategory, appID = ad_map[creativeID][a_n-2], ad_map[creativeID][a_n-1], ad_map[creativeID][a_n-3]
+        campaignID, adID = ad_map[creativeID][a_n-5], ad_map[creativeID][a_n-6]
+        advertiserID = ad_map[creativeID][a_n-4]
         comb_feature = get_combination_feature(connectionType, appPlatform, appCategory, sitesetID,
                       positionType, age, gender, education,
                       marriageStatus, haveBaby, hometown, residence)
@@ -188,6 +201,20 @@ def build_x_hepler(from_path, to_path,
                 features[offset+i] = str(field) + "," + str(1) if ffm else 1
         offset += len(comb_feature)
 
+        headers = ['appID', 'connectionType', 'campaignID', 'adID', 'advertiserID']
+        # position
+        combine_cvr = statistic_handler.get_pos_combine_cvr_feature('appID', appID, positionID)
+        offset = feed_cvr_feature(features, combine_cvr, offset, field, ffm)
+        combine_cvr = statistic_handler.get_pos_combine_cvr_feature('connectionType', connectionType, positionID)
+        offset = feed_cvr_feature(features, combine_cvr, offset, field, ffm)
+        combine_cvr = statistic_handler.get_pos_combine_cvr_feature('campaignID', campaignID, positionID)
+        offset = feed_cvr_feature(features, combine_cvr, offset, field, ffm)
+        combine_cvr = statistic_handler.get_pos_combine_cvr_feature('adID', adID, positionID)
+        offset = feed_cvr_feature(features, combine_cvr, offset, field, ffm)
+        combine_cvr = statistic_handler.get_pos_combine_cvr_feature('creativeID', creativeID, positionID)
+        offset = feed_cvr_feature(features, combine_cvr, offset, field, ffm)
+
+        field += 1
 
         if ffm:
             write_as_libffm(features, to_file, row[0])
@@ -209,11 +236,11 @@ def build_x():
     user_features, user_map, user_dim = uf.build_user_profile(has_sparse=has_sparse)
     pos_features, pos_dim = pf.build_position(has_sparse=has_sparse)
 
-    # src_dir_path = constants.project_path+"/dataset/custom/split_6/sample/"
-    src_dir_path = constants.project_path + "/dataset/custom/split_6/"
+    src_dir_path = constants.project_path+"/dataset/custom/split_6/sample/"
+    # src_dir_path = constants.project_path + "/dataset/custom/split_6/"
     # src_dir_path = constants.project_path + "/dataset/custom/split_online/"
-    # des_dir_path = constants.project_path+"/dataset/x_y/split_online/b13/"
-    des_dir_path = constants.project_path + "/dataset/x_y/split_6/b3/"
+    # des_dir_path = constants.project_path+"/dataset/x_y/split_online/b14/"
+    des_dir_path = constants.project_path + "/dataset/x_y/split_6/b4/"
     cus_dir_path = constants.project_path+"/dataset/custom/"
     # 加载cvr特征
     cvr_handler = cvr.StatisticHandler(cus_dir_path)
@@ -221,6 +248,7 @@ def build_x():
     cvr_handler.load_avg_cvr(17, 24)
     cvr_handler.load_time_cvr()
     train_time_gap, predict_time_gap = cvr_handler.load_time_gap_feature(cus_dir_path)
+    # train_last_click, predict_last_click = cvr_handler.load_last_click_feature(cus_dir_path)
 
     # # generate online test dataset
     # test_des_file = des_dir_path + "test_x_onehot.fm"
@@ -252,6 +280,7 @@ def build_x():
                        pos_features, pos_dim,
                        cvr_handler,
                        time_gap_dict=train_time_gap,
+                       # last_click_dict=train_last_click,
                        data_type="train",
                        has_gbdt=False,
                        ffm=False,
@@ -263,6 +292,7 @@ def build_x():
                        pos_features, pos_dim,
                        cvr_handler,
                        time_gap_dict=train_time_gap,
+                       # last_click_dict=train_last_click,
                        data_type="train",
                        has_gbdt=False,
                        ffm=False,

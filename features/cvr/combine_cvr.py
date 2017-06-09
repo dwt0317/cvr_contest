@@ -18,12 +18,12 @@ right_day = 24
 
 def combine_cvr_helper(partial_df, positive_df, headers, another_header, combine_dict):
     for header in headers:
-        groups = partial_df.groupby([another_header, header], as_index=False)
+        groups = partial_df.groupby([header, another_header], as_index=False)
         clicks = groups.size()
-        cv_groups = positive_df.groupby([another_header, header], as_index=False)
+        cv_groups = positive_df.groupby([header, another_header], as_index=False)
         cvs = cv_groups.size()
         combine_dict[header] = {}
-        # another header的attr值在前
+        # header的attr值在前
         for k in clicks.keys():
             x = k[0]
             y = k[1]

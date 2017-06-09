@@ -63,7 +63,7 @@ def get_combination_feature(connectionType, appPlatform, appCategory, sitesetID,
 # 填充组合cvr特征
 def feed_combine_cvr(attr_map, headers, a_header, features, offset, field, ffm, statistic_handler):
     for header in headers:
-        combine_cvr = statistic_handler.get_combine_cvr_feature(a_header, header, attr_map[a_header], attr_map[header])
+        combine_cvr = statistic_handler.get_combine_cvr_feature(a_header, header, attr_map[header], attr_map[a_header])
         offset = feed_cvr_feature(features, combine_cvr, offset, field, ffm)
     field += 1
     return offset, field

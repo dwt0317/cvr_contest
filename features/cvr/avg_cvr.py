@@ -22,7 +22,7 @@ betas = [2085, 7246, 2527, 90]
 connection_bias = [0.00383, 0.02917, 0.00823, 0.00705, 0.00648]
 
 not_smooth = False
-fine_feature = True
+in_memory = True
 
 left_day = 17
 right_day = 24
@@ -123,9 +123,6 @@ def id_cvr_helper(raw_file, header, id_index):
 
 
 
-
-
-
 '''
 处理user相关cvr数据
 '''
@@ -148,7 +145,7 @@ def user_profile_cvr(file_path):
 
 # {userID1:[cvr1, cvr2,..], userID2:[cvr1, cvr2,..], ...}
 def build_user_cvr(train_dir):
-    if False:
+    if in_memory:
         userID_feature = id_cvr_helper(constants.project_path+"/dataset/raw/user.csv", 'userID', 4)
         user_pro_feature = user_profile_cvr(train_dir+"train_with_user_info.csv")
         user_cvr_features = {}
@@ -166,11 +163,11 @@ def build_user_cvr(train_dir):
             feature_list.extend(user_pro_feature['haveBaby'][int(row[5])])
             user_cvr_features[int(row[0])] = feature_list
         del userID_feature, user_pro_feature
-        print "Building user cvr feature finished."
-        pickle.dump(user_cvr_features, open(constants.custom_path + '/features/user_cvr_features.pkl', 'wb'))
+
     else:
         user_cvr_features = pickle.load(
             open(constants.custom_path + '/features/user_cvr_features.pkl', 'rb'))
+    print "Building user cvr feature finished."
     return user_cvr_features
 
 
@@ -193,7 +190,7 @@ def pos_info_cvr(pos_info_file):
 
 # 按positionID处理cvr数据
 def build_pos_cvr(train_dir):
-    if False:
+    if in_memory:
         positionID_feature = id_cvr_helper(constants.project_path + "/dataset/raw/position.csv", 'positionID', 5)
         pos_info_feature = pos_info_cvr(train_dir+"train_with_pos_info.csv")
         pos_file = open(constants.project_path + "/dataset/raw/position.csv", 'r')
@@ -212,10 +209,9 @@ def build_pos_cvr(train_dir):
             pos_cvr_features[int(row[0])] = feature_list
             # print pos_cvr_features[int(row[0])]
         del positionID_feature, pos_info_feature
-        pickle.dump(pos_cvr_features, open(constants.custom_path + '/features/pos_cvr_features.pkl', 'wb'))
     else:
         pos_cvr_features = pickle.load(
-            open(constants.custom_path + '/features/pos_cvr_features.pkl', 'rb'))
+                open(constants.custom_path + '/features/pos_cvr_features.pkl', 'rb'))
     return pos_cvr_features
 
 
@@ -242,8 +238,7 @@ def build_ad_cvr(train_dir):
                             appPlatform_cl,appPlatform_cv,appPlatform_cvr]}
     :Example: a = getADFeature('train_with_ad.csv')
     '''
-    # ad_data = pd.read_csv(filePath)
-    if False:
+    if in_memory:
         ad_file_path = train_dir+"train_with_ad_info.csv"
         ad_file = open(ad_file_path, 'r')
         # length = len(ad_data)
@@ -379,10 +374,10 @@ def build_ad_cvr(train_dir):
             creativeID_adFeature_map[int(row[3])] = creativeData
         print "Building ad cvr finished."
         del ad, campaign, advertiser, app, appPlatform, creative
-        pickle.dump(creativeID_adFeature_map, open(constants.custom_path + '/features/creativeID_adFeature_map.pkl', 'wb'))
     else:
         creativeID_adFeature_map = pickle.load(
-            open(constants.custom_path + '/features/creativeID_adFeature_map.pkl', 'rb'))
+                open(constants.custom_path + '/features/creativeID_adFeature_map.pkl', 'rb'))
+
     return creativeID_adFeature_map
 
 
@@ -459,7 +454,6 @@ def build_conn_cvr(train_dir):
 if __name__ == "__main__":
     from features import cvr
     cvr_handler = cvr.StatisticHandler(constants.project_path+"/dataset/custom/")
-
     # cvr_handler.load_train_cvr()
     # cvr_handler.load_avg_cvr(24, 31)
     # build_ad_cvr(constants.project_path+"/dataset/custom/")

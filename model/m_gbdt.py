@@ -66,7 +66,7 @@ def train_model():
 
         dir_path = constants.project_path + "/dataset/x_y/split_6/b4/"
         # raw_dir_path = constants.project_path + "/dataset/custom/split_6/sample/"
-        # dir_path = constants.project_path + "/dataset/x_y/split_online/b13/"
+        # dir_path = constants.project_path + "/dataset/x_y/split_online/b15/"
         for i in range(0, 1):
             # train_x_file = dir_path + "train_x_onehot_" + str(i) + ".fm"
             train_x_file = dir_path + "train_x_onehot_" + str(i) + ".fms"
@@ -108,7 +108,7 @@ def train_model():
 
         if online:
             prob_test /= 5
-            with open(constants.project_path + "/out/gbdt_time_gap_p2.out", 'w') as f:
+            with open(constants.project_path + "/out/gbdt_more_pos.out", 'w') as f:
                 np.savetxt(f, prob_test, fmt="%s")
         else:
             end = datetime.datetime.now()
@@ -167,7 +167,7 @@ def feature_importance(xgb_model):
     df.plot(kind='barh', x='feature', y='fscore', legend=False, figsize=(10, 10))
     plt.title('XGBoost Feature Importance')
     plt.xlabel('relative importance')
-    plt.gcf().savefig(constants.project_path+'/img/feature_importance_xgb3.png')
+    plt.gcf().savefig(constants.project_path+'/img/feature_importance_xgb_6.png')
 
 
 # 将叶子结点记录转化为onehot特征

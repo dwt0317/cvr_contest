@@ -840,3 +840,176 @@ auc_test: 0.791186040636
 logloss: 0.10034404977
 time: 0:00:46.485000
 
++ appID combination
+2017-06-06 22:09:20
+gbdt:
+auc_test: 0.791299516023
+logloss: 0.100312231429
+time: 0:00:50.436000
+
+-appID combination
+2017-06-06 22:18:50
+gbdt:
+auc_test: 0.79118498153
+logloss: 0.100344377622
+time: 0:00:46.579000
+
++appID combination, -appID, adID, some position
+2017-06-06 22:28:36
+gbdt:
+auc_test: 0.791388309194
+logloss: 0.100345763063
+time: 0:00:49.977000
+
+-all position
+2017-06-06 22:35:37
+gbdt:
+auc_test: 0.790906346458
+logloss: 0.1003520035
+time: 0:00:51.322000
+
+more positionID
+2017-06-06 22:45:04
+gbdt:
+auc_test: 0.791558357832
+logloss: 0.10030996715
+time: 0:00:50.438000
+
++age gender positionID
+2017-06-06 22:56:12
+gbdt:
+auc_test: 0.792332700014
+logloss: 0.100260085709
+time: 0:00:52.429000
+
+more positionID combination
+2017-06-06 23:06:50
+gbdt:
+auc_test: 0.792432261892
+logloss: 0.100209817965
+time: 0:00:57.062000
+
+-some position id
+2017-06-06 23:14:57
+gbdt:
+auc_test: 0.792458415029
+logloss: 0.100250279527
+time: 0:00:57.292000
+
++前一天app
+2017-06-06 23:44:16
+gbdt:
+auc_test: 0.797275976545
+logloss: 0.0998631233247
+time: 0:00:58.492000
+
+
+no id
+2017-06-08 20:11:02
+gbdt:
+auc_test: 0.790310877128
+logloss: 0.100576423016
+time: 0:00:56.374000
+
++ multiple combine cvr
+2017-06-08 21:10:37
+gbdt:
+auc_test: 0.787110876797
+logloss: 0.100970781283
+time: 0:01:03.794000
+
+- remove all onehot combination
+2017-06-08 21:21:46
+gbdt:
+auc_test: 0.787431891394
+logloss: 0.10090459248
+time: 0:01:03.786000
+
+-user appID
+2017-06-08 21:31:41
+gbdt:
+auc_test: 0.787140082203
+logloss: 0.100963553735
+time: 0:01:00.017000
+
+changed combination cvr(过拟合了，最佳迭代在100次）
+2017-06-08 23:37:25
+gbdt:
+auc_test: 0.787423010222
+logloss: 0.100956533145
+time: 0:00:54.774000
+
+-----------below result my have bugs
+-connection, app change to campaign
+2017-06-08 23:59:42
+gbdt:
+auc_test: 0.788054731626
+logloss: 0.100842336539
+time: 0:00:52.210000
+
++ onehot combination -appcategory
+2017-06-09 00:12:10
+gbdt:
+auc_test: 0.787418212054
+logloss: 0.100954721205
+time: 0:00:50.984000
+
++id
+2017-06-09 00:21:53
+gbdt:
+auc_test: 0.79085041788
+logloss: 0.100511913231
+time: 0:00:53.730000
+
+
+-only position remove some position
+2017-06-09 00:44:50
+gbdt:
+auc_test: 0.790237274155
+logloss: 0.100502173051
+time: 0:00:50.985000
+
++age
+2017-06-09 10:04:20
+gbdt:
+auc_test: 0.790320596987
+logloss: 0.100619882457
+time: 0:00:55.121000
+
+-appCategory -age
+2017-06-09 10:19:01
+gbdt:
+auc_test: 0.790687240883
+logloss: 0.100527614977
+time: 0:00:53.860000
+
++campaign
+2017-06-09 10:33:13
+gbdt:
+auc_test: 0.790454065977
+logloss: 0.100567875815
+time: 0:00:54.818000
+-----------------------------------------------------------------
+
+change to app
+2017-06-09 19:02:20
+gbdt:
+auc_test: 0.790689493093
+logloss: 0.100421980825
+time: 0:00:52.560000
+
+campaign
+2017-06-09 19:54:39
+gbdt:
+auc_test: 0.790641297758
+logloss: 0.100432879129
+time: 0:00:56.117000
+
+
+change smooth
+2017-06-09 21:32:01
+gbdt:
+auc_test: 0.790577305089
+logloss: 0.100433628823
+time: 0:00:58.044000
+

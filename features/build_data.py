@@ -9,6 +9,7 @@ import one_hot.user_profile as uf
 from features.one_hot import advertising as af
 from util import constants
 import cvr
+import feature_helper
 import sys
 
 # 以libfm形式存储
@@ -59,6 +60,15 @@ def get_combination_feature(connectionType, appPlatform, appCategory, sitesetID,
     return f_high
 
 
+# 填充组合cvr特征
+def feed_combine_cvr(attr_map, headers, a_header, features, offset, field, ffm, statistic_handler):
+    for header in headers:
+        combine_cvr = statistic_handler.get_combine_cvr_feature(a_header, header, attr_map[a_header], attr_map[header])
+        offset = feed_cvr_feature(features, combine_cvr, offset, field, ffm)
+    field += 1
+    return offset, field
+
+
 # 构造训练集
 def build_x_hepler(from_path, to_path,
                    ad_features, ad_dim, ad_map,
@@ -92,6 +102,8 @@ def build_x_hepler(from_path, to_path,
         else:
             day = int(row[2]) / 10000
 
+        # if day == 30:
+        #     continue
         instance = int(row[8]) if data_type == "train" else row_num
         if instance in time_gap_dict:
             time_gap = time_gap_dict[instance]
@@ -99,6 +111,7 @@ def build_x_hepler(from_path, to_path,
             time_gap = [0] * 3
         offset = feed_cvr_feature(features, time_gap, offset, field, ffm)
         field += 1
+        del time_gap
 
         # instance = int(row[8]) if data_type == "train" else row_num+1
         # if statistic_handler.is_installed(instance, data_type):
@@ -144,6 +157,7 @@ def build_x_hepler(from_path, to_path,
             pos_cvr = statistic_handler.get_pos_cvr(data_type, int(row[5]))
             offset = feed_cvr_feature(features, pos_cvr, offset, field, ffm)
             field += 1
+            del pos_cvr
 
         # network feature connection * 5, tele-operator * 4
         connectionType = int(row[6])
@@ -163,6 +177,7 @@ def build_x_hepler(from_path, to_path,
             features[offset] = conn_cvr[0][0]
             features[offset+1] = conn_cvr[1][0]
             offset += 2
+            del conn_cvr
         field += 1
 
         if has_gbdt:
@@ -188,11 +203,18 @@ def build_x_hepler(from_path, to_path,
             del ad_cvr
         field += 1
 
+        attr_map = feature_helper.build_attr_map(ad_map, user_map, userID, creativeID, positionID, connectionType)
+
+        # headers = ['appID', 'connectionType', 'campaignID', 'adID', 'creativeID', 'age', 'education', 'gender',
+        #            'haveBaby', 'marriageStatus', 'residence', 'appCategory']
+
+
         age, gender, education, marriageStatus, haveBaby, hometown, residence = user_map[userID]
         a_n = len(ad_map[creativeID])
-        appPlatform, appCategory, appID = ad_map[creativeID][a_n-2], ad_map[creativeID][a_n-1], ad_map[creativeID][a_n-3]
-        campaignID, adID = ad_map[creativeID][a_n-5], ad_map[creativeID][a_n-6]
-        advertiserID = ad_map[creativeID][a_n-4]
+        appPlatform, appCategory, appID = ad_map[creativeID][a_n - 2], ad_map[creativeID][a_n - 1], ad_map[creativeID][
+            a_n - 3]
+        campaignID, adID = ad_map[creativeID][a_n - 5], ad_map[creativeID][a_n - 6]
+        advertiserID = ad_map[creativeID][a_n - 4]
         comb_feature = get_combination_feature(connectionType, appPlatform, appCategory, sitesetID,
                       positionType, age, gender, education,
                       marriageStatus, haveBaby, hometown, residence)
@@ -200,21 +222,46 @@ def build_x_hepler(from_path, to_path,
             if comb_feature[i] == 1:
                 features[offset+i] = str(field) + "," + str(1) if ffm else 1
         offset += len(comb_feature)
+        del comb_feature
 
-        headers = ['appID', 'connectionType', 'campaignID', 'adID', 'advertiserID']
-        # position
-        combine_cvr = statistic_handler.get_pos_combine_cvr_feature('appID', appID, positionID)
-        offset = feed_cvr_feature(features, combine_cvr, offset, field, ffm)
-        combine_cvr = statistic_handler.get_pos_combine_cvr_feature('connectionType', connectionType, positionID)
-        offset = feed_cvr_feature(features, combine_cvr, offset, field, ffm)
-        combine_cvr = statistic_handler.get_pos_combine_cvr_feature('campaignID', campaignID, positionID)
-        offset = feed_cvr_feature(features, combine_cvr, offset, field, ffm)
-        combine_cvr = statistic_handler.get_pos_combine_cvr_feature('adID', adID, positionID)
-        offset = feed_cvr_feature(features, combine_cvr, offset, field, ffm)
-        combine_cvr = statistic_handler.get_pos_combine_cvr_feature('creativeID', creativeID, positionID)
-        offset = feed_cvr_feature(features, combine_cvr, offset, field, ffm)
 
+        headers = ['age', 'gender', 'education', 'connectionType']
+        offset, field = feed_combine_cvr(attr_map, headers, 'appID', features, offset, field, ffm, statistic_handler)
+
+        headers = ['appID', 'connectionType', 'campaignID', 'adID', 'creativeID', 'age', 'education', 'gender',
+                   'haveBaby', 'marriageStatus']
+        offset, field = feed_combine_cvr(attr_map, headers, 'positionID', features, offset, field, ffm,
+                                         statistic_handler)
+        # print offset, len(features)
+
+        # print offset, len(features)
+        # print offset, len(features)
+
+        # print offset, len(features)
+        # headers = ['age', 'haveBaby', 'education']
+        # feed_combine_cvr(attr_map, headers, 'connectionType', features, offset, field, ffm, statistic_handler)
+
+        # headers = ['age', 'haveBaby', 'education', 'residence']
+        # feed_combine_cvr(attr_map, headers, 'appCategory', features, offset, field, ffm, statistic_handler)
+
+        # headers = ['education', 'marriageStatus', 'creativeID', 'appID', 'connectionType']
+        # feed_combine_cvr(attr_map, headers, 'age', features, offset, field, ffm, statistic_handler)
+        del headers
+
+        # sys.exit(0)
+
+
+
+
+
+        # del combine_cvr
         field += 1
+        # if data_type == 'test':
+        #     day -= 1
+        # app_short_fea = statistic_handler.get_app_short_cvr(creativeID, day)
+        # offset = feed_cvr_feature(features, app_short_fea, offset, field, ffm)
+        # del app_short_fea
+
 
         if ffm:
             write_as_libffm(features, to_file, row[0])
@@ -239,7 +286,7 @@ def build_x():
     src_dir_path = constants.project_path+"/dataset/custom/split_6/sample/"
     # src_dir_path = constants.project_path + "/dataset/custom/split_6/"
     # src_dir_path = constants.project_path + "/dataset/custom/split_online/"
-    # des_dir_path = constants.project_path+"/dataset/x_y/split_online/b14/"
+    # des_dir_path = constants.project_path+"/dataset/x_y/split_online/b15/"
     des_dir_path = constants.project_path + "/dataset/x_y/split_6/b4/"
     cus_dir_path = constants.project_path+"/dataset/custom/"
     # 加载cvr特征

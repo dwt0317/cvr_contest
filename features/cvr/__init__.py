@@ -7,8 +7,11 @@ import math
 import numpy as np
 import sys
 
-alpha = 130  # for smoothing
-beta = 5085
+# alpha = 130  # for smoothing
+# beta = 5085
+
+alpha = 123  # for smoothing
+beta = 5000
 
 # 0.02492 7e-05
 max_cvr = 0.025
@@ -27,9 +30,9 @@ class StatisticHandler:
         self._creative_app_dict = {}
         self._app_short_cvr_features = {}
         self._conn_cvr_features = {}
-        self._pos_combine_cvr_dict = {}
-        self._conn_combine_cvr_dict = {}
-        self._app_combine_cvr_dict = {}
+
+        self._combine_cvr_dict = {}
+
         self._train_installed_set = {}
         self._predict_installed_set = {}
 
@@ -52,17 +55,19 @@ class StatisticHandler:
 
     # 读取平均cvr特征
     def load_avg_cvr(self, left_day, right_day):
-        import avg_cvr
+        import avg_cvr, combine_cvr
         avg_cvr.left_day = left_day
         avg_cvr.right_day = right_day
+        combine_cvr.left_day = left_day
+        combine_cvr.right_day = right_day
+
         # self.load_installed_app_feature()
         self._user_cvr_features = avg_cvr.build_user_cvr(self._dir_path)
         self._pos_cvr_features = avg_cvr.build_pos_cvr(self._dir_path)
         self._ad_cvr_features = avg_cvr.build_ad_cvr(self._dir_path)
+        self._conn_cvr_features = avg_cvr.build_conn_cvr(self._dir_path)
+        self._combine_cvr_dict = combine_cvr.build_combine_cvr(self._dir_path)
         # self._app_short_cvr_features = avg_cvr.build_short_cvr(self._dir_path)
-        # self._conn_cvr_features = avg_cvr.build_conn_cvr(self._dir_path)
-        self._pos_combine_cvr_dict = avg_cvr.build_pos_combine_cvr(self._dir_path)
-        self._app_combine_cvr_dict = avg_cvr.build_app_combine_cvr(self._dir_path)
         print "Loading average cvr finished."
 
     # 读取时序cvr特征
@@ -158,8 +163,18 @@ class StatisticHandler:
 
     # 获取app短期表现(deprecated)
     def get_app_short_cvr(self, creativeID, day):
+        day = day - 1
         appID = self._creative_app_dict[creativeID]['appID']
-        return self._app_short_cvr_features[appID][day]
+        if appID in self._app_short_cvr_features:
+            if day in self._app_short_cvr_features[appID]:
+                cv = self._app_short_cvr_features[appID][day][1]
+                click = self._app_short_cvr_features[appID][day][0]
+                cvr = round((alpha+cv)/float(alpha+beta+click), 5)
+                if cv != 0:
+                    cv = math.log(cv, 2)
+                return [cv, cvr]
+
+        return [0, round(float(alpha)/(alpha+beta), 2)]
 
     # 获取user action category喜好
     def get_user_action(self, userID, creativeID, day):
@@ -218,19 +233,28 @@ class StatisticHandler:
         from features.cvr import last_creative
         return last_creative.load_user_last_click(dir_path)
 
-    # 获取pos组合点击率特征
-    def get_pos_combine_cvr_feature(self, header, id, positionID):
-        if id in self._pos_combine_cvr_dict[header]:
-            if positionID in self._pos_combine_cvr_dict[header][id]:
-                return self._pos_combine_cvr_dict[header][id][positionID]
+    # 获取组合点击率
+    def get_combine_cvr_feature(self, header1, header2, attr1, attr2):
+        if header1 in self._combine_cvr_dict:
+            if header2 in self._combine_cvr_dict[header1]:
+                if attr1 in self._combine_cvr_dict[header1][header2]:
+                    if attr2 in self._combine_cvr_dict[header1][header2][attr1]:
+                        return self._combine_cvr_dict[header1][header2][attr1][attr2]
         return [0, round(float(alpha)/(alpha+beta), 5)]
 
-    # 获取app组合点击率特征
-    def get_app_combine_cvr_feature(self, header, attr, appID):
-        if attr in self._pos_combine_cvr_dict[header]:
-            if appID in self._pos_combine_cvr_dict[header][attr]:
-                return self._pos_combine_cvr_dict[header][attr][appID]
-        return [0, round(float(alpha)/(alpha+beta), 5)]
+    # # 获取pos组合点击率特征
+    # def get_pos_combine_cvr_feature(self, header, id, positionID):
+    #     if id in self._pos_combine_cvr_dict[header]:
+    #         if positionID in self._pos_combine_cvr_dict[header][id]:
+    #             return self._pos_combine_cvr_dict[header][id][positionID]
+    #     return [0, round(float(alpha)/(alpha+beta), 5)]
+    #
+    # # 获取app组合点击率特征
+    # def get_app_combine_cvr_feature(self, header, attr, appID):
+    #     if attr in self._app_combine_cvr_dict[header]:
+    #         if appID in self._app_combine_cvr_dict[header][attr]:
+    #             return self._app_combine_cvr_dict[header][attr][appID]
+    #     return [0, round(float(alpha)/(alpha+beta), 5)]
 
 
     # 获取已安装app特征
@@ -270,3 +294,9 @@ def build_app_category_dict(raw_file):
     df = pd.read_csv(raw_file)
     df.set_index('appID', inplace=True)
     return df.to_dict()['appCategory']
+
+if __name__ == '__main__':
+    cus_dir_path = constants.project_path + "/dataset/custom/"
+    cvr_handler = StatisticHandler(cus_dir_path)
+    '''注意online test 的区间是不同的 24 31'''
+    cvr_handler.load_avg_cvr(17, 24)

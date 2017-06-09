@@ -222,12 +222,14 @@ def merge_by_category(train_file, to_path):
 
 
 def merge_with_all_data(to_dir):
-    merge_by_ad(constants.clean_train_path, to_dir+"train_with_ad_info.csv")
-    # merge_by_pos(constants.clean_train_path,
-    #              to_dir+"train_with_pos_info.csv")
-    # merge_by_user(constants.clean_train_path,
-    #               to_dir+"train_with_user_info.csv")
-
+    merge_tmp = to_dir+"/merge_tmp"
+    merge_by_ad(constants.clean_train_path, merge_tmp+"_1")
+    merge_by_pos(merge_tmp+"_1",
+                 merge_tmp + "_2")
+    merge_by_category(merge_tmp + "_2", merge_tmp + "_3")
+    merge_by_user(merge_tmp + "_3",
+                  to_dir+"train_with_all_info.csv")
+    # all_info = pd.read_csv(to_dir+"train_with_all_info.csv")
 
 
 if __name__ == '__main__':
@@ -245,9 +247,10 @@ if __name__ == '__main__':
     #                      constants.project_path + "/dataset/raw/" + "user_installedapps_with_category.csv")
     # pass
     # merge_by_ad(constants.clean_train_path, constants.project_path+"/dataset/custom/train_with_ad_info.csv")
-    merge_by_user(constants.project_path+"/dataset/custom/train_with_ad_info.csv", constants.project_path + "/dataset/custom/train_with_ad_user_info.csv")
+    # merge_by_user(constants.project_path+"/dataset/custom/train_with_ad_info.csv", constants.project_path + "/dataset/custom/train_with_ad_user_info.csv")
     # merge_by_pos(constants.project_path+"/dataset/custom/train_with_ad_info.csv", constants.project_path + "/dataset/custom/train_with_ad_pos_info.csv")
     # merge_by_category(constants.project_path+"/dataset/custom/train_with_ad_pos_user_re.csv",
     #               constants.project_path + "/dataset/custom/train_with_ad_pos_user_re2.csv")
+    merge_with_all_data(constants.custom_path)
     # random_split_dataset(0.85, constants.project_path+"/dataset/custom/split_6/")
     # bootstrap_online_train(24, dir_path+"split_online/")

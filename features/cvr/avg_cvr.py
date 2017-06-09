@@ -3,6 +3,7 @@ import copy
 import pandas as pd
 from util import constants
 import math
+import cPickle as pickle
 
 '''
 用于生成平均cvr特征特征
@@ -121,68 +122,7 @@ def id_cvr_helper(raw_file, header, id_index):
     return id_cvr
 
 
-def combine_cvr_helper(partial_df, positive_df, headers, another_header, combine_dict):
-    for header in headers:
-        groups = partial_df.groupby([header, another_header], as_index=False)
-        clicks = groups.size()
-        cv_groups = positive_df.groupby([header, another_header], as_index=False)
-        cvs = cv_groups.size()
-        combine_dict[header] = {}
-        for k in clicks.keys():
-            x = k[0]
-            y = k[1]
-            if x not in cvs or y not in cvs[x]:
-                cv = 0
-            else:
-                cv = round(math.log(cvs[x][y], 2), 5)
-            click = clicks[x][y]
-            cvr = round((cv + alpha) / (float(click) + alpha + beta), 5)
-            x = int(x)
-            y = int(y)
-            if x in combine_dict[header]:
-                combine_dict[header][x][y] = [cv, cvr]
-            else:
-                combine_dict[header][x] = {y: [cv, cvr]}
 
-
-# 与positionID相关的组合cvr特征
-def build_pos_combine_cvr(train_dir):
-    ad_file_path = train_dir + "train_with_ad_info.csv"
-    total_df = pd.read_csv(ad_file_path)
-    partial_df = total_df[(total_df.clickTime >= left_day*10000) & (total_df.clickTime < right_day*10000)]
-
-    positive_df = partial_df[partial_df.label == 1]
-    pos_combine_dict = {}
-    headers = ['appID', 'connectionType', 'campaignID', 'adID', 'creativeID']
-    combine_cvr_helper(partial_df, positive_df, headers, 'positionID', pos_combine_dict)
-    # headers = ['appID', 'campaignID', 'adID']
-    # conn_combine_dict = {}
-    # combine_cvr_helper(partial_df, positive_df, headers, 'connectionType', conn_combine_dict)
-
-    del total_df, partial_df
-    print "Building combination cvr dict finished."
-    return pos_combine_dict
-
-
-# 与connectionType
-def build_conn_combine_cvr(train_dir):
-    pass
-
-
-# 与appID相关
-def build_app_combine_cvr(train_dir):
-    ad_file_path = train_dir + "train_with_ad_user_info.csv"
-    total_df = pd.read_csv(ad_file_path)
-    partial_df = total_df[(total_df.clickTime >= left_day*10000) & (total_df.clickTime < right_day*10000)]
-
-    positive_df = partial_df[partial_df.label == 1]
-    app_combine_dict = {}
-    headers = ['age', 'gender', 'education']
-    combine_cvr_helper(partial_df, positive_df, headers, 'appID', app_combine_dict)
-
-    del total_df, partial_df
-    print "Building combination cvr dict finished."
-    return app_combine_dict
 
 
 
@@ -208,24 +148,29 @@ def user_profile_cvr(file_path):
 
 # {userID1:[cvr1, cvr2,..], userID2:[cvr1, cvr2,..], ...}
 def build_user_cvr(train_dir):
-    userID_feature = id_cvr_helper(constants.project_path+"/dataset/raw/user.csv", 'userID', 4)
-    user_pro_feature = user_profile_cvr(train_dir+"train_with_user_info.csv")
-    user_cvr_features = {}
-    user_file = open(constants.project_path + "/dataset/raw/user.csv", 'r')
-    user_file.readline()
-    for line in user_file:
-        row = line.strip().split(',')
-        # if fine_feature:
-        feature_list = copy.copy(userID_feature[int(row[0])])
-        feature_list.extend(user_pro_feature['gender'][int(row[2])])
-        # else:
-        # feature_list = copy.copy(user_pro_feature['gender'][int(row[2])])
-        feature_list.extend(user_pro_feature['education'][int(row[3])])
-        feature_list.extend(user_pro_feature['marriageStatus'][int(row[4])])
-        feature_list.extend(user_pro_feature['haveBaby'][int(row[5])])
-        user_cvr_features[int(row[0])] = feature_list
-    del userID_feature, user_pro_feature
-    print "Building user cvr feature finished."
+    if False:
+        userID_feature = id_cvr_helper(constants.project_path+"/dataset/raw/user.csv", 'userID', 4)
+        user_pro_feature = user_profile_cvr(train_dir+"train_with_user_info.csv")
+        user_cvr_features = {}
+        user_file = open(constants.project_path + "/dataset/raw/user.csv", 'r')
+        user_file.readline()
+        for line in user_file:
+            row = line.strip().split(',')
+            # if fine_feature:
+            feature_list = copy.copy(userID_feature[int(row[0])])
+            feature_list.extend(user_pro_feature['gender'][int(row[2])])
+            # else:
+            # feature_list = copy.copy(user_pro_feature['gender'][int(row[2])])
+            feature_list.extend(user_pro_feature['education'][int(row[3])])
+            feature_list.extend(user_pro_feature['marriageStatus'][int(row[4])])
+            feature_list.extend(user_pro_feature['haveBaby'][int(row[5])])
+            user_cvr_features[int(row[0])] = feature_list
+        del userID_feature, user_pro_feature
+        print "Building user cvr feature finished."
+        pickle.dump(user_cvr_features, open(constants.custom_path + '/features/user_cvr_features.pkl', 'wb'))
+    else:
+        user_cvr_features = pickle.load(
+            open(constants.custom_path + '/features/user_cvr_features.pkl', 'rb'))
     return user_cvr_features
 
 
@@ -248,24 +193,29 @@ def pos_info_cvr(pos_info_file):
 
 # 按positionID处理cvr数据
 def build_pos_cvr(train_dir):
-    positionID_feature = id_cvr_helper(constants.project_path + "/dataset/raw/position.csv", 'positionID', 5)
-    pos_info_feature = pos_info_cvr(train_dir+"train_with_pos_info.csv")
-    pos_file = open(constants.project_path + "/dataset/raw/position.csv", 'r')
-    pos_file.readline()
-    pos_cvr_features = {}
-    i = 1
-    for line in pos_file:
-        row = line.strip().split(',')
-        # if fine_feature:
-        feature_list = copy.copy(positionID_feature[int(row[0])])
-        feature_list.extend(pos_info_feature['sitesetID'][int(row[1])])
-        # else:
-        # feature_list = copy.copy(pos_info_feature['sitesetID'][int(row[1])])
+    if False:
+        positionID_feature = id_cvr_helper(constants.project_path + "/dataset/raw/position.csv", 'positionID', 5)
+        pos_info_feature = pos_info_cvr(train_dir+"train_with_pos_info.csv")
+        pos_file = open(constants.project_path + "/dataset/raw/position.csv", 'r')
+        pos_file.readline()
+        pos_cvr_features = {}
+        i = 1
+        for line in pos_file:
+            row = line.strip().split(',')
+            # if fine_feature:
+            feature_list = copy.copy(positionID_feature[int(row[0])])
+            feature_list.extend(pos_info_feature['sitesetID'][int(row[1])])
+            # else:
+            # feature_list = copy.copy(pos_info_feature['sitesetID'][int(row[1])])
 
-        feature_list.extend(pos_info_feature['positionType'][int(row[2])])
-        pos_cvr_features[int(row[0])] = feature_list
-        # print pos_cvr_features[int(row[0])]
-    del positionID_feature, pos_info_feature
+            feature_list.extend(pos_info_feature['positionType'][int(row[2])])
+            pos_cvr_features[int(row[0])] = feature_list
+            # print pos_cvr_features[int(row[0])]
+        del positionID_feature, pos_info_feature
+        pickle.dump(pos_cvr_features, open(constants.custom_path + '/features/pos_cvr_features.pkl', 'wb'))
+    else:
+        pos_cvr_features = pickle.load(
+            open(constants.custom_path + '/features/pos_cvr_features.pkl', 'rb'))
     return pos_cvr_features
 
 
@@ -293,169 +243,161 @@ def build_ad_cvr(train_dir):
     :Example: a = getADFeature('train_with_ad.csv')
     '''
     # ad_data = pd.read_csv(filePath)
-    ad_file_path = train_dir+"train_with_ad_info.csv"
-    ad_file = open(ad_file_path, 'r')
-    # length = len(ad_data)
-    creative = {}
-    ad = {}
-    campaign = {}
-    advertiser = {}
-    app = {}
-    appPlatform = {}
-    creativeID_adFeature_map = {}
-    ad_file.readline()
-    for line in ad_file:
-        # alpha = alphas[connectionType]
-        # beta = betas[connectionType]
+    if False:
+        ad_file_path = train_dir+"train_with_ad_info.csv"
+        ad_file = open(ad_file_path, 'r')
+        # length = len(ad_data)
+        creative = {}
+        ad = {}
+        campaign = {}
+        advertiser = {}
+        app = {}
+        appPlatform = {}
+        creativeID_adFeature_map = {}
+        ad_file.readline()
+        for line in ad_file:
+            # alpha = alphas[connectionType]
+            # beta = betas[connectionType]
 
-        row = line.strip().split(',')
-        day = int(row[1])
-        if day < left_day * 10000 or day > right_day * 10000:
-            continue
-        connectionType = int(row[6])
-        creativeID_key = int(row[3])
-        adID_key = int(row[8])
-        campaignID_key = int(row[9])
-        advertiserID_key = int(row[10])
-        appID_key = int(row[11])
-        appPlatform_key = int(row[12])
+            row = line.strip().split(',')
+            day = int(row[1])
+            if day < left_day * 10000 or day > right_day * 10000:
+                continue
+            connectionType = int(row[6])
+            creativeID_key = int(row[3])
+            adID_key = int(row[8])
+            campaignID_key = int(row[9])
+            advertiserID_key = int(row[10])
+            appID_key = int(row[11])
+            appPlatform_key = int(row[12])
 
-        # 更新creativeID的数据
-        if creativeID_key not in creative:
-            creative[creativeID_key] = [0, 0, 0]
-        if row[1] == '1':
-            creative[creativeID_key][0] += 1
-            creative[creativeID_key][1] += 1
-        else:
-            creative[creativeID_key][0] += 1
+            # 更新creativeID的数据
+            if creativeID_key not in creative:
+                creative[creativeID_key] = [0, 0, 0]
+            if row[1] == '1':
+                creative[creativeID_key][0] += 1
+                creative[creativeID_key][1] += 1
+            else:
+                creative[creativeID_key][0] += 1
 
-        if int(creative[creativeID_key][0]) == 0 and not_smooth:
-            creative[creativeID_key][2] = 0
-        else:
-            creative[creativeID_key][2] = round((float(creative[creativeID_key][1]) + alpha) /
-                                          (float(creative[creativeID_key][0]) + beta + alpha), 5)
+            if int(creative[creativeID_key][0]) == 0 and not_smooth:
+                creative[creativeID_key][2] = 0
+            else:
+                creative[creativeID_key][2] = round((float(creative[creativeID_key][1]) + alpha) /
+                                              (float(creative[creativeID_key][0]) + beta + alpha), 5)
 
-        # 更新adID的数据
-        if adID_key not in ad:
-            ad[adID_key] = [0, 0, 0, 0]
-        if row[1] == '1':
-            ad[adID_key][0] += 1
-            ad[adID_key][1] += 1
-        else:
-            ad[adID_key][0] += 1
-        ad[adID_key][3] += connection_bias[connectionType]
+            # 更新adID的数据
+            if adID_key not in ad:
+                ad[adID_key] = [0, 0, 0, 0]
+            if row[1] == '1':
+                ad[adID_key][0] += 1
+                ad[adID_key][1] += 1
+            else:
+                ad[adID_key][0] += 1
+            ad[adID_key][3] += connection_bias[connectionType]
 
-        # 更新campaignID的数据
-        if campaignID_key not in campaign:
-            campaign[campaignID_key] = [0, 0, 0, 0]
-        if row[1] == '1':
-            campaign[campaignID_key][0] += 1
-            campaign[campaignID_key][1] += 1
-        else:
-            campaign[campaignID_key][0] += 1
-        campaign[campaignID_key][3] += connection_bias[connectionType]
+            # 更新campaignID的数据
+            if campaignID_key not in campaign:
+                campaign[campaignID_key] = [0, 0, 0, 0]
+            if row[1] == '1':
+                campaign[campaignID_key][0] += 1
+                campaign[campaignID_key][1] += 1
+            else:
+                campaign[campaignID_key][0] += 1
+            campaign[campaignID_key][3] += connection_bias[connectionType]
 
-        # 更新advertiserID的数据
-        if advertiserID_key not in advertiser:
-            advertiser[advertiserID_key] = [0, 0, 0, 0]
-        if row[1] == '1':
-            advertiser[advertiserID_key][0] += 1
-            advertiser[advertiserID_key][1] += 1
-        else:
-            advertiser[advertiserID_key][0] += 1
-        advertiser[advertiserID_key][3] += connection_bias[connectionType]
+            # 更新advertiserID的数据
+            if advertiserID_key not in advertiser:
+                advertiser[advertiserID_key] = [0, 0, 0, 0]
+            if row[1] == '1':
+                advertiser[advertiserID_key][0] += 1
+                advertiser[advertiserID_key][1] += 1
+            else:
+                advertiser[advertiserID_key][0] += 1
+            advertiser[advertiserID_key][3] += connection_bias[connectionType]
 
-        # 更新appID的数据
-        if appID_key not in app:
-            app[appID_key] = [0, 0, 0, 0]
-        if row[1] == '1':
-            app[appID_key][0] += 1
-            app[appID_key][1] += 1
-        else:
-            app[appID_key][0] += 1
-        app[appID_key][3] += connection_bias[connectionType]
+            # 更新appID的数据
+            if appID_key not in app:
+                app[appID_key] = [0, 0, 0, 0]
+            if row[1] == '1':
+                app[appID_key][0] += 1
+                app[appID_key][1] += 1
+            else:
+                app[appID_key][0] += 1
+            app[appID_key][3] += connection_bias[connectionType]
 
-        # 更新appPlatform的数据
-        if appPlatform_key not in appPlatform:
-            appPlatform[appPlatform_key] = [0, 0, 0]
-        if row[1] == '1':
-            appPlatform[appPlatform_key][0] += 1
-            appPlatform[appPlatform_key][1] += 1
-        else:
-            appPlatform[appPlatform_key][0] += 1
+            # 更新appPlatform的数据
+            if appPlatform_key not in appPlatform:
+                appPlatform[appPlatform_key] = [0, 0, 0]
+            if row[1] == '1':
+                appPlatform[appPlatform_key][0] += 1
+                appPlatform[appPlatform_key][1] += 1
+            else:
+                appPlatform[appPlatform_key][0] += 1
 
-    for adID_key in ad.keys():
-        calibrate(ad, adID_key)
-        # COEC
-        ad[adID_key][3] = round((ad[adID_key][1]/ad[adID_key][3]), 5)
+        for adID_key in ad.keys():
+            calibrate(ad, adID_key)
+            # COEC
+            ad[adID_key][3] = round((ad[adID_key][1]/ad[adID_key][3]), 5)
 
-    for campaignID_key in campaign:
-        calibrate(campaign, campaignID_key)
-        campaign[campaignID_key][3] = round((campaign[campaignID_key][1] / campaign[campaignID_key][3]), 5)
+        for campaignID_key in campaign:
+            calibrate(campaign, campaignID_key)
+            campaign[campaignID_key][3] = round((campaign[campaignID_key][1] / campaign[campaignID_key][3]), 5)
 
-    for advertiserID_key in advertiser:
-        calibrate(advertiser, advertiserID_key)
-        advertiser[advertiserID_key][3] = round((advertiser[advertiserID_key][1] / advertiser[advertiserID_key][3]), 5)
+        for advertiserID_key in advertiser:
+            calibrate(advertiser, advertiserID_key)
+            advertiser[advertiserID_key][3] = round((advertiser[advertiserID_key][1] / advertiser[advertiserID_key][3]), 5)
 
-    for appPlatform_key in appPlatform:
-        calibrate(appPlatform, appPlatform_key)
+        for appPlatform_key in appPlatform:
+            calibrate(appPlatform, appPlatform_key)
 
-    # if fine_feature:
-    for appID_key in app:
-        calibrate(app, appID_key)
-        app[appID_key][3] = round((app[appID_key][1] / app[appID_key][3]), 5)
+        # if fine_feature:
+        for appID_key in app:
+            calibrate(app, appID_key)
+            app[appID_key][3] = round((app[appID_key][1] / app[appID_key][3]), 5)
 
-    bound = 1
+        bound = 1
 
-    # 获取最终的list
-    ad_file = open(ad_file_path, 'r')
-    ad_file.readline()
-    for line in ad_file:
-        row = line.strip().split(',')
-        day = int(row[1])
-        if day < left_day * 10000 or day > right_day * 10000:
-            continue
-        creative_data = creative[int(row[3])][bound:]
-        adID_data = ad[int(row[8])][bound:]
-        campaignID_data = campaign[int(row[9])][bound:]
-        advertiserID_data = advertiser[int(row[10])][bound:]
-        creativeData = adID_data + campaignID_data + advertiserID_data
+        # 获取最终的list
+        ad_file = open(ad_file_path, 'r')
+        ad_file.readline()
+        for line in ad_file:
+            row = line.strip().split(',')
+            day = int(row[1])
+            if day < left_day * 10000 or day > right_day * 10000:
+                continue
+            creative_data = creative[int(row[3])][bound:]
+            adID_data = ad[int(row[8])][bound:]
+            campaignID_data = campaign[int(row[9])][bound:]
+            advertiserID_data = advertiser[int(row[10])][bound:]
+            creativeData = adID_data + campaignID_data + advertiserID_data
 
-        appID_data = app[int(row[11])][bound:]
-        appPlatform_data = appPlatform[int(row[12])][bound:]
-        creativeData += appID_data + appPlatform_data + creative_data
+            appID_data = app[int(row[11])][bound:]
+            appPlatform_data = appPlatform[int(row[12])][bound:]
+            creativeData += appID_data + appPlatform_data + creative_data
 
-        creativeID_adFeature_map[int(row[3])] = creativeData
-    print "Building ad cvr finished."
-    del ad, campaign, advertiser, app, appPlatform, creative
+            creativeID_adFeature_map[int(row[3])] = creativeData
+        print "Building ad cvr finished."
+        del ad, campaign, advertiser, app, appPlatform, creative
+        pickle.dump(creativeID_adFeature_map, open(constants.custom_path + '/features/creativeID_adFeature_map.pkl', 'wb'))
+    else:
+        creativeID_adFeature_map = pickle.load(
+            open(constants.custom_path + '/features/creativeID_adFeature_map.pkl', 'rb'))
     return creativeID_adFeature_map
 
 
 # 获取appID短期cvr特征
 def build_short_cvr(train_dir):
-    '''
-    :type train_dir: string train_with_ad.csv的路径
-    :rtype: dict{appID:{Day20:[conver,cvr]
-                        Day21:[conver,cvr]
-                            ...
-                        Day30:[conver,cvr]
-                                }}
-    :Example: a = getAppID_cvr_twoDays('train_with_ad_info.csv')
-    '''
     ad_file_path = train_dir + "train_with_ad_info.csv"
     ad_file = open(ad_file_path, 'r')
     ad_file.readline()
     appID_day_map = {}
-    appID_twoDay_map = {}
-    max_conversion = 0
-    min_conversion = 1
-    max_cvr = 0.0
-    min_cvr = 1.0
+    # appID_twoDay_map = {}
     for line in ad_file:
         row = line.strip().split(',')
         label = row[0]
-        clickTime = row[1]
-        day = int(float(clickTime) / 1440.0)
+        clickTime = int(row[1])
+        day = clickTime / 10000
         appID = int(row[11])
         if appID not in appID_day_map:
             appID_day_map[appID] = {}
@@ -469,48 +411,39 @@ def build_short_cvr(train_dir):
 
     # 将20-31天的appID对应的前两天的conversion amount和cvr存成2维dict：appID_twoDay_map[appID][day]
     # ex: a = appID_twoDay_map[appID][day], conversion = a[0],cvr = a[1]
-    for day in range(20, 32):
-        for appID in appID_day_map.keys():
-            if appID not in appID_twoDay_map:
-                appID_twoDay_map[appID] = {}
-            if day not in appID_twoDay_map[appID]:
-                appID_twoDay_map[appID][day] = [0, 0]
-            yesterday = day - 1
-            beforeYesterday = day - 2
-            clickYes, clickBeforeYes = 0, 0
-            converYes, converBeforeYes = 0, 0
-            if appID in appID_day_map and yesterday in appID_day_map[appID]:
-                clickYes, converYes = appID_day_map[appID][yesterday][0], appID_day_map[appID][yesterday][1]
-            if appID in appID_day_map and beforeYesterday in appID_day_map[appID]:
-                clickBeforeYes, converBeforeYes = appID_day_map[appID][beforeYesterday][0], \
-                                                  appID_day_map[appID][beforeYesterday][1]
+    # for day in range(20, 32):
+    #     for appID in appID_day_map.keys():
+    #         if appID not in appID_twoDay_map:
+    #             appID_twoDay_map[appID] = {}
+    #         if day not in appID_twoDay_map[appID]:
+    #             appID_twoDay_map[appID][day] = [0, 0]
+    #         yesterday = day - 1
+    #         clickYes, clickBeforeYes = 0, 0
+    #         converYes, converBeforeYes = 0, 0
+    #         if appID in appID_day_map and yesterday in appID_day_map[appID]:
+    #             clickYes, converYes = appID_day_map[appID][yesterday][0], appID_day_map[appID][yesterday][1]
+    #         # if appID in appID_day_map and beforeYesterday in appID_day_map[appID]:
+    #         #     clickBeforeYes, converBeforeYes = appID_day_map[appID][beforeYesterday][0], \
+    #         #                                       appID_day_map[appID][beforeYesterday][1]
+    #
+    #         if clickYes == 0 and not_smooth:
+    #             cvr_yes = 0
+    #         else:
+    #             cvr_yes = round((alpha + converYes) / (float(clickYes) + alpha + beta), 5)
+    #         appID_twoDay_map[appID][day] = [round(math.log(converYes, 2), 5), cvr_yes]
 
-            if clickYes == 0 and not_smooth:
-                cvr_yes = 0
-            else:
-                cvr_yes = (alpha + converYes) / (float(clickYes) + alpha + beta)
-            # cvr_before_yes = (alpha + converBeforeYes) / (float(clickBeforeYes) + alpha + beta)
-            # avg_conversion = (converYes + converBeforeYes) / 2
-            # cvr = (cvr_yes + cvr_before_yes) / 2
-            # max_conversion = max(max_conversion, avg_conversion)
-            # min_conversion = min(min_conversion, avg_conversion)
-            # max_cvr = max(max_cvr, cvr_yes)
-            # min_cvr = min(min_cvr, cvr_yes)
-            # appID_twoDay_map[appID][day] = [avg_conversion, cvr]
-            appID_twoDay_map[appID][day] = [cvr_yes, converYes]
-
-    for k, v in appID_twoDay_map.iteritems():
-        for day in range(20, 32):
-            if day in v:
-                pass
-                # v[day][0] = round((v[day][0] - min_conversion) / float(max_conversion - min_conversion), 5)
-                # v[day][0] = round((v[day][0] - min_cvr) / float(max_cvr - min_cvr), 5)
-            else:
-                v[day] = [0]
-                # v[day] = [0, float(alpha)/(alpha+beta)]
-                # v[day] = [float(alpha) / (alpha + beta)]
+    # for k, v in appID_twoDay_map.iteritems():
+    #     for day in range(20, 32):
+    #         if day in v:
+    #             pass
+    #             # v[day][0] = round((v[day][0] - min_conversion) / float(max_conversion - min_conversion), 5)
+    #             # v[day][0] = round((v[day][0] - min_cvr) / float(max_cvr - min_cvr), 5)
+    #         else:
+    #             v[day] = [0]
+    #             # v[day] = [0, float(alpha)/(alpha+beta)]
+    #             # v[day] = [float(alpha) / (alpha + beta)]
     print "Building app short cvr finished."
-    return appID_twoDay_map
+    return appID_day_map
 
 
 # build connection feature
@@ -526,9 +459,7 @@ def build_conn_cvr(train_dir):
 if __name__ == "__main__":
     from features import cvr
     cvr_handler = cvr.StatisticHandler(constants.project_path+"/dataset/custom/")
-    a = build_pos_combine_cvr(constants.project_path + "/dataset/custom/")
-    for k in a['appID'].keys()[:5]:
-        print a['appID'][k]
+
     # cvr_handler.load_train_cvr()
     # cvr_handler.load_avg_cvr(24, 31)
     # build_ad_cvr(constants.project_path+"/dataset/custom/")

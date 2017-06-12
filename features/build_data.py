@@ -3,14 +3,14 @@ import io
 
 import pandas as pd
 
+import cvr
 import features.gbdt_feature as gf
 import one_hot.position as pf
 import one_hot.user_profile as uf
 from features.one_hot import advertising as af
+from features.utils import attr_mapper
 from util import constants
-import cvr
-import feature_helper
-import sys
+
 
 # 以libfm形式存储
 def write_as_libfm(features, file_write, label):
@@ -102,16 +102,15 @@ def build_x_hepler(from_path, to_path,
         else:
             day = int(row[2]) / 10000
 
-        # if day == 30:
-        #     continue
-        instance = int(row[8]) if data_type == "train" else row_num
-        if instance in time_gap_dict:
-            time_gap = time_gap_dict[instance]
-        else:
-            time_gap = [0] * 3
-        offset = feed_cvr_feature(features, time_gap, offset, field, ffm)
-        field += 1
-        del time_gap
+        # time gap feature
+        # instance = int(row[8]) if data_type == "train" else row_num
+        # if instance in time_gap_dict:
+        #     time_gap = time_gap_dict[instance]
+        # else:
+        #     time_gap = [0] * 3
+        # offset = feed_cvr_feature(features, time_gap, offset, field, ffm)
+        # field += 1
+        # del time_gap
 
         # instance = int(row[8]) if data_type == "train" else row_num+1
         # if statistic_handler.is_installed(instance, data_type):
@@ -136,14 +135,14 @@ def build_x_hepler(from_path, to_path,
             del user_cvr
 
         # user actions
-        user_actions_f = statistic_handler.get_user_action(userID, creativeID, day)
-        offset = feed_cvr_feature(features, user_actions_f, offset, field, ffm)
-        del user_actions_f
-
-        user_before_actions_f = statistic_handler.get_user_before_action(userID, creativeID)
-        offset = feed_cvr_feature(features, user_before_actions_f, offset, field, ffm)
-        field += 1
-        del user_before_actions_f
+        # user_actions_f = statistic_handler.get_user_action(userID, creativeID, day)
+        # offset = feed_cvr_feature(features, user_actions_f, offset, field, ffm)
+        # del user_actions_f
+        #
+        # user_before_actions_f = statistic_handler.get_user_before_action(userID, creativeID)
+        # offset = feed_cvr_feature(features, user_before_actions_f, offset, field, ffm)
+        # field += 1
+        # del user_before_actions_f
 
         # position feature
         pos_f = pos_features[positionID]
@@ -203,7 +202,7 @@ def build_x_hepler(from_path, to_path,
             del ad_cvr
         field += 1
 
-        attr_map = feature_helper.build_attr_map(ad_map, user_map, userID, creativeID, positionID, connectionType)
+        attr_map = attr_mapper.build_attr_map(ad_map, user_map, userID, creativeID, positionID, connectionType)
 
         # headers = ['appID', 'connectionType', 'campaignID', 'adID', 'creativeID', 'age', 'education', 'gender',
         #            'haveBaby', 'marriageStatus', 'residence', 'appCategory']
@@ -232,6 +231,9 @@ def build_x_hepler(from_path, to_path,
                    'haveBaby', 'marriageStatus']
         offset, field = feed_combine_cvr(attr_map, headers, 'positionID', features, offset, field, ffm,
                                          statistic_handler)
+
+        # triple_combine_feature = statistic_handler.get_triple_cvr_feature('triple', appID, positionID, connectionType)
+        # offset = feed_cvr_feature(features, triple_combine_feature, offset, field, ffm)
         # print offset, len(features)
 
         # print offset, len(features)
@@ -293,8 +295,9 @@ def build_x():
     cvr_handler = cvr.StatisticHandler(cus_dir_path)
     '''注意online test 的区间是不同的 24 31'''
     cvr_handler.load_avg_cvr(17, 24)
-    cvr_handler.load_time_cvr()
-    train_time_gap, predict_time_gap = cvr_handler.load_time_gap_feature(cus_dir_path)
+
+    # cvr_handler.load_time_cvr()
+    # train_time_gap, predict_time_gap = cvr_handler.load_time_gap_feature(cus_dir_path)
     # train_last_click, predict_last_click = cvr_handler.load_last_click_feature(cus_dir_path)
 
     # # generate online test dataset
@@ -326,7 +329,7 @@ def build_x():
                        user_features, user_dim, user_map,
                        pos_features, pos_dim,
                        cvr_handler,
-                       time_gap_dict=train_time_gap,
+                       # time_gap_dict=train_time_gap,
                        # last_click_dict=train_last_click,
                        data_type="train",
                        has_gbdt=False,
@@ -338,7 +341,7 @@ def build_x():
                        user_features, user_dim, user_map,
                        pos_features, pos_dim,
                        cvr_handler,
-                       time_gap_dict=train_time_gap,
+                       # time_gap_dict=train_time_gap,
                        # last_click_dict=train_last_click,
                        data_type="train",
                        has_gbdt=False,

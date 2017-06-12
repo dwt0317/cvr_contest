@@ -109,3 +109,66 @@ conn_site:  193
 conn_cvr:  195
 ad_f:  1072
 
+------------------------------------------------------
+
+train中userID个数： 18903884
+多余userID数： 17565582 0.929204918947
+train中positionID个数： 21488
+多余positionID数： 9020 0.419769173492
+train中appID个数： 465
+多余appID数： 127 0.27311827957
+train中adID个数： 29726
+多余adID数： 21287 0.716107111619
+train中creativeID个数： 48836
+多余creativeID数： 34585 0.708186583668
+train中advertiserID个数： 639
+多余advertiserID数： 165 0.258215962441
+train中camgaignID个数： 6583
+多余camgaignID数： 3701 0.5622056813
+
+
+pos 5%: 1.0
+pos 15%: 1.0
+pos 25%: 3.0
+pos 45%: 9.0
+pos 65%: 42.0
+pos 85%: 319.95
+pos 90%: 716.8
+pos 95%: 2646.3
+
+user 5%: 1.0
+user 15%: 1.0
+user 25%: 1.0
+user 45%: 1.0
+user 65%: 2.0
+user 85%: 3.0
+user 90%: 4.0
+user 95%: 5.0
+
+creative 5%: 1.0
+creative 15%: 3.0
+creative 25%: 5.0
+creative 45%: 17.0
+creative 65%: 57.0
+creative 85%: 375.0
+creative 90%: 783.0
+creative 95%: 2259.0
+
+campaignID count: 6570
+campaignID 5%: 3.0
+campaignID 15%: 16.0
+campaignID 25%: 52.0
+campaignID 45%: 256.05
+campaignID 65%: 1137.95
+campaignID 85%: 6863.0
+campaignID 90%: 11706.5
+campaignID 95%: 26641.55
+
+
+creativeID 20 25115
+positionID 20 9383
+campaignID 20 5463
+adID 20 17714
+userID 5 907444
+advertiserID 1 639
+appID 1 465

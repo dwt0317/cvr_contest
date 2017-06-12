@@ -112,12 +112,11 @@ def bootstrap_online_train(start_date, to_dir):
 
 
 # 按日期进行分割
-def split_by_date_online(left_bound, right_bound, to_dir):
+def split_by_date(left_bound, right_bound, to_file):
     total_df = pd.read_csv(constants.raw_train_path)
-    train_df = total_df[(total_df['clickTime'] >= left_bound)
-                        & (total_df['clickTime'] < right_bound)]
-    # test_df = total_df[(total_df['clickTime'] > right_bound*1440)]
-    train_df.to_csv(to_dir + "train_second_week.csv", index=False)
+    train_df = total_df[(total_df['clickTime'] >= left_bound*1000000)
+                        & (total_df['clickTime'] < right_bound*1000000)]
+    train_df.to_csv(to_file, index=False)
     print train_df.shape
     # test_df.to_csv(to_dir + "test_x.csv", index=False)
     # print test_df.shape
@@ -181,7 +180,7 @@ def map_age(age):
 # 在train文件中merge user信息
 def merge_by_user(train_file, to_path):
     total_df = pd.read_csv(train_file)
-    user_df = pd.read_csv(constants.project_path + "/dataset/raw/" + "user.csv")
+    user_df = pd.read_csv(constants.raw_path + "/user.csv")
     merge_df = pd.merge(left=total_df, right=user_df, how='left', on=['userID'])
 
     # pos_df = pd.read_csv(constants.project_path + "/dataset/raw/" + "position.csv")
@@ -194,7 +193,7 @@ def merge_by_user(train_file, to_path):
 # 在train文件中merge ad信息
 def merge_by_ad(train_file, to_path):
     total_df = pd.read_csv(train_file)
-    ad_df = pd.read_csv(constants.project_path + "/dataset/raw/" + "ad.csv")
+    ad_df = pd.read_csv(constants.raw_path + "/ad.csv")
 
     merge_df = pd.merge(left=total_df, right=ad_df, how='left', on=['creativeID'])
 
@@ -208,7 +207,7 @@ def merge_by_ad(train_file, to_path):
 # 在train文件中merge pos信息
 def merge_by_pos(train_file, to_path):
     total_df = pd.read_csv(train_file)
-    pos_df = pd.read_csv(constants.project_path + "/dataset/raw/" + "position.csv")
+    pos_df = pd.read_csv(constants.raw_path + "/position.csv")
     merge_df = pd.merge(left=total_df, right=pos_df, how='left', on=['positionID'])
     merge_df.to_csv(path_or_buf=to_path, index=False)
     print "Merging pos finished."
@@ -216,20 +215,39 @@ def merge_by_pos(train_file, to_path):
 
 def merge_by_category(train_file, to_path):
     total_df = pd.read_csv(train_file)
-    cate_df = pd.read_csv(constants.project_path + "/dataset/raw/" + "app_categories.csv")
+    cate_df = pd.read_csv(constants.raw_path + "/app_categories.csv")
     merge_df = pd.merge(left=total_df, right=cate_df, how='left', on=['appID'])
     merge_df.to_csv(path_or_buf=to_path, index=False)
 
 
-def merge_with_all_data(to_dir):
+def merge_with_all_data(train_file, day, to_dir):
     merge_tmp = to_dir+"/merge_tmp"
-    merge_by_ad(constants.clean_train_path, merge_tmp+"_1")
+    merge_by_ad(train_file, merge_tmp+"_1")
     merge_by_pos(merge_tmp+"_1",
                  merge_tmp + "_2")
     merge_by_category(merge_tmp + "_2", merge_tmp + "_3")
     merge_by_user(merge_tmp + "_3",
-                  to_dir+"train_with_all_info.csv")
+                  to_dir+"/train_with_all_"+str(day)+".csv")
     # all_info = pd.read_csv(to_dir+"train_with_all_info.csv")
+
+
+# 合并分开的数据集
+def concat_data(dir_path, l_bound, r_bound, to_path, headers):
+    to_file = open(to_path, 'w')
+    to_file.write(','.join(headers)+'\n')
+    df = None
+    for train_file in os.listdir(dir_path):
+        print train_file
+        if os.path.isdir(dir_path+train_file):
+            continue
+        day = int(train_file.split('_')[3].split('.')[0])
+        if day < l_bound or day > r_bound:
+            continue
+        with open(dir_path+train_file, 'r') as f:
+            f.readline()
+            for line in f:
+                to_file.write(line)
+    to_file.close()
 
 
 if __name__ == '__main__':
@@ -238,19 +256,29 @@ if __name__ == '__main__':
     # split_by_date_kfold(20, dir_path)
     # pass
     # abandon_thirty(constants.raw_train_path)
-    # split_by_date_online(240000, 310000, dir_path)
     # merge_with_all_data(constants.project_path + "/dataset/custom/")
     # conversion_gap()
     # convert_data_time(constants.raw_train_path, constants.project_path + "/dataset/custom/train_re-time.csv", 0)
     # convert_data_time(constants.raw_test_path, constants.project_path +"/dataset/custom/test_re-time.csv", 1)
     # install_merge_by_app(constants.project_path + "/dataset/raw/" + "user_installedapps.csv",
     #                      constants.project_path + "/dataset/raw/" + "user_installedapps_with_category.csv")
-    # pass
     # merge_by_ad(constants.clean_train_path, constants.project_path+"/dataset/custom/train_with_ad_info.csv")
-    # merge_by_user(constants.project_path+"/dataset/custom/train_with_ad_info.csv", constants.project_path + "/dataset/custom/train_with_ad_user_info.csv")
-    # merge_by_pos(constants.project_path+"/dataset/custom/train_with_ad_info.csv", constants.project_path + "/dataset/custom/train_with_ad_pos_info.csv")
+    # merge_by_user(constants.project_path+"/dataset/custom/train_with_ad_info.csv",
+    # constants.project_path + "/dataset/custom/train_with_ad_user_info.csv")
+    # merge_by_pos(constants.project_path+"/dataset/custom/train_with_ad_info.csv",
+    # constants.project_path + "/dataset/custom/train_with_ad_pos_info.csv")
     # merge_by_category(constants.project_path+"/dataset/custom/train_with_ad_pos_user_re.csv",
     #               constants.project_path + "/dataset/custom/train_with_ad_pos_user_re2.csv")
-    merge_with_all_data(constants.custom_path)
+    # for day in range(17, 31):
+    #     train_file = constants.custom_path+'/split_by_day/train_'+str(day)+'.csv'
+    #     merge_by_user(train_file, constants.custom_path+'/split_by_day/with_user/train_with_user_'+str(day)+'.csv')
+    #     print str(day) + ' finished.'
+    # train_file = constants.custom_path + '/split_by_day/tmp/train_30_clean_3.csv'
+    # merge_by_ad(train_file, constants.custom_path + '/split_by_day/with_ad/train_with_ad_30.csv')
     # random_split_dataset(0.85, constants.project_path+"/dataset/custom/split_6/")
     # bootstrap_online_train(24, dir_path+"split_online/")
+    # headers = ['label','clickTime','conversionTime','creativeID','userID','positionID','connectionType','telecomsOperator','age','gender','education','marriageStatus','haveBaby','hometown','residence']
+    # concat_data(constants.custom_path+'/split_by_day/with_user/', 17, 30,
+    #             constants.custom_path+'/train_with_user_info.csv', headers)
+    split_by_date(23, 27, constants.custom_path+'/for_train/train.csv')
+    split_by_date(27, 31, constants.custom_path + '/for_predict/train.csv')

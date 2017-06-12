@@ -1022,15 +1022,59 @@ auc_test: 0.792687285856
 logloss: 0.100237496318
 time: 0:00:57.911000
 
-2017-06-09 23:40:59
++ age
+2017-06-10 00:07:42
 gbdt:
-auc_test: 0.792662049098
-logloss: 0.100228733357
-time: 0:00:57.788000
+auc_test: 0.791927485925
+logloss: 0.100283634972
+time: 0:01:02.616000
 
-2017-06-09 23:57:46
++age position(3 features)
+2017-06-10 10:29:57
 gbdt:
-auc_test: 0.792662049098
-logloss: 0.100228733357
-time: 0:00:58.370000
+auc_test: 0.793023387643
+logloss: 0.100351939871
+time: 0:01:05.139000
+
++ install and action count
+2017-06-10 11:08:58
+gbdt:
+auc_test: 0.792819440621
+logloss: 0.100212439524
+time: 0:00:58.199000
+
+change alpha beta to 129 5085
+2017-06-10 11:23:13
+gbdt:
+auc_test: 0.791304102937
+logloss: 0.100392909768
+time: 0:00:58.977000
+
+all 123 5000
+2017-06-10 11:44:59
+gbdt:
+auc_test: 0.79236931327
+logloss: 0.100270026934
+time: 0:00:58.732000
+2017-06-10 12:08:51
+
+(dont change alpha beta more)
+gbdt:
+auc_test: 0.792819440621
+logloss: 0.100212439524
+time: 0:00:58.616000
+
+set unavaliable combination low priori
+2017-06-10 17:24:05
+gbdt:
+auc_test: 0.792191193775
+logloss: 0.100259096076
+time: 0:01:00.371000
+
++ triple combination
+2017-06-10 17:55:21
+gbdt:
+auc_test: 0.792328138633
+logloss: 0.100295511155
+time: 0:01:01.001000
 

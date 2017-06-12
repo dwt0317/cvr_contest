@@ -10,6 +10,7 @@ import sys
 alpha = 130  # for smoothing
 beta = 5085
 
+
 # 0.02492 7e-05
 max_cvr = 0.025
 min_cvr = 7e-05
@@ -36,7 +37,9 @@ class StatisticHandler:
 
         # for time
         self._user_action_features = {}
-        self._user_before_action_feature = {}
+        self._user_before_action_features = {}
+        self._user_install_features = {}
+        self._user_before_install_features = {}
         self._id_cvr_feature = {}
         self._yes_id_cvr_feature = {}
         self._cur_day = 17
@@ -69,8 +72,8 @@ class StatisticHandler:
     # 读取时序cvr特征
     def load_time_cvr(self):
         import time_cvr
-        self._user_action_features = time_cvr.build_user_action()
-        self._user_before_action_feature = time_cvr.build_user_before_action()
+        self._user_action_features, self._user_install_features = time_cvr.build_user_action()
+        self._user_before_action_features, self._user_before_install_features = time_cvr.build_user_before_action()
         # self.load_id_cvr()
         print "Loading time cvr finished."
 
@@ -175,12 +178,13 @@ class StatisticHandler:
         appID = self._creative_app_dict[creativeID]['appID']
         category = self._app_category_dict[appID]
         d = day - 1
-        features = [0, 0, 0, 0, 0]      # diversity, num, most, medium, low
+        features = [0, 0, 0, 0, 0, 0]      # diversity, num, most, medium, low, app_count
         if d in self._user_action_features:
             if userID in self._user_action_features[d]:
                 diversity = len(self._user_action_features[d][userID])
                 num = self._user_action_features[d][userID].get(category, 0)
                 rate = num / float(diversity)
+                app_count = self._user_install_features[d][userID]
                 features[0], features[1] = diversity, num
                 if rate < 0.2:
                     features[4] = 1
@@ -188,6 +192,7 @@ class StatisticHandler:
                     features[3] = 1
                 else:
                     features[2] = 1
+                features[5] = app_count
         return features
 
     # 获取30天前用户行为特征
@@ -195,11 +200,12 @@ class StatisticHandler:
         appID = self._creative_app_dict[creativeID]['appID']
         category = self._app_category_dict[appID]
 
-        features = [0, 0, 0, 0, 0]      # diversity, num, most, medium, low
-        if userID in self._user_before_action_feature:
-            diversity = len(self._user_before_action_feature[userID])
-            num = self._user_before_action_feature[userID].get(category, 0)
+        features = [0, 0, 0, 0, 0, 0]      # diversity, num, most, medium, low, app_count
+        if userID in self._user_before_action_features:
+            diversity = len(self._user_before_action_features[userID])
+            num = self._user_before_action_features[userID].get(category, 0)
             rate = num / float(diversity)
+            app_count = self._user_before_install_features[userID]
             features[0], features[1] = diversity, num
             if rate < 0.2:
                 features[4] = 1
@@ -207,6 +213,7 @@ class StatisticHandler:
                 features[3] = 1
             else:
                 features[2] = 1
+            features[5] = app_count
         return features
 
     # 获取网络转化率
@@ -235,6 +242,15 @@ class StatisticHandler:
                     if attr2 in self._combine_cvr_dict[header1][header2][attr1]:
                         return self._combine_cvr_dict[header1][header2][attr1][attr2]
         return [0, round(float(alpha)/(alpha+beta), 5)]
+
+    # 获取三重组合点击率
+    def get_triple_cvr_feature(self, header, attr1, attr2, attr3):
+        if attr1 in self._combine_cvr_dict[header]:
+            if attr2 in self._combine_cvr_dict[header][attr1]:
+                if attr3 in self._combine_cvr_dict[header][attr1][attr2]:
+                    return self._combine_cvr_dict[header][attr1][attr2][attr3]
+        return [0, round(float(alpha)/(alpha+beta), 5)]
+
 
     # # 获取pos组合点击率特征
     # def get_pos_combine_cvr_feature(self, header, id, positionID):

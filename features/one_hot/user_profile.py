@@ -5,6 +5,7 @@ import pandas as pd
 from util import *
 import copy
 
+
 # 30天之前的用户app安装特征
 def user_before_app_feature():
     installedapp_file = constants.project_path+"/dataset/raw/user_installedapps.csv"

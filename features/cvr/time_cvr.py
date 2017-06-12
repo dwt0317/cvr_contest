@@ -21,12 +21,16 @@ beta = 5085
 '''
 
 
+in_memory = False
+
+
 # 用户安装行为
 def build_user_action():
-    if False:
+    if in_memory:
         # 读取favorite文件
         user_category_file = constants.project_path + "/dataset/custom/favorite/" + "user_app_actions_with_category.csv"
         user_action_dict = {}
+        user_install_dict = {}
         with open(user_category_file, 'r') as f:
             f.readline()
             for line in f:
@@ -42,19 +46,31 @@ def build_user_action():
                 else:
                     user_action_dict[day] = {userID: {category: 1}}
 
+                if day in user_install_dict:
+                    if userID in user_install_dict[day]:
+                        user_install_dict[day][userID] += 1
+                    else:
+                        user_install_dict[day][userID] = 1
+                else:
+                    user_install_dict[day] = {userID: 1}
+
         pickle.dump(user_action_dict, open(constants.custom_path+'/features/user_action_dict.pkl', 'wb'))
+        pickle.dump(user_install_dict, open(constants.custom_path + '/features/user_install_dict.pkl', 'wb'))
     else:
         user_action_dict = pickle.load(
             open(constants.custom_path + '/features/user_action_dict.pkl', 'rb'))
-    return user_action_dict
+        user_install_dict = pickle.load(
+            open(constants.custom_path + '/features/user_install_dict.pkl', 'rb'))
+    return user_action_dict, user_install_dict
 
 
 # 30天前用户app类别特征
 def build_user_before_action():
-    if False:
+    if in_memory:
         user_before_category_file = constants.project_path + \
                                     "/dataset/custom/favorite/user_installedapps_with_category_group.csv"
         user_before_action_dict = {}
+        user_before_install_dict = {}
         with open(user_before_category_file, 'r') as f:
             f.readline()
             for line in f:
@@ -66,11 +82,19 @@ def build_user_before_action():
                     user_before_action_dict[userID][category] = number
                 else:
                     user_before_action_dict[userID] = {category: number}
+                if userID in user_before_install_dict:
+                    user_before_install_dict[userID] += number
+                else:
+                    user_before_install_dict[userID] = number
         print "Building user before app favorite finished."
         pickle.dump(user_before_action_dict, open(constants.custom_path + '/features/user_before_action_dict.pkl', 'wb'))
+        pickle.dump(user_before_install_dict,
+                    open(constants.custom_path + '/features/user_before_install_dict.pkl', 'wb'))
     else:
         user_before_action_dict = pickle.load(open(constants.custom_path + '/features/user_before_action_dict.pkl', 'rb'))
-    return user_before_action_dict
+        user_before_install_dict = pickle.load(
+            open(constants.custom_path + '/features/user_before_install_dict.pkl', 'rb'))
+    return user_before_action_dict, user_before_install_dict
 
 
 # 历史转化率信息

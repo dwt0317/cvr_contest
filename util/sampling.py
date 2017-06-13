@@ -12,8 +12,8 @@ def total_samplilng(raw_file, to_dir):
 
 
 # 对样本进行负采样
-def negative_down_sampling(src_dir_path):
-    for i in range(0, 5):
+def negative_down_sampling(src_dir_path, rate):
+    for i in range(0, 4):
         train_src_file = src_dir_path + "train_x_" + str(i)
         train_df = pd.read_csv(train_src_file)
         negative_df = train_df[train_df.label == 0]
@@ -24,7 +24,7 @@ def negative_down_sampling(src_dir_path):
         train_df.fillna(-1, inplace=True)
         print n, k
         random_list = []
-        for m in xrange(int(n * 0.1)):
+        for m in xrange(int(n * rate)):
             random_list.append(random.randint(0, k - 1))
         print len(random_list)
 
@@ -46,5 +46,5 @@ def negative_down_sampling(src_dir_path):
 
 
 if __name__ == '__main__':
-    # negative_down_sampling(constants.project_path+"/dataset/custom/split_6/")
-    total_samplilng(constants.raw_path, constants.custom_path)
+    negative_down_sampling(constants.project_path+"/dataset/custom/split_0/", 0.025)
+    # total_samplilng(constants.raw_path, constants.custom_path)

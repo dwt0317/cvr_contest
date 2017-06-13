@@ -77,20 +77,23 @@ def get_idset(header, stat, bound):
 # 生成广告特征 return {creativeID:(adID,campaignID,advertiserID), appID,appPlatform,appCategory}
 def build_ad_feature(has_sparse=True):
     ad_info_df = pd.read_csv(constants.project_path + "/dataset/raw/" + "ad.csv")
-    stat = pd.read_csv(constants.project_path+'/dataset/custom/train_with_ad_info.csv')
 
     ad_id_lens = [0, 0, 0, 0, 0]
     appID_set = list2dict(ad_info_df['appID'].unique())
 
-    campID_set = get_idset('campaignID', stat, 2000)
-    # adverID_set = list2dict(ad_info_df['advertiserID'].unique())
-    adverID_set = get_idset('advertiserID', stat, 2000)
-    adID_set = get_idset('adID', stat, 2000)
-    del stat
+    # stat = pd.read_csv(constants.project_path + '/dataset/custom/train_with_ad_info.csv')
+    # campID_set = get_idset('campaignID', stat, 2000)
+    # adverID_set = get_idset('advertiserID', stat, 2000)
+    # adID_set = get_idset('adID', stat, 2000)
+    # del stat
+
+    campID_set = list2dict(list(np.loadtxt(constants.custom_path+'/idset/'+'campaignID_onehot', dtype=int)))
+    adverID_set = list2dict(list(np.loadtxt(constants.custom_path + '/idset/' + 'advertiserID_onehot', dtype=int)))
+    adID_set = list2dict(list(np.loadtxt(constants.custom_path + '/idset/' + 'adID_onehot', dtype=int)))
 
     print "camp id:" + str(len(campID_set))
     print "adver id:" + str(len(adverID_set))
-    print "adver id:" + str(len(adID_set))
+    print "ad id:" + str(len(adID_set))
 
     ad_id_lens[1] = len(adID_set) + 1
     ad_id_lens[2] = len(campID_set) + 1
@@ -170,7 +173,7 @@ def build_ad_feature(has_sparse=True):
             app_cate_2 = app_cate_1 * 100
         line_feature.append(offset+app_cate_1)
         offset += 10
-        line_map.append(app_cate_1)
+        line_map.append(str(app_cate_1))
         if has_sparse:
             line_feature.append(offset+app_cate_2)
             offset += 1000
@@ -183,6 +186,7 @@ def build_ad_feature(has_sparse=True):
     return ad_feature, ad_map, offset
 
 
+# deprecated
 def build_ad_spec_feature(has_sparse=True):
     train_df = pd.read_csv(constants.project_path + "/dataset/raw/" + "ad.csv")
 

@@ -27,15 +27,16 @@ def build_user_profile(has_sparse=False):
 
     if has_sparse:
         # user id 特征
-        stat = pd.read_csv(constants.clean_train_path)
-        userdf = stat['userID'].value_counts()
-        del stat
-        userlist = []
-        for i, row in userdf.iteritems():
-            if int(row) > 2:
-                userlist.append(i)
-        userIDset = utils.list2dict(userlist)
-        del userlist
+        # stat = pd.read_csv(constants.clean_train_path)
+        # userdf = stat['userID'].value_counts()
+        # del stat
+        # userlist = []
+        # for i, row in userdf.iteritems():
+        #     if int(row) > 2:
+        #         userlist.append(i)
+        # userIDset = utils.list2dict(userlist)
+        # del userlist
+        userIDset = utils.list2dict(list(np.loadtxt(constants.custom_path + '/idset/' + 'userID', dtype=int)))
 
     # user编号从1开始的, 0处补一个作为填充
     user_feature = [[0]]

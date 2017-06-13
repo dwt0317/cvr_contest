@@ -3,6 +3,7 @@ from util import constants
 import pandas as pd
 from util import utils
 from util.utils import list2dict
+import numpy as np
 
 def pos_statistic():
     total_df = pd.read_csv(constants.cus_train_path)
@@ -17,16 +18,19 @@ def build_position(has_sparse=False):
     # postion_df = pd.read_csv(constants.project_path + "/dataset/raw/position.csv")
     # positionID_set = list2dict(postion_df['positionID'].unique())
 
-    stat = pd.read_csv(constants.clean_train_path)
-    posdf = stat['positionID'].value_counts()
-    del stat
-    poslist = []
-    for i, row in posdf.iteritems():
-        if int(row) > 1000:
-            poslist.append(i)
-    positionID_set = utils.list2dict(poslist)
+    # stat = pd.read_csv(constants.clean_train_path)
+    # posdf = stat['positionID'].value_counts()
+    # del stat
+    # poslist = []
+    # for i, row in posdf.iteritems():
+    #     if int(row) > 1000:
+    #         poslist.append(i)
+    # positionID_set = utils.list2dict(poslist)
+    # del poslist
+
+    positionID_set = list2dict(list(np.loadtxt(constants.custom_path + '/idset/' + 'positionID_onehot', dtype=int)))
     print "pos id:" + str(len(positionID_set))
-    del poslist
+
     offset = 0
 
     for line in f:

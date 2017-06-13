@@ -123,13 +123,13 @@ def split_by_date(left_bound, right_bound, to_file):
 
 
 # 随机按量切分数据集
-def random_split_dataset(train_percent, to_path):
-    total_df = pd.read_csv(constants.project_path+"/dataset/custom/train_second_week.csv")
+def random_split_dataset(train_file, train_percent, to_path):
+    total_df = pd.read_csv(train_file)
     print total_df.shape
     # total_df = abandon_data(total_df, abandon_list)
     # shuffle原数据集
 
-    for i in xrange(5):
+    for i in xrange(4):
         random_df = total_df.sample(frac=1)
         random_df['instance'] = random_df.index
         random_df.reset_index(drop=True, inplace=True)
@@ -232,10 +232,10 @@ def merge_with_all_data(train_file, day, to_dir):
 
 
 # 合并分开的数据集
-def concat_data(dir_path, l_bound, r_bound, to_path, headers):
+def concat_data(dir_path, l_bound, r_bound, to_path):
     to_file = open(to_path, 'w')
-    to_file.write(','.join(headers)+'\n')
     df = None
+    count = 0
     for train_file in os.listdir(dir_path):
         print train_file
         if os.path.isdir(dir_path+train_file):
@@ -243,10 +243,15 @@ def concat_data(dir_path, l_bound, r_bound, to_path, headers):
         day = int(train_file.split('_')[3].split('.')[0])
         if day < l_bound or day > r_bound:
             continue
+
         with open(dir_path+train_file, 'r') as f:
-            f.readline()
+            if count == 0:
+                to_file.write(f.readline())
+            else:
+                f.readline()
             for line in f:
                 to_file.write(line)
+            count += 1
     to_file.close()
 
 
@@ -254,21 +259,23 @@ if __name__ == '__main__':
     dir_path = constants.project_path + "/dataset/custom/"
     # bootstrap_online_train(23, dir_path)
     # split_by_date_kfold(20, dir_path)
-    # pass
     # abandon_thirty(constants.raw_train_path)
-    # merge_with_all_data(constants.project_path + "/dataset/custom/")
+
     # conversion_gap()
     # convert_data_time(constants.raw_train_path, constants.project_path + "/dataset/custom/train_re-time.csv", 0)
     # convert_data_time(constants.raw_test_path, constants.project_path +"/dataset/custom/test_re-time.csv", 1)
     # install_merge_by_app(constants.project_path + "/dataset/raw/" + "user_installedapps.csv",
     #                      constants.project_path + "/dataset/raw/" + "user_installedapps_with_category.csv")
-    # merge_by_ad(constants.clean_train_path, constants.project_path+"/dataset/custom/train_with_ad_info.csv")
-    # merge_by_user(constants.project_path+"/dataset/custom/train_with_ad_info.csv",
-    # constants.project_path + "/dataset/custom/train_with_ad_user_info.csv")
-    # merge_by_pos(constants.project_path+"/dataset/custom/train_with_ad_info.csv",
-    # constants.project_path + "/dataset/custom/train_with_ad_pos_info.csv")
-    # merge_by_category(constants.project_path+"/dataset/custom/train_with_ad_pos_user_re.csv",
-    #               constants.project_path + "/dataset/custom/train_with_ad_pos_user_re2.csv")
+    # merge_by_ad(constants.custom_path+'/for_predict/train.csv', constants.project_path+"/dataset/custom/for_predict/train_with_ad_info.csv")
+    # merge_by_user(constants.custom_path+'/for_predict/train.csv',
+    # constants.project_path + "/dataset/custom/clean_id/train_with_user_info.csv")
+    # merge_by_pos(constants.custom_path+'/for_predict/train.csv',
+    # constants.project_path + "/dataset/custom/train_with_pos_info.csv")
+    # merge_with_all_data(constants.custom_path+'/for_predict/train.csv', 0, constants.custom_path+'/for_predict')
+
+
+    # merge_by_category(constants.custom_path+'/clean_id/train.csv',
+    #               constants.project_path + "/dataset/custom/clean_id/train_with_ad_pos_user_re2.csv")
     # for day in range(17, 31):
     #     train_file = constants.custom_path+'/split_by_day/train_'+str(day)+'.csv'
     #     merge_by_user(train_file, constants.custom_path+'/split_by_day/with_user/train_with_user_'+str(day)+'.csv')
@@ -278,7 +285,8 @@ if __name__ == '__main__':
     # random_split_dataset(0.85, constants.project_path+"/dataset/custom/split_6/")
     # bootstrap_online_train(24, dir_path+"split_online/")
     # headers = ['label','clickTime','conversionTime','creativeID','userID','positionID','connectionType','telecomsOperator','age','gender','education','marriageStatus','haveBaby','hometown','residence']
-    # concat_data(constants.custom_path+'/split_by_day/with_user/', 17, 30,
-    #             constants.custom_path+'/train_with_user_info.csv', headers)
-    split_by_date(23, 27, constants.custom_path+'/for_train/train.csv')
-    split_by_date(27, 31, constants.custom_path + '/for_predict/train.csv')
+    concat_data(constants.custom_path+'/split_by_day/with_pos/', 17, 30,
+                constants.custom_path+'/train_with_pos_info.csv')
+    # split_by_date(23, 27, constants.custom_path+'/for_train/train.csv')
+    # split_by_date(27, 31, constants.custom_path + '/for_predict/train.csv')
+    # random_split_dataset(constants.custom_path+'/for_predict/train.csv', 0.85, constants.custom_path+'/split_0/')

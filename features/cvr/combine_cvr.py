@@ -16,7 +16,7 @@ beta = 5085
 left_day = 17
 right_day = 24
 
-in_memory = False
+in_memory = True
 
 
 def combine_cvr_helper(partial_df, positive_df, headers, another_header, combine_dict):
@@ -45,13 +45,14 @@ def combine_cvr_helper(partial_df, positive_df, headers, another_header, combine
 
 
 def build_combine_cvr(train_dir):
-    train_file_path = train_dir + "train_with_all_info_re.csv"
+    train_file_path = train_dir + "train_with_all_info.csv"
     total_df = pd.read_csv(train_file_path)
-    partial_df = total_df[(total_df.clickTime >= left_day*10000) & (total_df.clickTime < right_day*10000)]
+    # partial_df = total_df[(total_df.clickTime >= left_day*10000) & (total_df.clickTime < right_day*10000)]
+    partial_df = total_df
     positive_df = partial_df[partial_df.label == 1]
     pos_combine_dict = build_pos_combine_cvr(partial_df, positive_df)
     app_combine_dict = build_app_combine_cvr(partial_df, positive_df)
-    triple_combine_dict = build_triple_combine_cvr(partial_df, positive_df)
+    # triple_combine_dict = build_triple_combine_cvr(partial_df, positive_df)
     # conn_combine_dict = build_conn_combine_cvr(partial_df, positive_df)
     # cate_combine_dict = build_cate_combine_cvr(partial_df, positive_df)
     # age_combine_dict = build_age_combine_cvr(partial_df, positive_df)
@@ -62,7 +63,7 @@ def build_combine_cvr(train_dir):
     # combine_cvr_dict['connectionType'] = conn_combine_dict
     # combine_cvr_dict['appCategory'] = cate_combine_dict
     # combine_cvr_dict['age'] = age_combine_dict
-    combine_cvr_dict['triple'] = triple_combine_dict
+    # combine_cvr_dict['triple'] = triple_combine_dict
     del total_df, partial_df
     return combine_cvr_dict
 

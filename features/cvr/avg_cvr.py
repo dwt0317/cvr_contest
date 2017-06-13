@@ -4,6 +4,7 @@ import pandas as pd
 from util import constants
 import math
 import cPickle as pickle
+import numpy as np
 
 '''
 用于生成平均cvr特征特征
@@ -82,11 +83,11 @@ def cvr_helper(total_df, header, dim, feature_map):
 
 
 # 统计ID维度的转化率
-def id_cvr_helper(raw_file, header, id_index):
-    stat = pd.read_csv(raw_file)
-    stat_file = open(constants.clean_train_path, 'r')
-    id_set = stat[header].values
-    del stat
+def id_cvr_helper(raw_file, stat_dir, header, id_index):
+    # stat = pd.read_csv(raw_file)
+    stat_file = open(stat_dir+'train.csv', 'r')
+    id_set = set(np.loadtxt(constants.custom_path+'/idset/'+'userID', dtype=int))
+    # del stat
     click_set = {}
     cv_set = {}
     # skip header
@@ -94,9 +95,9 @@ def id_cvr_helper(raw_file, header, id_index):
     # 采用按行读取的方式，统计各个id的点击和转化
     for line in stat_file:
         row = line.strip().split(',')
-        day = int(row[1])
-        if day < left_day * 10000 or day > right_day * 10000:
-            continue
+        # day = int(row[1])
+        # if day < left_day * 10000 or day > right_day * 10000:
+        #     continue
         id = int(row[id_index])
         click_set[id] = 1 + click_set.setdefault(id, 0)
         if int(row[0]) == 1:
@@ -145,8 +146,9 @@ def user_profile_cvr(file_path):
 
 # {userID1:[cvr1, cvr2,..], userID2:[cvr1, cvr2,..], ...}
 def build_user_cvr(train_dir):
+    print "Building user cvr feature starts."
     if in_memory:
-        userID_feature = id_cvr_helper(constants.project_path+"/dataset/raw/user.csv", 'userID', 4)
+        userID_feature = id_cvr_helper(constants.project_path+"/dataset/raw/user.csv", train_dir, 'userID', 4)
         user_pro_feature = user_profile_cvr(train_dir+"train_with_user_info.csv")
         user_cvr_features = {}
         user_file = open(constants.project_path + "/dataset/raw/user.csv", 'r')
@@ -163,11 +165,11 @@ def build_user_cvr(train_dir):
             feature_list.extend(user_pro_feature['haveBaby'][int(row[5])])
             user_cvr_features[int(row[0])] = feature_list
         del userID_feature, user_pro_feature
-
+        pickle.dump(user_cvr_features,
+                    open(constants.custom_path + '/features/user_cvr_features.pkl', 'wb'))
     else:
         user_cvr_features = pickle.load(
             open(constants.custom_path + '/features/user_cvr_features.pkl', 'rb'))
-    print "Building user cvr feature finished."
     return user_cvr_features
 
 
@@ -190,8 +192,9 @@ def pos_info_cvr(pos_info_file):
 
 # 按positionID处理cvr数据
 def build_pos_cvr(train_dir):
+    print "Building pos cvr feature starts."
     if in_memory:
-        positionID_feature = id_cvr_helper(constants.project_path + "/dataset/raw/position.csv", 'positionID', 5)
+        positionID_feature = id_cvr_helper(constants.project_path + "/dataset/raw/position.csv", train_dir, 'positionID', 5)
         pos_info_feature = pos_info_cvr(train_dir+"train_with_pos_info.csv")
         pos_file = open(constants.project_path + "/dataset/raw/position.csv", 'r')
         pos_file.readline()
@@ -209,6 +212,8 @@ def build_pos_cvr(train_dir):
             pos_cvr_features[int(row[0])] = feature_list
             # print pos_cvr_features[int(row[0])]
         del positionID_feature, pos_info_feature
+        pickle.dump(pos_cvr_features,
+                    open(constants.custom_path + '/features/pos_cvr_features.pkl', 'wb'))
     else:
         pos_cvr_features = pickle.load(
                 open(constants.custom_path + '/features/pos_cvr_features.pkl', 'rb'))
@@ -229,6 +234,7 @@ def calibrate(map, key):
 
 
 def build_ad_cvr(train_dir):
+    print "Building ad cvr feature starts."
     '''
     :type train_dir: string train_with_ad.csv所在文件夹
     :rtype: dict{creativeID:[ad_cl,ad_cv,ad_cvr,
@@ -255,9 +261,9 @@ def build_ad_cvr(train_dir):
             # beta = betas[connectionType]
 
             row = line.strip().split(',')
-            day = int(row[1])
-            if day < left_day * 10000 or day > right_day * 10000:
-                continue
+            # day = int(row[1])
+            # if day < left_day * 10000 or day > right_day * 10000:
+            #     continue
             connectionType = int(row[6])
             creativeID_key = int(row[3])
             adID_key = int(row[8])
@@ -358,9 +364,9 @@ def build_ad_cvr(train_dir):
         ad_file.readline()
         for line in ad_file:
             row = line.strip().split(',')
-            day = int(row[1])
-            if day < left_day * 10000 or day > right_day * 10000:
-                continue
+            # day = int(row[1])
+            # if day < left_day * 10000 or day > right_day * 10000:
+            #     continue
             creative_data = creative[int(row[3])][bound:]
             adID_data = ad[int(row[8])][bound:]
             campaignID_data = campaign[int(row[9])][bound:]
@@ -372,8 +378,10 @@ def build_ad_cvr(train_dir):
             creativeData += appID_data + appPlatform_data + creative_data
 
             creativeID_adFeature_map[int(row[3])] = creativeData
-        print "Building ad cvr finished."
+        # print "Building ad cvr finished."
         del ad, campaign, advertiser, app, appPlatform, creative
+        pickle.dump(creativeID_adFeature_map,
+                    open(constants.custom_path + '/features/creativeID_adFeature_map.pkl', 'wb'))
     else:
         creativeID_adFeature_map = pickle.load(
                 open(constants.custom_path + '/features/creativeID_adFeature_map.pkl', 'rb'))
@@ -443,7 +451,8 @@ def build_short_cvr(train_dir):
 
 # build connection feature
 def build_conn_cvr(train_dir):
-    total_df = pd.read_csv(train_dir+"train_with_pos_info.csv")
+    print "Building connection cvr starts."
+    total_df = pd.read_csv(train_dir+"train.csv")
     # {header:[[3],[3],...,[3]], }
     connection_features = {}
     cvr_helper(total_df, 'connectionType', 5, connection_features)

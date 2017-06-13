@@ -98,9 +98,9 @@ def build_x_hepler(from_path, to_path,
         userID = int(row[4])
         positionID = int(row[5])
         if data_type == 'train':
-            day = int(row[1]) / 10000
+            day = int(row[1]) / 1000000
         else:
-            day = int(row[2]) / 10000
+            day = int(row[2]) / 1000000
 
         # time gap feature
         # instance = int(row[8]) if data_type == "train" else row_num
@@ -285,14 +285,17 @@ def build_x():
     user_features, user_map, user_dim = uf.build_user_profile(has_sparse=has_sparse)
     pos_features, pos_dim = pf.build_position(has_sparse=has_sparse)
 
-    src_dir_path = constants.project_path+"/dataset/custom/split_6/sample/"
+    src_dir_path = constants.project_path+"/dataset/custom/split_0/sample/"
     # src_dir_path = constants.project_path + "/dataset/custom/split_6/"
     # src_dir_path = constants.project_path + "/dataset/custom/split_online/"
     # des_dir_path = constants.project_path+"/dataset/x_y/split_online/b15/"
-    des_dir_path = constants.project_path + "/dataset/x_y/split_6/b4/"
+    des_dir_path = constants.project_path + "/dataset/x_y/split_0/b0/"
     cus_dir_path = constants.project_path+"/dataset/custom/"
+    for_train_path = constants.custom_path+'/for_train/clean_id/'
+    # for_predict_path = constants.custom_path + '/for_predict/clean_id/'
+
     # 加载cvr特征
-    cvr_handler = cvr.StatisticHandler(cus_dir_path)
+    cvr_handler = cvr.StatisticHandler(for_train_path)
     '''注意online test 的区间是不同的 24 31'''
     cvr_handler.load_avg_cvr(17, 24)
 
@@ -315,10 +318,10 @@ def build_x():
     #                has_cvr=True)
 
     for i in range(0, 1):
-        test_des_file = des_dir_path + "test_x_onehot_" + str(i) + ".fm"
+        test_des_file = des_dir_path + "test_x_" + str(i) + ".fm"
         test_src_file = src_dir_path + "test_x_" + str(i)
         train_src_file = src_dir_path + "train_x_" + str(i) + '_sample'
-        train_des_file = des_dir_path + "train_x_onehot_" + str(i) + ".fms"
+        train_des_file = des_dir_path + "train_x_" + str(i) + ".fms"
         # train_src_file = src_dir_path + "train_x_" + str(i)
         # train_des_file = des_dir_path + "train_x_onehot_" + str(i) + ".fm"
         #

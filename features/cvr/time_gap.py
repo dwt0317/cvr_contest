@@ -70,6 +70,29 @@ def build_user_click_time_gap(train_file, test_file, dir_path):
     to_file.close()
 
 
+# 获取用户，creative跟上一条的时间差
+def get_min_click_IDS_time_diff(x):
+    x['user'] = x['userID'].shift(1)
+    x['creative'] = x['creativeID'].shift(1)
+    x['time_delta_user_creative'] = x['clickTime'] - x['clickTime'].shift(1)  # 减去上一条的时间
+    x.loc[
+        ((x.user != x.userID) | (x.creative != x.creativeID)), 'time_delta_user_creative'] = -1  # 第一条的时间差是-1
+    return x.drop(['user', 'creative'], axis=1)
+
+
+def get_userID_creativeID_delta(x):
+    x['user'] = x['userID'].shift(1)
+    x['creative'] = x['creativeID'].shift(1)
+    x['user_delta_up'] = x['userID'] - x['user']  # 减去上一条的userID
+    x['creative_delta_up'] = x['creativeID'] - x['creative']  # 减去上一条的creativeID
+    x.loc[(x.user_delta_up != 0) | (x.creative_delta_up != 0), 'user_creative_delta_up'] = 2  # 第一条的rank是2
+    x.fillna(0, inplace=True)
+    return x.drop(['user', 'creative', 'user_delta_up', 'creative_delta_up'], axis=1)
+
+
+
+
+
 def split_train_test(dir_path):
     train_test_fea = pd.read_csv(dir_path+'train_test_time_delta_fea.csv')
     print train_test_fea.head()

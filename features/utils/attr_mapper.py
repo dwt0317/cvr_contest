@@ -3,7 +3,7 @@
 
 # 属性映射dict
 def build_attr_map(ad_map, user_map, userID, creativeID, positionID, connectionType):
-    age, gender, education, marriageStatus, haveBaby, hometown, residence = user_map[userID]
+    age, gender, education, marriageStatus, haveBaby, hometown, residence = user_map
     a_n = len(ad_map[creativeID])
     appPlatform, appCategory, appID = ad_map[creativeID][a_n - 2], ad_map[creativeID][a_n - 1], ad_map[creativeID][
         a_n - 3]

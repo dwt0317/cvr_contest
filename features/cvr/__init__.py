@@ -7,9 +7,11 @@ import math
 import numpy as np
 import sys
 
-alpha = 130  # for smoothing
-beta = 5085
+# alpha = 130  # for smoothing
+# beta = 5085
 
+alpha = 256  # for smoothing
+beta = 9179
 
 # 0.02492 7e-05
 max_cvr = 0.025
@@ -66,7 +68,7 @@ class StatisticHandler:
         # self._app_short_cvr_features = avg_cvr.build_short_cvr(self._dir_path)
         import combine_cvr
         self._conn_cvr_features = avg_cvr.build_conn_cvr(self._dir_path)
-        self._combine_cvr_dict = combine_cvr.build_combine_cvr(self._dir_path)
+        # self._combine_cvr_dict = combine_cvr.build_combine_cvr(self._dir_path)
         print "Loading average cvr finished."
 
     # 读取时序cvr特征
@@ -97,37 +99,25 @@ class StatisticHandler:
         print "Loading train cvr finished."
 
     # 获取user_cvr feature
-    def get_user_cvr(self, data_type, userID):
-        if data_type == 'before':
-            try:
-                features = self._user_cvr_fd.readline().strip().split(',')
-            except:
-                raise Exception("File reaches end!")
-            return features
-        else:
+    def get_user_cvr(self, userID):
+        if userID in self._user_cvr_features:
             return self._user_cvr_features[userID]
+        else:
+            return self._user_cvr_features[0]
 
     # 获取positive cvr feature
-    def get_pos_cvr(self, data_type, positionID):
-        if data_type == 'before':
-            try:
-                features = self._pos_cvr_fd.readline().strip().split(',')
-            except:
-                raise Exception("File reaches end!")
-            return features
-        else:
+    def get_pos_cvr(self, positionID):
+        if positionID in self._pos_cvr_features:
             return self._pos_cvr_features[positionID]
+        else:
+            return self._pos_cvr_features[0]
 
     # 获取ad cvr feature
-    def get_ad_cvr(self, data_type, creativeID):
-        if data_type == 'before':
-            try:
-                features = self._ad_cvr_fd.readline().strip().split(',')
-            except:
-                raise Exception("File reaches end!")
-            return features
+    def get_ad_cvr(self, creativeID):
+        if creativeID in self._ad_cvr_features:
+            return self._ad_cvr_features[creativeID]
         else:
-            return self._pos_cvr_features[creativeID]
+            return self._ad_cvr_features[0]
 
     # 获取id类统计信息
     def get_id_cvr(self, header, id, day):

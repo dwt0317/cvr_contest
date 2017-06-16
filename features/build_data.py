@@ -72,7 +72,7 @@ def feed_combine_cvr(attr_map, headers, a_header, features, offset, field, ffm, 
 # 构造训练集
 def build_x_hepler(from_path, to_path,
                    ad_features, ad_dim, ad_map,
-                   user_features, user_dim, user_map,
+                   # user_features, user_dim, user_map,
                    pos_features, pos_dim,
                    statistic_handler,
                    time_gap_dict=None,
@@ -119,17 +119,17 @@ def build_x_hepler(from_path, to_path,
         #     features[offset] = 0
         # offset += 1
 
-        # user feature
-        user_f = user_features[userID]
+        # user feature, 之前特征为onehot, 现在改为连续值
+        user_f = [int(num) for num in row[8:15]]
         for i in xrange(len(user_f)):
             field += 1
             features[offset+user_f[i]] = str(field) + "," + str(1) if ffm else 1
-        offset += user_dim
+        offset += len(user_f)
         del user_f
 
         if has_cvr:
             # user cvr feature
-            user_cvr = statistic_handler.get_user_cvr(data_type, userID)
+            user_cvr = statistic_handler.get_user_cvr(userID)
             offset = feed_cvr_feature(features, user_cvr, offset, field, ffm)
             field += 1
             del user_cvr
@@ -153,7 +153,7 @@ def build_x_hepler(from_path, to_path,
 
         # position cvr feature
         if has_cvr:
-            pos_cvr = statistic_handler.get_pos_cvr(data_type, int(row[5]))
+            pos_cvr = statistic_handler.get_pos_cvr(int(row[5]))
             offset = feed_cvr_feature(features, pos_cvr, offset, field, ffm)
             field += 1
             del pos_cvr
@@ -195,42 +195,42 @@ def build_x_hepler(from_path, to_path,
 
         # ad cvr feature
         if has_cvr:
-            ad_cvr = statistic_handler.get_ad_cvr(data_type, int(row[3]))
+            ad_cvr = statistic_handler.get_ad_cvr(int(row[3]))
             for i in xrange(len(ad_cvr)):
                 features[offset+i] = str(field) + "," + str(ad_cvr[i]) if ffm else ad_cvr[i]
             offset += len(ad_cvr)
             del ad_cvr
         field += 1
-
+        user_map = [int(num) for num in row[8:15]]
         attr_map = attr_mapper.build_attr_map(ad_map, user_map, userID, creativeID, positionID, connectionType)
 
         # headers = ['appID', 'connectionType', 'campaignID', 'adID', 'creativeID', 'age', 'education', 'gender',
         #            'haveBaby', 'marriageStatus', 'residence', 'appCategory']
 
-
-        age, gender, education, marriageStatus, haveBaby, hometown, residence = user_map[userID]
+        age, gender, education, marriageStatus, haveBaby, hometown, residence = user_map
         a_n = len(ad_map[creativeID])
         appPlatform, appCategory, appID = ad_map[creativeID][a_n - 2], ad_map[creativeID][a_n - 1], ad_map[creativeID][
             a_n - 3]
         campaignID, adID = ad_map[creativeID][a_n - 5], ad_map[creativeID][a_n - 6]
         advertiserID = ad_map[creativeID][a_n - 4]
-        comb_feature = get_combination_feature(connectionType, appPlatform, appCategory, sitesetID,
-                      positionType, age, gender, education,
-                      marriageStatus, haveBaby, hometown, residence)
-        for i in xrange(len(comb_feature)):
-            if comb_feature[i] == 1:
-                features[offset+i] = str(field) + "," + str(1) if ffm else 1
-        offset += len(comb_feature)
-        del comb_feature
+
+        # comb_feature = get_combination_feature(connectionType, appPlatform, appCategory, sitesetID,
+        #               positionType, age, gender, education,
+        #               marriageStatus, haveBaby, hometown, residence)
+        # for i in xrange(len(comb_feature)):
+        #     if comb_feature[i] == 1:
+        #         features[offset+i] = str(field) + "," + str(1) if ffm else 1
+        # offset += len(comb_feature)
+        # del comb_feature
 
 
-        headers = ['age', 'gender', 'education', 'connectionType']
-        offset, field = feed_combine_cvr(attr_map, headers, 'appID', features, offset, field, ffm, statistic_handler)
-
-        headers = ['appID', 'connectionType', 'campaignID', 'adID', 'creativeID', 'age', 'education', 'gender',
-                   'haveBaby', 'marriageStatus']
-        offset, field = feed_combine_cvr(attr_map, headers, 'positionID', features, offset, field, ffm,
-                                         statistic_handler)
+        # headers = ['age', 'gender', 'education', 'connectionType']
+        # offset, field = feed_combine_cvr(attr_map, headers, 'appID', features, offset, field, ffm, statistic_handler)
+        #
+        # headers = ['appID', 'connectionType', 'campaignID', 'adID', 'creativeID', 'age', 'education', 'gender',
+        #            'haveBaby', 'marriageStatus']
+        # offset, field = feed_combine_cvr(attr_map, headers, 'positionID', features, offset, field, ffm,
+        #                                  statistic_handler)
 
         # triple_combine_feature = statistic_handler.get_triple_cvr_feature('triple', appID, positionID, connectionType)
         # offset = feed_cvr_feature(features, triple_combine_feature, offset, field, ffm)
@@ -248,12 +248,7 @@ def build_x_hepler(from_path, to_path,
 
         # headers = ['education', 'marriageStatus', 'creativeID', 'appID', 'connectionType']
         # feed_combine_cvr(attr_map, headers, 'age', features, offset, field, ffm, statistic_handler)
-        del headers
-
-        # sys.exit(0)
-
-
-
+        # del headers
 
 
         # del combine_cvr
@@ -282,20 +277,19 @@ def build_x_hepler(from_path, to_path,
 def build_x():
     has_sparse = False
     ad_features, ad_map, ad_dim = af.build_ad_feature(has_sparse=has_sparse)
-    user_features, user_map, user_dim = uf.build_user_profile(has_sparse=has_sparse)
+    # user_features, user_map, user_dim = uf.build_user_profile(has_sparse=has_sparse)
     pos_features, pos_dim = pf.build_position(has_sparse=has_sparse)
 
     src_dir_path = constants.project_path+"/dataset/custom/split_0/sample/"
-    # src_dir_path = constants.project_path + "/dataset/custom/split_6/"
-    # src_dir_path = constants.project_path + "/dataset/custom/split_online/"
-    # des_dir_path = constants.project_path+"/dataset/x_y/split_online/b15/"
+    # src_dir_path = constants.project_path + "/dataset/custom/split_online/sample/"
+    # des_dir_path = constants.project_path+"/dataset/x_y/split_online/b0/"
     des_dir_path = constants.project_path + "/dataset/x_y/split_0/b0/"
     cus_dir_path = constants.project_path+"/dataset/custom/"
-    for_train_path = constants.custom_path+'/for_train/clean_id/'
-    # for_predict_path = constants.custom_path + '/for_predict/clean_id/'
+    for_path = constants.custom_path+'/for_train/clean_id/'
+    # for_path = constants.custom_path + '/for_predict/clean_id/'
 
     # 加载cvr特征
-    cvr_handler = cvr.StatisticHandler(for_train_path)
+    cvr_handler = cvr.StatisticHandler(for_path)
     '''注意online test 的区间是不同的 24 31'''
     cvr_handler.load_avg_cvr(17, 24)
 
@@ -304,14 +298,14 @@ def build_x():
     # train_last_click, predict_last_click = cvr_handler.load_last_click_feature(cus_dir_path)
 
     # # generate online test dataset
-    # test_des_file = des_dir_path + "test_x_onehot.fm"
-    # test_src_file = constants.project_path+"/dataset/custom/test.csv"
+    # test_des_file = des_dir_path + "test_x.fm"
+    # test_src_file = constants.custom_path + "/test_with_user_info.csv"
     # build_x_hepler(test_src_file, test_des_file,
     #                ad_features, ad_dim, ad_map,
-    #                user_features, user_dim, user_map,
+    #                # user_features, user_dim, user_map,
     #                pos_features, pos_dim,
     #                cvr_handler,
-    #                time_gap_dict=predict_time_gap,
+    #                # time_gap_dict=predict_time_gap,
     #                data_type="test",
     #                has_gbdt=False,
     #                ffm=False,
@@ -329,7 +323,7 @@ def build_x():
         #
         build_x_hepler(test_src_file, test_des_file,
                        ad_features, ad_dim, ad_map,
-                       user_features, user_dim, user_map,
+                       # user_features, user_dim, user_map,
                        pos_features, pos_dim,
                        cvr_handler,
                        # time_gap_dict=train_time_gap,
@@ -341,7 +335,7 @@ def build_x():
 
         build_x_hepler(train_src_file, train_des_file,
                        ad_features, ad_dim, ad_map,
-                       user_features, user_dim, user_map,
+                       # user_features, user_dim, user_map,
                        pos_features, pos_dim,
                        cvr_handler,
                        # time_gap_dict=train_time_gap,

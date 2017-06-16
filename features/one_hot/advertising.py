@@ -82,28 +82,30 @@ def build_ad_feature(has_sparse=True):
     appID_set = list2dict(ad_info_df['appID'].unique())
 
     # stat = pd.read_csv(constants.project_path + '/dataset/custom/train_with_ad_info.csv')
-    # campID_set = get_idset('campaignID', stat, 2000)
-    # adverID_set = get_idset('advertiserID', stat, 2000)
-    # adID_set = get_idset('adID', stat, 2000)
+    # campID_onehot_set = get_idset('campaignID', stat, 2000)
+    # adverID_onehot_set = get_idset('advertiserID', stat, 2000)
+    # adID_onehot_set = get_idset('adID', stat, 2000)
     # del stat
 
-    campID_set = list2dict(list(np.loadtxt(constants.custom_path+'/idset/'+'campaignID_onehot', dtype=int)))
-    adverID_set = list2dict(list(np.loadtxt(constants.custom_path + '/idset/' + 'advertiserID_onehot', dtype=int)))
-    adID_set = list2dict(list(np.loadtxt(constants.custom_path + '/idset/' + 'adID_onehot', dtype=int)))
+    campID_onehot_set = list2dict(list(np.loadtxt(constants.custom_path+'/idset/'+'campaignID_onehot', dtype=int)))
+    adverID_onehot_set = list2dict(list(np.loadtxt(constants.custom_path + '/idset/' + 'advertiserID_onehot', dtype=int)))
+    adID_onehot_set = list2dict(list(np.loadtxt(constants.custom_path + '/idset/' + 'adID_onehot', dtype=int)))
+    creativeID_onehot_set = list2dict(list(np.loadtxt(constants.custom_path + '/idset/' + 'creativeID_onehot', dtype=int)))
 
-    print "camp id:" + str(len(campID_set))
-    print "adver id:" + str(len(adverID_set))
-    print "ad id:" + str(len(adID_set))
+    print "camp id:" + str(len(campID_onehot_set))
+    print "adver id:" + str(len(adverID_onehot_set))
+    print "ad id:" + str(len(adID_onehot_set))
+    print "creative id:" + str(len(creativeID_onehot_set))
 
-    ad_id_lens[1] = len(adID_set) + 1
-    ad_id_lens[2] = len(campID_set) + 1
-    ad_id_lens[3] = len(adverID_set) + 1
+    ad_id_lens[1] = len(adID_onehot_set) + 1
+    ad_id_lens[2] = len(campID_onehot_set) + 1
+    ad_id_lens[3] = len(adverID_onehot_set) + 1
     ad_id_lens[4] = len(appID_set) + 1
     if has_sparse:
         # 将list转为dict{id:index}
-        creativeID_set = list2dict(ad_info_df['creativeID'].unique())
-        adID_set = list2dict(ad_info_df['adID'].unique())
-        ad_id_lens = [len(creativeID_set) + 1, len(adID_set) + 1, len(campID_set) + 1, len(adverID_set) + 1,
+        # creativeID_set = list2dict(ad_info_df['creativeID'].unique())
+        # adID_onehot_set = list2dict(ad_info_df['adID'].unique())
+        ad_id_lens = [len(creativeID_onehot_set) + 1, len(adID_onehot_set) + 1, len(campID_onehot_set) + 1, len(adverID_onehot_set) + 1,
                       len(appID_set) + 1]
     print "Building ID set finished."
     del ad_info_df
@@ -125,30 +127,31 @@ def build_ad_feature(has_sparse=True):
     for line in f:
         line_feature = []
         fields = line.strip().split(',')
+
         line_map = fields[1:]
         offset = 0
         if has_sparse:
-            if int(fields[0]) in creativeID_set:
-                line_feature.append(offset+creativeID_set[int(fields[0])])
+            if int(fields[0]) in creativeID_onehot_set:
+                line_feature.append(offset+creativeID_onehot_set[int(fields[0])])
             else:
                 line_feature.append(offset)
             offset += ad_id_lens[0]
 
-        if int(fields[1]) in adID_set:
-            line_feature.append(offset+adID_set[int(fields[1])])
+        if int(fields[1]) in adID_onehot_set:
+            line_feature.append(offset+adID_onehot_set[int(fields[1])])
         else:
             line_feature.append(offset)
         offset += ad_id_lens[1]
 
-        if int(fields[2]) in campID_set:
-            line_feature.append(offset+campID_set[int(fields[2])])
+        if int(fields[2]) in campID_onehot_set:
+            line_feature.append(offset+campID_onehot_set[int(fields[2])])
         else:
             line_feature.append(offset)
         offset += ad_id_lens[2]
 
         # 下面的id特征非常稠密，不与一般id类特征一同处理
-        if int(fields[3]) in adverID_set:
-            line_feature.append(offset+adverID_set[int(fields[3])])
+        if int(fields[3]) in adverID_onehot_set:
+            line_feature.append(offset+adverID_onehot_set[int(fields[3])])
         else:
             line_feature.append(offset)
         offset += ad_id_lens[3]

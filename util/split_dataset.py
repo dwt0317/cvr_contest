@@ -129,9 +129,9 @@ def random_split_dataset(train_file, train_percent, to_path):
     # total_df = abandon_data(total_df, abandon_list)
     # shuffle原数据集
 
-    for i in xrange(4):
+    for i in range(2, 3):
         random_df = total_df.sample(frac=1)
-        random_df['instance'] = random_df.index
+        random_df['instanceID'] = random_df.index
         random_df.reset_index(drop=True, inplace=True)
         # print random_df.head()
         # print random_df.shape
@@ -177,6 +177,13 @@ def map_age(age):
     return age
 
 
+# 重新映射hometown
+def map_place_func(x):
+    if x != 0:
+        return x / 100
+    return x
+
+
 # 在train文件中merge user信息
 def merge_by_user(train_file, to_path):
     total_df = pd.read_csv(train_file)
@@ -186,6 +193,8 @@ def merge_by_user(train_file, to_path):
     # pos_df = pd.read_csv(constants.project_path + "/dataset/raw/" + "position.csv")
     # merge_df = pd.merge(left=merge_df, right=pos_df, how='left', on=['positionID'])
     merge_df['age'] = merge_df['age'].apply(lambda x: map_age(x))
+    merge_df['hometown'] = merge_df['hometown'].apply(lambda x: map_place_func(x))
+    merge_df['residence'] = merge_df['residence'].apply(lambda x: map_place_func(x))
     merge_df.to_csv(path_or_buf=to_path, index=False)
     print "Merging user finished."
 
@@ -267,8 +276,8 @@ if __name__ == '__main__':
     # install_merge_by_app(constants.project_path + "/dataset/raw/" + "user_installedapps.csv",
     #                      constants.project_path + "/dataset/raw/" + "user_installedapps_with_category.csv")
     # merge_by_ad(constants.custom_path+'/for_predict/train.csv', constants.project_path+"/dataset/custom/for_predict/train_with_ad_info.csv")
-    # merge_by_user(constants.custom_path+'/for_predict/train.csv',
-    # constants.project_path + "/dataset/custom/clean_id/train_with_user_info.csv")
+    # merge_by_user(constants.raw_test_path,
+    #               constants.custom_path + '/test_with_user_info.csv')
     # merge_by_pos(constants.custom_path+'/for_predict/train.csv',
     # constants.project_path + "/dataset/custom/train_with_pos_info.csv")
     # merge_with_all_data(constants.custom_path+'/for_predict/train.csv', 0, constants.custom_path+'/for_predict')
@@ -285,8 +294,8 @@ if __name__ == '__main__':
     # random_split_dataset(0.85, constants.project_path+"/dataset/custom/split_6/")
     # bootstrap_online_train(24, dir_path+"split_online/")
     # headers = ['label','clickTime','conversionTime','creativeID','userID','positionID','connectionType','telecomsOperator','age','gender','education','marriageStatus','haveBaby','hometown','residence']
-    concat_data(constants.custom_path+'/split_by_day/with_pos/', 17, 30,
-                constants.custom_path+'/train_with_pos_info.csv')
+    # concat_data(constants.custom_path+'/split_by_day/with_pos/', 17, 30,
+    #             constants.custom_path+'/for_train/train_with_pos_info.csv')
     # split_by_date(23, 27, constants.custom_path+'/for_train/train.csv')
     # split_by_date(27, 31, constants.custom_path + '/for_predict/train.csv')
-    # random_split_dataset(constants.custom_path+'/for_predict/train.csv', 0.85, constants.custom_path+'/split_0/')
+    random_split_dataset(constants.custom_path+'/for_predict/train_with_user_info.csv', 0.8, constants.custom_path+'/split_0/')

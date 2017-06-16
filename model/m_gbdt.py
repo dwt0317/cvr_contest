@@ -52,28 +52,28 @@ def train_model():
                   'eval_metric': 'logloss',
                   "eta": 0.1,
                   "max_depth": 8,
-                  'silent': 0,
+                  'silent': 1,
                   'min_child_weight': 2,
                   'subsample': 0.8,
                   'colsample_bytree': 0.8,
                   'nthread': 6,
                   'gamma': 1,
-                  'scale_pos_weight': 0.1
+                  # 'scale_pos_weight': 0.025
                   }
         online = False
 
-        prob_test = np.zeros(338489)
+        prob_test = np.zeros(3321748)
 
-        dir_path = constants.project_path + "/dataset/x_y/split_6/b4/"
+        dir_path = constants.project_path + "/dataset/x_y/split_0/b0/"
+        # dir_path = constants.project_path + "/dataset/x_y/split_online/b0/"
         # raw_dir_path = constants.project_path + "/dataset/custom/split_6/sample/"
-        # dir_path = constants.project_path + "/dataset/x_y/split_online/b15/"
         for i in range(0, 1):
             # train_x_file = dir_path + "train_x_onehot_" + str(i) + ".fm"
-            train_x_file = dir_path + "train_x_onehot_" + str(i) + ".fms"
+            train_x_file = dir_path + "train_x_" + str(i) + ".fms"
             if online:
-                test_x_file = dir_path + "test_x_onehot.fm"
+                test_x_file = dir_path + "test_x.fm"
             else:
-                test_x_file = dir_path + "test_x_onehot_" + str(i) + ".fm"
+                test_x_file = dir_path + "test_x_" + str(i) + ".fm"
 
             # train_x, train_y = load_svmlight_file(train_x_file)
             if not online:
@@ -83,23 +83,24 @@ def train_model():
             print "train done"
             validation_set = xgb.DMatrix(test_x_file)
             print "test done"
-            watchlist = [(train_set, 'train'), (validation_set, 'eval')]
-            # watchlist = [(train_set, 'train')]
+            # watchlist = [(train_set, 'train'), (validation_set, 'eval')]
+            watchlist = [(train_set, 'train')]
             print "Training model..."
             xgb_model = xgb.train(params, train_set, rounds, watchlist, verbose_eval=True)
             pred = xgb_model.predict(xgb.DMatrix(test_x_file))
 
             p = pred
-
             if online:
+                ones = np.ones(len(p))
+                p = p / (p + (ones - p) / 0.025)
                 prob_test += p
                 print pd.DataFrame(prob_test).mean()
             # else:
             #     prob_test = pred
             #     print pd.DataFrame(prob_test).mean()
             if not online:
-                # ones = np.ones(len(p))
-                # p = p / (p + (ones - p) / 0.1)
+                ones = np.ones(len(p))
+                p = p / (p + (ones - p) / 0.025)
                 auc_local = metrics.roc_auc_score(test_y, p)
                 logloss_local = metrics.log_loss(test_y, p)
                 print str(i) + ": " + str(auc_local) + " " + str(logloss_local)
@@ -108,7 +109,7 @@ def train_model():
 
         if online:
             prob_test /= 5
-            with open(constants.project_path + "/out/gbdt_more_pos.out", 'w') as f:
+            with open(constants.project_path + "/out/gbdt.out", 'w') as f:
                 np.savetxt(f, prob_test, fmt="%s")
         else:
             end = datetime.datetime.now()
@@ -122,7 +123,8 @@ def train_model():
             log_file = open(constants.result_path, "a")
             log_file.write(rcd)
             log_file.close()
-            feature_importance(xgb_model)
+            if False:
+                feature_importance(xgb_model)
 
             build_feature = False
             if build_feature:

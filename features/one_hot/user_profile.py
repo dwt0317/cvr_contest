@@ -22,7 +22,7 @@ def user_before_app_feature():
 # age * 11, gender * 3, education * 8, marriage * 4, baby * 7, residence * 35,
 def build_user_profile(has_sparse=False):
     # make user raw data
-    f = open(constants.project_path + "/dataset/raw/" + "user.csv")
+    f = open(constants.project_path + "/dataset/raw/" + "user_clean.csv")
     # user_app_dict, max_app, min_app, median_app = user_before_app_feature()
 
     if has_sparse:
@@ -36,19 +36,21 @@ def build_user_profile(has_sparse=False):
         #         userlist.append(i)
         # userIDset = utils.list2dict(userlist)
         # del userlist
-        userIDset = utils.list2dict(list(np.loadtxt(constants.custom_path + '/idset/' + 'userID', dtype=int)))
+        pass
+    userIDset = utils.list2dict(list(np.loadtxt(constants.custom_path + '/idset/' + 'userID', dtype=int)))
 
     # user编号从1开始的, 0处补一个作为填充
-    user_feature = [[0]]
-    user_map = [[0]]
+    user_feature = {}
+    user_map = {}
     offset = 0
     f.readline()
+    count = 0
     for line in f:
         offset = 0
         features = []
         fields = line.strip().split(',')
         or_features = []
-
+        userID = int(fields[0])
         # age
         age_bucket = [7, 12, 16, 21, 25, 32, 40, 48, 55, 65]
         age = int(fields[1])
@@ -95,7 +97,7 @@ def build_user_profile(has_sparse=False):
         #     offset += 3500
 
         # favorite category remove to test gbdt
-        userID = int(fields[0])
+
         or_features.append(int(fields[6])/100)
         or_features.append(int(fields[7])/100)
 
@@ -109,8 +111,11 @@ def build_user_profile(has_sparse=False):
                 features.append(0)
             offset += len(userIDset) + 1
 
-        user_feature.append(features)
-        user_map.append(or_features)
+        user_feature[userID] = features
+        user_map[userID] = or_features
+        if count % 1000000 == 0:
+            print count
+        count += 1
         # del userIDset
     print "Buliding user profile finished."
     return user_feature, user_map, offset

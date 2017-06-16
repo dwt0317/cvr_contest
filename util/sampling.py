@@ -13,7 +13,7 @@ def total_samplilng(raw_file, to_dir):
 
 # 对样本进行负采样
 def negative_down_sampling(src_dir_path, rate):
-    for i in range(0, 4):
+    for i in range(0, 5):
         train_src_file = src_dir_path + "train_x_" + str(i)
         train_df = pd.read_csv(train_src_file)
         negative_df = train_df[train_df.label == 0]
@@ -45,6 +45,34 @@ def negative_down_sampling(src_dir_path, rate):
         sample_f.close()
 
 
+# bootstrap采样线上的train数据
+def bootstrap_online_train(start_date, raw_file, to_dir):
+    total_df = pd.read_csv(raw_file)
+    total_df['instance'] = total_df.index
+    partial_df = total_df
+    partial_df.fillna(-1, inplace=True)
+    data_array = partial_df.as_matrix().astype(int)
+    header = list(partial_df.columns.values)
+    print "Reading data finished."
+    for i in xrange(5):
+        random.seed()
+        train_file = to_dir + "train_x_" + str(i)
+        n = len(data_array)
+        sample_index = [0] * n
+        for j in xrange(n):
+            sample_index[j] = random.randint(0, n-1)
+        sample_index.sort()
+        # np.savetxt(to_dir + "/index/train_x_" + str(i)+'_idx', sample_index, fmt="%s")
+        with open(train_file, 'w') as f:
+            f.write(','.join(header))
+            f.write('\n')
+            for j in sample_index:
+                f.write(','.join(str(x) for x in data_array[j]))
+                f.write('\n')
+        print str(i) + " finished."
+
+
 if __name__ == '__main__':
-    negative_down_sampling(constants.project_path+"/dataset/custom/split_0/", 0.025)
+    bootstrap_online_train(27, constants.custom_path+'/for_predict/train_with_user_info.csv', constants.custom_path+'/split_online/')
+    negative_down_sampling(constants.project_path+"/dataset/custom/split_online/", 0.025)
     # total_samplilng(constants.raw_path, constants.custom_path)

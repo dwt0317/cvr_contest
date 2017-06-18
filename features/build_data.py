@@ -223,25 +223,20 @@ def build_x_hepler(from_path, to_path,
         # offset += len(comb_feature)
         # del comb_feature
 
+        headers = ['age', 'gender', 'education', 'connectionType']
+        offset, field = feed_combine_cvr(attr_map, headers, 'appID', features, offset, field, ffm, statistic_handler)
 
-        # headers = ['age', 'gender', 'education', 'connectionType']
-        # offset, field = feed_combine_cvr(attr_map, headers, 'appID', features, offset, field, ffm, statistic_handler)
-        #
-        # headers = ['appID', 'connectionType', 'campaignID', 'adID', 'creativeID', 'age', 'education', 'gender',
-        #            'haveBaby', 'marriageStatus']
-        # offset, field = feed_combine_cvr(attr_map, headers, 'positionID', features, offset, field, ffm,
-        #                                  statistic_handler)
+        headers = ['appID', 'connectionType', 'camgaignID', 'adID', 'creativeID', 'age', 'education', 'gender',
+                   'haveBaby', 'marriageStatus']
+        offset, field = feed_combine_cvr(attr_map, headers, 'positionID', features, offset, field, ffm,
+                                         statistic_handler)
+
+        headers = ['creativeID', 'camgaignID']
+        offset, field = feed_combine_cvr(attr_map, headers, 'connectionType', features, offset, field, ffm, statistic_handler)
 
         # triple_combine_feature = statistic_handler.get_triple_cvr_feature('triple', appID, positionID, connectionType)
         # offset = feed_cvr_feature(features, triple_combine_feature, offset, field, ffm)
         # print offset, len(features)
-
-        # print offset, len(features)
-        # print offset, len(features)
-
-        # print offset, len(features)
-        # headers = ['age', 'haveBaby', 'education']
-        # feed_combine_cvr(attr_map, headers, 'connectionType', features, offset, field, ffm, statistic_handler)
 
         # headers = ['age', 'haveBaby', 'education', 'residence']
         # feed_combine_cvr(attr_map, headers, 'appCategory', features, offset, field, ffm, statistic_handler)
@@ -250,9 +245,8 @@ def build_x_hepler(from_path, to_path,
         # feed_combine_cvr(attr_map, headers, 'age', features, offset, field, ffm, statistic_handler)
         # del headers
 
-
         # del combine_cvr
-        field += 1
+
         # if data_type == 'test':
         #     day -= 1
         # app_short_fea = statistic_handler.get_app_short_cvr(creativeID, day)

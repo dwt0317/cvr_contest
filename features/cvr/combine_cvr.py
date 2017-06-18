@@ -5,6 +5,7 @@ import pandas as pd
 from util import constants
 import math
 import cPickle as pickle
+import datetime
 
 '''
 用于生成组合cvr特征特征
@@ -16,7 +17,7 @@ beta = 5085
 left_day = 17
 right_day = 24
 
-in_memory = True
+in_memory = False
 
 
 def combine_cvr_helper(partial_df, positive_df, headers, another_header, combine_dict):
@@ -45,34 +46,39 @@ def combine_cvr_helper(partial_df, positive_df, headers, another_header, combine
 
 
 def build_combine_cvr(train_dir):
-    train_file_path = train_dir + "train_with_all_info.csv"
-    total_df = pd.read_csv(train_file_path)
-    # partial_df = total_df[(total_df.clickTime >= left_day*10000) & (total_df.clickTime < right_day*10000)]
-    partial_df = total_df
-    positive_df = partial_df[partial_df.label == 1]
-    pos_combine_dict = build_pos_combine_cvr(partial_df, positive_df)
-    app_combine_dict = build_app_combine_cvr(partial_df, positive_df)
-    # triple_combine_dict = build_triple_combine_cvr(partial_df, positive_df)
-    # conn_combine_dict = build_conn_combine_cvr(partial_df, positive_df)
+    begin = datetime.datetime.now()
+    train_file_path = train_dir + "train_with_all_info_clean.csv"
+    if in_memory:
+        total_df = pd.read_csv(train_file_path)
+        positive_df = total_df[total_df.label == 1]
+    else:
+        total_df = None
+        positive_df = None
+    pos_combine_dict = build_pos_combine_cvr(total_df, positive_df, train_dir)
+    app_combine_dict = build_app_combine_cvr(total_df, positive_df, train_dir)
+    conn_combine_dict = build_conn_combine_cvr(total_df, positive_df, train_dir)
     # cate_combine_dict = build_cate_combine_cvr(partial_df, positive_df)
     # age_combine_dict = build_age_combine_cvr(partial_df, positive_df)
+    # triple_combine_dict = build_triple_combine_cvr(partial_df, positive_df)
 
     combine_cvr_dict = {}
     combine_cvr_dict['positionID'] = pos_combine_dict
     combine_cvr_dict['appID'] = app_combine_dict
-    # combine_cvr_dict['connectionType'] = conn_combine_dict
+    combine_cvr_dict['connectionType'] = conn_combine_dict
     # combine_cvr_dict['appCategory'] = cate_combine_dict
     # combine_cvr_dict['age'] = age_combine_dict
     # combine_cvr_dict['triple'] = triple_combine_dict
-    del total_df, partial_df
+    del total_df
+    end = datetime.datetime.now()
+    print "Combination cvr run time: " + str(end-begin)
     return combine_cvr_dict
 
 
 # 与positionID相关的组合cvr特征
-def build_pos_combine_cvr(partial_df, positive_df):
+def build_pos_combine_cvr(partial_df, positive_df, train_dir):
     if in_memory:
         pos_combine_dict = {}
-        headers = ['appID', 'connectionType', 'campaignID', 'adID', 'creativeID', 'age', 'education', 'gender', 'haveBaby',
+        headers = ['appID', 'connectionType', 'camgaignID', 'adID', 'creativeID', 'age', 'education', 'gender', 'haveBaby',
                    'marriageStatus']
         # , 'hometown', 'residence', 'appCategory'
         combine_cvr_helper(partial_df, positive_df, headers, 'positionID', pos_combine_dict)
@@ -80,30 +86,36 @@ def build_pos_combine_cvr(partial_df, positive_df):
                     open(constants.custom_path + '/features/pos_combine_dict.pkl', 'wb'))
     else:
         pos_combine_dict = pickle.load(
-            open(constants.custom_path + '/features/pos_combine_dict.pkl', 'rb'))
+            open(train_dir + 'features/pos_combine_dict.pkl', 'rb'))
     print "Building pos combination cvr dict finished."
     return pos_combine_dict
 
 
 # 与appID相关,
-def build_app_combine_cvr(partial_df, positive_df):
+def build_app_combine_cvr(partial_df, positive_df, train_dir):
     if in_memory:
         app_combine_dict = {}
         headers = ['age', 'gender', 'education', 'connectionType']
         combine_cvr_helper(partial_df, positive_df, headers, 'appID', app_combine_dict)
         pickle.dump(app_combine_dict,
-                    open(constants.custom_path + '/features/app_combine_dict.pkl', 'wb'))
+                    open(train_dir + 'features/app_combine_dict.pkl', 'wb'))
     else:
         app_combine_dict = pickle.load(
-            open(constants.custom_path + '/features/app_combine_dict.pkl', 'rb'))
+            open(train_dir + 'features/app_combine_dict.pkl', 'rb'))
     print "Building app combination cvr dict finished."
     return app_combine_dict
 
 
-def build_conn_combine_cvr(partial_df, positive_df):
-    conn_combine_dict = {}
-    headers = ['age', 'haveBaby', 'education']
-    combine_cvr_helper(partial_df, positive_df, headers, 'connectionType', conn_combine_dict)
+def build_conn_combine_cvr(partial_df, positive_df, train_dir):
+    if in_memory:
+        conn_combine_dict = {}
+        headers = ['creativeID', 'camgaignID']
+        combine_cvr_helper(partial_df, positive_df, headers, 'connectionType', conn_combine_dict)
+        pickle.dump(conn_combine_dict,
+                    open(train_dir + 'features/conn_combine_dict.pkl', 'wb'))
+    else:
+        conn_combine_dict = pickle.load(
+            open(train_dir + 'features/conn_combine_dict.pkl', 'rb'))
     print "Building connection combination cvr dict finished."
     return conn_combine_dict
 
@@ -155,6 +167,4 @@ def build_triple_combine_cvr(partial_df, positive_df):
 
 
 if __name__ == '__main__':
-    combine_dict = build_combine_cvr(constants.custom_path+'/')
-    for k in combine_dict['triple'].keys()[:1]:
-        print k, combine_dict['triple'][k]
+    combine_dict = build_combine_cvr(constants.custom_path+'/for_train/clean_id/')

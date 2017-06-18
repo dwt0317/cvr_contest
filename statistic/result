@@ -1126,3 +1126,39 @@ auc_test: 0.81028848025
 logloss: 0.10245997231
 time: 0:02:35.526000
 
+click and cv = 0 for rare
+2017-06-16 22:27:59
+gbdt:
+auc_test: 0.810675675444
+logloss: 0.102407525816
+time: 0:02:36.971000
+
+no coec(totally useless)
+2017-06-16 22:42:13
+gbdt:
+auc_test: 0.810675675444
+logloss: 0.102407525816
+time: 0:02:48.003000
+
+all creativeID, >5 positionID, >5 userID
+2017-06-16 23:46:21
+gbdt:
+auc_test: 0.810676281615
+logloss: 0.102380659462
+time: 0:02:36.160000
+
+
+------------------------------- cleaned data
+2017-06-18 17:20:23
+gbdt:
+auc_test: 0.814140453407
+logloss: 0.101929144748
+time: 0:02:28.505000
+
++combination cvr
+2017-06-18 20:06:07
+gbdt:
+auc_test: 0.820673937655
+logloss: 0.100887457369
+time: 0:04:18.882000
+

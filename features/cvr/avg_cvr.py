@@ -26,7 +26,7 @@ betas = [2085, 7246, 2527, 90]
 connection_bias = [0.00383, 0.02917, 0.00823, 0.00705, 0.00648]
 
 not_smooth = False
-in_memory = False
+in_memory = True
 
 left_day = 17
 right_day = 24
@@ -111,6 +111,9 @@ def id_cvr_helper(raw_file, stat_dir, header, id_index):
     for id in id_set:
         click = float(click_set.setdefault(id, 0))
         cv = float(cv_set.setdefault(id, 0))
+        if id == 0:
+            click = 0
+            cv = 0
         if click == 0 and not_smooth:
             cvr = 0
         else:
@@ -119,10 +122,8 @@ def id_cvr_helper(raw_file, stat_dir, header, id_index):
             cv = round(math.log(cv, 2), 5)
         if click != 0:
             click = round(math.log10(click), 5)
-        if id == 0:
-            id_cvr[0] = [0, 0, round(cvr, 5)]
-        else:
-            id_cvr[id] = [click, cv, round(cvr, 5)]
+
+        id_cvr[id] = [click, cv, round(cvr, 5)]
         # id_cvr[id] = [cv, round(cvr, 5)]
     print "Building " + header + " cvr finished."
     return id_cvr
@@ -282,53 +283,53 @@ def build_ad_cvr(train_dir):
 
             # 更新creativeID的数据
             if creativeID_key not in creative:
-                creative[creativeID_key] = [0, 0, 0, 0]
+                creative[creativeID_key] = [0, 0, 0]
             if row[1] == '1':
                 creative[creativeID_key][0] += 1
                 creative[creativeID_key][1] += 1
             else:
                 creative[creativeID_key][0] += 1
-            creative[creativeID_key][3] += connection_bias[connectionType]
+            # creative[creativeID_key][3] += connection_bias[connectionType]
 
             # 更新adID的数据
             if adID_key not in ad:
-                ad[adID_key] = [0, 0, 0, 0]
+                ad[adID_key] = [0, 0, 0]
             if row[1] == '1':
                 ad[adID_key][0] += 1
                 ad[adID_key][1] += 1
             else:
                 ad[adID_key][0] += 1
-            ad[adID_key][3] += connection_bias[connectionType]
+            # ad[adID_key][3] += connection_bias[connectionType]
 
             # 更新campaignID的数据
             if campaignID_key not in campaign:
-                campaign[campaignID_key] = [0, 0, 0, 0]
+                campaign[campaignID_key] = [0, 0, 0]
             if row[1] == '1':
                 campaign[campaignID_key][0] += 1
                 campaign[campaignID_key][1] += 1
             else:
                 campaign[campaignID_key][0] += 1
-            campaign[campaignID_key][3] += connection_bias[connectionType]
+            # campaign[campaignID_key][3] += connection_bias[connectionType]
 
             # 更新advertiserID的数据
             if advertiserID_key not in advertiser:
-                advertiser[advertiserID_key] = [0, 0, 0, 0]
+                advertiser[advertiserID_key] = [0, 0, 0]
             if row[1] == '1':
                 advertiser[advertiserID_key][0] += 1
                 advertiser[advertiserID_key][1] += 1
             else:
                 advertiser[advertiserID_key][0] += 1
-            advertiser[advertiserID_key][3] += connection_bias[connectionType]
+            # advertiser[advertiserID_key][3] += connection_bias[connectionType]
 
             # 更新appID的数据
             if appID_key not in app:
-                app[appID_key] = [0, 0, 0, 0]
+                app[appID_key] = [0, 0, 0]
             if row[1] == '1':
                 app[appID_key][0] += 1
                 app[appID_key][1] += 1
             else:
                 app[appID_key][0] += 1
-            app[appID_key][3] += connection_bias[connectionType]
+            # app[appID_key][3] += connection_bias[connectionType]
 
             # 更新appPlatform的数据
             if appPlatform_key not in appPlatform:
@@ -342,20 +343,20 @@ def build_ad_cvr(train_dir):
         for creativeID_key in creative.keys():
             calibrate(creative, creativeID_key)
             # COEC
-            creative[creativeID_key][3] = round((creative[creativeID_key][1] / creative[creativeID_key][3]), 5)
+            # creative[creativeID_key][3] = round((creative[creativeID_key][1] / creative[creativeID_key][3]), 5)
 
         for adID_key in ad.keys():
             calibrate(ad, adID_key)
             # COEC
-            ad[adID_key][3] = round((ad[adID_key][1]/ad[adID_key][3]), 5)
+            # ad[adID_key][3] = round((ad[adID_key][1]/ad[adID_key][3]), 5)
 
         for campaignID_key in campaign:
             calibrate(campaign, campaignID_key)
-            campaign[campaignID_key][3] = round((campaign[campaignID_key][1] / campaign[campaignID_key][3]), 5)
+            # campaign[campaignID_key][3] = round((campaign[campaignID_key][1] / campaign[campaignID_key][3]), 5)
 
         for advertiserID_key in advertiser:
             calibrate(advertiser, advertiserID_key)
-            advertiser[advertiserID_key][3] = round((advertiser[advertiserID_key][1] / advertiser[advertiserID_key][3]), 5)
+            # advertiser[advertiserID_key][3] = round((advertiser[advertiserID_key][1] / advertiser[advertiserID_key][3]), 5)
 
         for appPlatform_key in appPlatform:
             calibrate(appPlatform, appPlatform_key)
@@ -363,9 +364,9 @@ def build_ad_cvr(train_dir):
         # if fine_feature:
         for appID_key in app:
             calibrate(app, appID_key)
-            app[appID_key][3] = round((app[appID_key][1] / app[appID_key][3]), 5)
+            # app[appID_key][3] = round((app[appID_key][1] / app[appID_key][3]), 5)
 
-        bound = 1
+        bound = 0
 
         # 获取最终的list
         ad_file = open(ad_file_path, 'r')
@@ -469,12 +470,12 @@ def build_conn_cvr(train_dir):
 
 
 if __name__ == "__main__":
-    from features import cvr
+    train_dir = constants.custom_path+'/for_train/clean_id/'
+    build_pos_cvr(train_dir)
     # cvr_handler = cvr.StatisticHandler(constants.custom_path+'/for_train/clean_id/')
     # user_pro_feature = user_profile_cvr(constants.custom_path+'/for_train/clean_id/' + "train_with_user_info.csv")
-    # cvr_handler.load_train_cvr()
     # cvr_handler.load_avg_cvr(24, 31)
-    ad_map = build_ad_cvr(constants.custom_path+'/for_train/clean_id/')
+    # ad_map = build_ad_cvr(constants.custom_path+'/for_train/clean_id/')
     # pos_info_cvr(constants.project_path+"/dataset/custom/train_with_pos_info.csv")
     # userID_feature = id_cvr_helper(constants.project_path + "/dataset/raw/user.csv", 'userID')
     # from features.one_hot.user_profile import user_app_feature

@@ -21,7 +21,7 @@ def build_attr_map(ad_map, user_map, userID, creativeID, positionID, connectionT
     attr_map['appPlatform'] = appPlatform
     attr_map['appCategory'] = appCategory
     attr_map['appID'] = appID
-    attr_map['campaignID'] = campaignID
+    attr_map['camgaignID'] = campaignID
     attr_map['adID'] = adID
     attr_map['advertiserID'] = advertiserID
     attr_map['creativeID'] = creativeID

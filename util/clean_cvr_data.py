@@ -16,8 +16,8 @@ class IDMapper:
 
     # load id set
     def load_idset(self):
-        # self._userID_set = set(np.loadtxt(self._idset_dir+'userID', dtype=int))
-        self._creativeID_set = set(np.loadtxt(self._idset_dir + 'creativeID', dtype=int))
+        self._userID_set = set(np.loadtxt(self._idset_dir+'userID', dtype=int))
+        # self._creativeID_set = set(np.loadtxt(self._idset_dir + 'creativeID', dtype=int))
         # self._adID_set = set(np.loadtxt(self._idset_dir + 'adID', dtype=int))
         # self._campaignID_set = set(np.loadtxt(self._idset_dir + 'campaignID', dtype=int))
         self._positionID_set = set(np.loadtxt(self._idset_dir + 'positionID', dtype=int))
@@ -73,17 +73,16 @@ def process_id(raw_file, to_file):
     imp = IDMapper(constants.custom_path+'/idset/')
     train_df = pd.read_csv(raw_file)
 
-    train_df['creativeID'] = train_df['creativeID'].apply(lambda x: map_single_func(imp, 'creativeID', x))
-    print "creativeID finished."
+    # train_df['creativeID'] = train_df['creativeID'].apply(lambda x: map_single_func(imp, 'creativeID', x))
+    # print "creativeID finished."
+    #
+    # train_df['adID'] = train_df[['creativeID', 'adID']].apply(lambda x: map_func(imp, 'adID', *x), axis=1)
+    # print "adID finished."
+    # train_df['camgaignID'] = train_df[['creativeID', 'camgaignID']].apply(lambda x: map_func(imp, 'camgaignID', *x), axis=1)
+    # print "campaignID finished."
 
-    train_df['adID'] = train_df[['creativeID', 'adID']].apply(lambda x: map_func(imp, 'adID', *x), axis=1)
-    print "adID finished."
-    train_df['camgaignID'] = train_df[['creativeID', 'camgaignID']].apply(lambda x: map_func(imp, 'camgaignID', *x), axis=1)
-    print "campaignID finished."
-
-
-    # train_df['userID'] = train_df['userID'].apply(lambda x: map_func(imp, 'userID', x))
-    # print "userID finished."
+    train_df['userID'] = train_df['userID'].apply(lambda x: map_single_func(imp, 'userID', x))
+    print "userID finished."
     train_df['positionID'] = train_df['positionID'].apply(lambda x: map_single_func(imp, 'positionID', x))
     print "positionID finished."
     train_df.to_csv(to_file, index=False)
@@ -117,23 +116,24 @@ def show_head(raw_file, row):
             count += 1
 
 if __name__ == '__main__':
-    # process_id(constants.custom_path+'/for_train/train_with_ad_info.csv',
-    #            constants.custom_path+'/for_train/clean_id/train_with_ad_info.csv')
+    # process_id(constants.custom_path+'/for_train/train_with_pos_info.csv',
+    #            constants.custom_path+'/for_train/clean_id/train_with_pos_info.csv')
     # process_id(constants.custom_path+'/for_train/train_with_all_info.csv',
     #            constants.custom_path+'/for_train/clean_id/train_with_all_info.csv')
-
-    # process_id(constants.custom_path+'/for_predict/train_with_ad_info.csv',
-    #            constants.custom_path+'/for_predict/clean_id/train_with_ad_info.csv')
+    #
+    # process_id(constants.custom_path+'/for_predict/train_with_pos_info.csv',
+    #            constants.custom_path+'/for_predict/clean_id/train_with_pos_info.csv')
     # process_id(constants.custom_path + '/for_predict/train_with_all_info.csv',
     #            constants.custom_path + '/for_predict/clean_id/train_with_all_info.csv')
 
-    clean_with_all_data(constants.custom_path+'/for_train/clean_id/train_with_all_info.csv',
-                        constants.custom_path + '/for_train/clean_id/train_with_all_info_clean.csv')
-
+    # clean_with_all_data(constants.custom_path+'/for_train/clean_id/train_with_all_info.csv',
+    #                     constants.custom_path + '/for_train/clean_id/train_with_all_info_clean.csv')
+    #
     clean_with_all_data(constants.custom_path + '/for_predict/clean_id/train_with_all_info.csv',
                         constants.custom_path + '/for_predict/clean_id/train_with_all_info_clean.csv')
 
     # show_head(constants.custom_path+'/for_train/train_with_all_info.csv', 5)
 
 
-
+    # tmp_df = pd.read_csv(constants.custom_path+'/for_train/clean_id/train_with_pos_info.csv')
+    # print tmp_df[tmp_df.positionID == 0]

@@ -30,9 +30,7 @@ class StatisticHandler:
         self._creative_app_dict = {}
         self._app_short_cvr_features = {}
         self._conn_cvr_features = {}
-        # self._pos_combine_cvr_dict = {}
-        # self._conn_combine_cvr_dict = {}
-        # self._app_combine_cvr_dict = {}
+
         self._combine_cvr_dict = {}
         self._train_installed_set = {}
         self._predict_installed_set = {}
@@ -68,7 +66,7 @@ class StatisticHandler:
         # self._app_short_cvr_features = avg_cvr.build_short_cvr(self._dir_path)
         import combine_cvr
         self._conn_cvr_features = avg_cvr.build_conn_cvr(self._dir_path)
-        # self._combine_cvr_dict = combine_cvr.build_combine_cvr(self._dir_path)
+        self._combine_cvr_dict = combine_cvr.build_combine_cvr(self._dir_path)
         print "Loading average cvr finished."
 
     # 读取时序cvr特征
@@ -117,7 +115,7 @@ class StatisticHandler:
         if creativeID in self._ad_cvr_features:
             return self._ad_cvr_features[creativeID]
         else:
-            return self._ad_cvr_features[0]
+            return [0, 0, round(float(alpha)/(alpha+beta), 5)]
 
     # 获取id类统计信息
     def get_id_cvr(self, header, id, day):
@@ -161,7 +159,7 @@ class StatisticHandler:
                 cvr = round((alpha+cv)/float(alpha+beta+click), 5)
                 return [math.log(cv, 2), cvr]
 
-        return [0, round(float(alpha)/(alpha+beta), 2)]
+        return [0, round(float(alpha)/(alpha+beta), 5)]
 
     # 获取user action category喜好
     def get_user_action(self, userID, creativeID, day):

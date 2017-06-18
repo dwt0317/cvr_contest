@@ -73,6 +73,6 @@ def bootstrap_online_train(start_date, raw_file, to_dir):
 
 
 if __name__ == '__main__':
-    bootstrap_online_train(27, constants.custom_path+'/for_predict/train_with_user_info.csv', constants.custom_path+'/split_online/')
-    negative_down_sampling(constants.project_path+"/dataset/custom/split_online/", 0.025)
+    # bootstrap_online_train(27, constants.custom_path+'/for_predict/train_with_user_info.csv', constants.custom_path+'/split_online/')
+    negative_down_sampling(constants.project_path+"/dataset/custom/split_0/", 0.025)
     # total_samplilng(constants.raw_path, constants.custom_path)

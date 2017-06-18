@@ -113,7 +113,7 @@ def bootstrap_online_train(start_date, to_dir):
 
 # 按日期进行分割
 def split_by_date(left_bound, right_bound, to_file):
-    total_df = pd.read_csv(constants.raw_train_path)
+    total_df = pd.read_csv(constants.clean_train_path)
     train_df = total_df[(total_df['clickTime'] >= left_bound*1000000)
                         & (total_df['clickTime'] < right_bound*1000000)]
     train_df.to_csv(to_file, index=False)
@@ -129,7 +129,7 @@ def random_split_dataset(train_file, train_percent, to_path):
     # total_df = abandon_data(total_df, abandon_list)
     # shuffle原数据集
 
-    for i in range(2, 3):
+    for i in range(2, 4):
         random_df = total_df.sample(frac=1)
         random_df['instanceID'] = random_df.index
         random_df.reset_index(drop=True, inplace=True)
@@ -275,11 +275,12 @@ if __name__ == '__main__':
     # convert_data_time(constants.raw_test_path, constants.project_path +"/dataset/custom/test_re-time.csv", 1)
     # install_merge_by_app(constants.project_path + "/dataset/raw/" + "user_installedapps.csv",
     #                      constants.project_path + "/dataset/raw/" + "user_installedapps_with_category.csv")
-    # merge_by_ad(constants.custom_path+'/for_predict/train.csv', constants.project_path+"/dataset/custom/for_predict/train_with_ad_info.csv")
-    # merge_by_user(constants.raw_test_path,
-    #               constants.custom_path + '/test_with_user_info.csv')
+    # merge_by_ad(constants.custom_path+'/for_predict/train.csv',
+    #             constants.project_path+"/dataset/custom/for_predict/train_with_ad_info.csv")
+    # merge_by_user(constants.custom_path+'/for_predict/train.csv',
+    #               constants.project_path + "/dataset/custom/for_predict/train_with_ad_info.csv")
     # merge_by_pos(constants.custom_path+'/for_predict/train.csv',
-    # constants.project_path + "/dataset/custom/train_with_pos_info.csv")
+    # constants.project_path + "/dataset/custom/for_predict/train_with_pos_info.csv")
     # merge_with_all_data(constants.custom_path+'/for_predict/train.csv', 0, constants.custom_path+'/for_predict')
 
 
@@ -297,5 +298,5 @@ if __name__ == '__main__':
     # concat_data(constants.custom_path+'/split_by_day/with_pos/', 17, 30,
     #             constants.custom_path+'/for_train/train_with_pos_info.csv')
     # split_by_date(23, 27, constants.custom_path+'/for_train/train.csv')
-    # split_by_date(27, 31, constants.custom_path + '/for_predict/train.csv')
-    random_split_dataset(constants.custom_path+'/for_predict/train_with_user_info.csv', 0.8, constants.custom_path+'/split_0/')
+    split_by_date(23, 31, constants.custom_path + '/train_second_week.csv')
+    # random_split_dataset(constants.custom_path+'/for_predict/train_with_user_info.csv', 0.8, constants.custom_path+'/split_0/')

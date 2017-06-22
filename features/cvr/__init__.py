@@ -6,7 +6,7 @@ import cPickle as pickle
 import math
 import numpy as np
 import sys
-
+import gc
 # alpha = 130  # for smoothing
 # beta = 5085
 
@@ -43,6 +43,7 @@ class StatisticHandler:
         self._id_cvr_feature = {}
         self._yes_id_cvr_feature = {}
         self._cur_day = 17
+        self._actions_preNday_dict = {}
 
         # for train
         self._pos_cvr_fd = None
@@ -60,20 +61,24 @@ class StatisticHandler:
         avg_cvr.left_day = left_day
         avg_cvr.right_day = right_day
         # self.load_installed_app_feature()
-        self._user_cvr_features = avg_cvr.build_user_cvr(self._dir_path)
-        self._pos_cvr_features = avg_cvr.build_pos_cvr(self._dir_path)
-        self._ad_cvr_features = avg_cvr.build_ad_cvr(self._dir_path)
-        # self._app_short_cvr_features = avg_cvr.build_short_cvr(self._dir_path)
+        src_path = constants.custom_path+'/clean_id/'
+        self._user_cvr_features = avg_cvr.build_user_cvr(src_path, self._dir_path)
+        self._pos_cvr_features = avg_cvr.build_pos_cvr(src_path, self._dir_path)
+        self._ad_cvr_features = avg_cvr.build_ad_cvr(src_path, self._dir_path)
         import combine_cvr
-        self._conn_cvr_features = avg_cvr.build_conn_cvr(self._dir_path)
+        combine_cvr.left_day = left_day
+        combine_cvr.right_day = right_day
+        self._conn_cvr_features = avg_cvr.build_conn_cvr(src_path, self._dir_path)
         self._combine_cvr_dict = combine_cvr.build_combine_cvr(self._dir_path)
         print "Loading average cvr finished."
 
     # 读取时序cvr特征
     def load_time_cvr(self):
         import time_cvr
-        self._user_action_features, self._user_install_features = time_cvr.build_user_action()
-        self._user_before_action_features, self._user_before_install_features = time_cvr.build_user_before_action()
+        # src_path =
+        # self._user_action_features, self._user_install_features = time_cvr.build_user_action(self._dir_path)
+        self._actions_preNday_dict = time_cvr.build_NDay_installationTimes(2, self._dir_path)
+        # self._user_before_action_features, self._user_before_install_features = time_cvr.build_user_before_action()
         # self.load_id_cvr()
         print "Loading time cvr finished."
 
@@ -166,7 +171,8 @@ class StatisticHandler:
         appID = self._creative_app_dict[creativeID]['appID']
         category = self._app_category_dict[appID]
         d = day - 1
-        features = [0, 0, 0, 0, 0, 0]      # diversity, num, most, medium, low, app_count
+        # features = [0, 0, 0, 0, 0, 0]      # diversity, num, most, medium, low, app_count
+        features = [0, 0, 0, 0]     # diversity, num, rate, app_count
         if d in self._user_action_features:
             if userID in self._user_action_features[d]:
                 diversity = len(self._user_action_features[d][userID])
@@ -174,13 +180,24 @@ class StatisticHandler:
                 rate = num / float(diversity)
                 app_count = self._user_install_features[d][userID]
                 features[0], features[1] = diversity, num
-                if rate < 0.2:
-                    features[4] = 1
-                elif rate < 0.6:
-                    features[3] = 1
-                else:
-                    features[2] = 1
-                features[5] = app_count
+                features[2] = rate
+                features[3] = app_count
+                # if rate < 0.2:
+                #     features[4] = 1
+                # elif rate < 0.6:
+                #     features[3] = 1
+                # else:
+                #     features[2] = 1
+                # features[5] = app_count
+        return features
+
+    # 获取之前n天app安装数据
+    def get_app_install_num(self, creativeID, day):
+        appID = self._creative_app_dict[creativeID]['appID']
+        features = [0]
+        if appID in self._actions_preNday_dict:
+            if day in self._actions_preNday_dict[appID]:
+                features[0] = round(math.log(self._actions_preNday_dict[appID][day], 2), 5)
         return features
 
     # 获取30天前用户行为特征
@@ -212,10 +229,10 @@ class StatisticHandler:
         return conn_cvr
 
     # 获取时间差特征
-    def load_time_gap_feature(self, dir_path):
+    def load_time_gap_feature(self, dir_path, online):
         from features.cvr import time_gap
         # time_gap.build_user_click_time_gap(train_file, test_file, dir_path+"feature/")
-        return time_gap.load_user_click_time_gap(dir_path)
+        return time_gap.load_user_click_time_gap(dir_path, online)
 
     # 获取最后点击特征
     def load_last_click_feature(self, dir_path):
@@ -238,21 +255,6 @@ class StatisticHandler:
                 if attr3 in self._combine_cvr_dict[header][attr1][attr2]:
                     return self._combine_cvr_dict[header][attr1][attr2][attr3]
         return [0, round(float(alpha)/(alpha+beta), 5)]
-
-
-    # # 获取pos组合点击率特征
-    # def get_pos_combine_cvr_feature(self, header, id, positionID):
-    #     if id in self._pos_combine_cvr_dict[header]:
-    #         if positionID in self._pos_combine_cvr_dict[header][id]:
-    #             return self._pos_combine_cvr_dict[header][id][positionID]
-    #     return [0, round(float(alpha)/(alpha+beta), 5)]
-    #
-    # # 获取app组合点击率特征
-    # def get_app_combine_cvr_feature(self, header, attr, appID):
-    #     if attr in self._app_combine_cvr_dict[header]:
-    #         if appID in self._app_combine_cvr_dict[header][attr]:
-    #             return self._app_combine_cvr_dict[header][attr][appID]
-    #     return [0, round(float(alpha)/(alpha+beta), 5)]
 
 
     # 获取已安装app特征

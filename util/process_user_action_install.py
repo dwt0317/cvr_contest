@@ -5,17 +5,16 @@ import constants
 
 # merge user actions with ad info
 def install_merge_by_app(raw_file, to_path):
-    total_df = pd.read_csv(raw_file)
-    ad_df = pd.read_csv(constants.project_path + "/dataset/raw/" + "app_categories.csv")
-    merge_df = pd.merge(left=total_df, right=ad_df, how='left', on=['appID'])
-    tmp_path = constants.project_path + "/dataset/raw/tmp.action"
-    merge_df.to_csv(path_or_buf=tmp_path, index=False)
+    # total_df = pd.read_csv(raw_file)
+    # ad_df = pd.read_csv(constants.project_path + "/dataset/raw/" + "app_categories.csv")
+    # merge_df = pd.merge(left=total_df, right=ad_df, how='left', on=['appID'])
+    tmp_path = constants.project_path + "/dataset/custom/actions/tmp.action"
+    # merge_df.to_csv(path_or_buf=tmp_path, index=False)
     #
     user_action_file = tmp_path
     to_f = open(to_path, 'w')
     to_f.write('userID,' + 'appCategory' + '\n')
     # to_f.write(",".join(merge_df.columns.values))
-    to_f.write('\n')
     with open(user_action_file, 'r') as f:
         f.readline()
         for line in f:
@@ -60,3 +59,6 @@ def group_user_installedapp():
                 print i
             i += 1
     to_file.close()
+
+install_merge_by_app(constants.raw_path+'/user_app_actions.csv',
+                     constants.custom_path+'/actions/user_app_actions_with_category.csv')

@@ -6,11 +6,11 @@ import pandas as pd
 import cvr
 import features.gbdt_feature as gf
 import one_hot.position as pf
-import one_hot.user_profile as uf
+from util import sampling
 from features.one_hot import advertising as af
 from features.utils import attr_mapper
 from util import constants
-
+import gc
 
 # 以libfm形式存储
 def write_as_libfm(features, file_write, label):
@@ -102,15 +102,16 @@ def build_x_hepler(from_path, to_path,
         else:
             day = int(row[2]) / 1000000
 
-        # time gap feature
-        # instance = int(row[8]) if data_type == "train" else row_num
-        # if instance in time_gap_dict:
-        #     time_gap = time_gap_dict[instance]
-        # else:
-        #     time_gap = [0] * 3
-        # offset = feed_cvr_feature(features, time_gap, offset, field, ffm)
-        # field += 1
-        # del time_gap
+        if time_gap_dict != None:
+            # time gap feature
+            instance = int(row[15]) if data_type == "train" else row_num
+            if instance in time_gap_dict:
+                time_gap = time_gap_dict[instance]
+            else:
+                time_gap = [-1, -1, 0, 0]
+            offset = feed_cvr_feature(features, time_gap, offset, field, ffm)
+            field += 1
+            del time_gap
 
         # instance = int(row[8]) if data_type == "train" else row_num+1
         # if statistic_handler.is_installed(instance, data_type):
@@ -127,6 +128,9 @@ def build_x_hepler(from_path, to_path,
         offset += len(user_f)
         del user_f
 
+        '''
+        Temp remove
+        '''
         if has_cvr:
             # user cvr feature
             user_cvr = statistic_handler.get_user_cvr(userID)
@@ -137,7 +141,9 @@ def build_x_hepler(from_path, to_path,
         # user actions
         # user_actions_f = statistic_handler.get_user_action(userID, creativeID, day)
         # offset = feed_cvr_feature(features, user_actions_f, offset, field, ffm)
-        # del user_actions_f
+        user_actions_f = statistic_handler.get_app_install_num(creativeID, day)
+        offset = feed_cvr_feature(features, user_actions_f, offset, field, ffm)
+        del user_actions_f
         #
         # user_before_actions_f = statistic_handler.get_user_before_action(userID, creativeID)
         # offset = feed_cvr_feature(features, user_before_actions_f, offset, field, ffm)
@@ -158,13 +164,16 @@ def build_x_hepler(from_path, to_path,
             field += 1
             del pos_cvr
 
+        '''
+        Temp remove
+        '''
         # network feature connection * 5, tele-operator * 4
         connectionType = int(row[6])
-        features[offset+connectionType] = str(field) + "," + str(1) if ffm else 1
-        offset += 5
+        # features[offset+connectionType] = str(field) + "," + str(1) if ffm else 1
+        # offset += 5
         telecomsOperator = int(row[7])
-        features[offset+telecomsOperator] = str(field) + "," + str(1) if ffm else 1
-        offset += 4
+        # features[offset+telecomsOperator] = str(field) + "," + str(1) if ffm else 1
+        # offset += 4
 
         # connection, sitesetID (5*3), connection, positionType (5*6)
         sitesetID = pos_features[int(row[5])][0]
@@ -243,16 +252,7 @@ def build_x_hepler(from_path, to_path,
 
         # headers = ['education', 'marriageStatus', 'creativeID', 'appID', 'connectionType']
         # feed_combine_cvr(attr_map, headers, 'age', features, offset, field, ffm, statistic_handler)
-        # del headers
-
-        # del combine_cvr
-
-        # if data_type == 'test':
-        #     day -= 1
-        # app_short_fea = statistic_handler.get_app_short_cvr(creativeID, day)
-        # offset = feed_cvr_feature(features, app_short_fea, offset, field, ffm)
-        # del app_short_fea
-
+        del headers, attr_map, user_map
 
         if ffm:
             write_as_libffm(features, to_file, row[0])
@@ -260,6 +260,7 @@ def build_x_hepler(from_path, to_path,
             write_as_libfm(features, to_file, row[0])
         if row_num % 100000 == 0:
             print row_num
+            gc.collect()
         row_num += 1
         del features
     print "Building x finished."
@@ -274,70 +275,92 @@ def build_x():
     # user_features, user_map, user_dim = uf.build_user_profile(has_sparse=has_sparse)
     pos_features, pos_dim = pf.build_position(has_sparse=has_sparse)
 
-    src_dir_path = constants.project_path+"/dataset/custom/split_0/sample/"
+    src_dir_path = constants.project_path+"/dataset/custom/split_1/sample/"
     # src_dir_path = constants.project_path + "/dataset/custom/split_online/sample/"
-    # des_dir_path = constants.project_path+"/dataset/x_y/split_online/b0/"
-    des_dir_path = constants.project_path + "/dataset/x_y/split_0/b0/"
-    cus_dir_path = constants.project_path+"/dataset/custom/"
-    for_path = constants.custom_path+'/for_train/clean_id/'
-    # for_path = constants.custom_path + '/for_predict/clean_id/'
+    # des_dir_path = constants.project_path+"/dataset/x_y/split_online/b3/"
+    des_dir_path = constants.project_path + "/dataset/x_y/split_1/b1/"
 
-    # 加载cvr特征
-    cvr_handler = cvr.StatisticHandler(for_path)
-    '''注意online test 的区间是不同的 24 31'''
-    cvr_handler.load_avg_cvr(17, 24)
+    # feature_path = constants.custom_path+'/for_train/clean_id/'
 
-    # cvr_handler.load_time_cvr()
-    # train_time_gap, predict_time_gap = cvr_handler.load_time_gap_feature(cus_dir_path)
-    # train_last_click, predict_last_click = cvr_handler.load_last_click_feature(cus_dir_path)
+    '''注意修改predict和online'''
+    predict = False
+    online = False
 
-    # # generate online test dataset
-    # test_des_file = des_dir_path + "test_x.fm"
-    # test_src_file = constants.custom_path + "/test_with_user_info.csv"
-    # build_x_hepler(test_src_file, test_des_file,
-    #                ad_features, ad_dim, ad_map,
-    #                # user_features, user_dim, user_map,
-    #                pos_features, pos_dim,
-    #                cvr_handler,
-    #                # time_gap_dict=predict_time_gap,
-    #                data_type="test",
-    #                has_gbdt=False,
-    #                ffm=False,
-    #                has_cvr=True)
+    days = [27, 28, 29]
+    if predict:
+        days = [30]
+    if online and not predict:
+        days = [28, 29]
 
-    for i in range(0, 1):
-        test_des_file = des_dir_path + "test_x_" + str(i) + ".fm"
-        test_src_file = src_dir_path + "test_x_" + str(i)
-        train_src_file = src_dir_path + "train_x_" + str(i) + '_sample'
-        train_des_file = des_dir_path + "train_x_" + str(i) + ".fms"
-        # train_src_file = src_dir_path + "train_x_" + str(i)
-        # train_des_file = des_dir_path + "train_x_onehot_" + str(i) + ".fm"
-        #
+    for day in days:
+        fea_day = day - 1   # feature day is less 1 than data day
+        feature_path = constants.custom_path+'/four_days/' + str(fea_day) + '/'
+        print 'feature path: ' + feature_path
 
-        #
-        build_x_hepler(test_src_file, test_des_file,
-                       ad_features, ad_dim, ad_map,
-                       # user_features, user_dim, user_map,
-                       pos_features, pos_dim,
-                       cvr_handler,
-                       # time_gap_dict=train_time_gap,
-                       # last_click_dict=train_last_click,
-                       data_type="train",
-                       has_gbdt=False,
-                       ffm=False,
-                       has_cvr=True)
+        # 加载cvr特征
+        cvr_handler = cvr.StatisticHandler(feature_path)
+        '''注意online test 的区间是不同的 24 31
+        online使用的不同的time_delta
+        '''
+        cvr_handler.load_avg_cvr(17, 24)
+        cvr_handler.load_time_cvr()
 
-        build_x_hepler(train_src_file, train_des_file,
-                       ad_features, ad_dim, ad_map,
-                       # user_features, user_dim, user_map,
-                       pos_features, pos_dim,
-                       cvr_handler,
-                       # time_gap_dict=train_time_gap,
-                       # last_click_dict=train_last_click,
-                       data_type="train",
-                       has_gbdt=False,
-                       ffm=False,
-                       has_cvr=True)
+        time_delta_dir = constants.custom_path + '/global_features/time_delta/'
+        train_time_gap, predict_time_gap = cvr_handler.load_time_gap_feature(time_delta_dir, online)
+        # train_last_click, predict_last_click = cvr_handler.load_last_click_feature(cus_dir_path)
+        gc.collect()
+
+        # # generate online test dataset
+        if predict:
+            test_des_file = des_dir_path + "test_x.fm"
+            test_src_file = constants.custom_path + "/test_with_user_info.csv"
+            build_x_hepler(test_src_file, test_des_file,
+                           ad_features, ad_dim, ad_map,
+                           # user_features, user_dim, user_map,
+                           pos_features, pos_dim,
+                           cvr_handler,
+                           time_gap_dict=predict_time_gap,
+                           data_type="test",
+                           has_gbdt=False,
+                           ffm=False,
+                           has_cvr=True)
+            sampling.split_test_file(test_des_file, des_dir_path+'test/')
+
+        bound = 0 if predict else 1
+        for i in range(0, bound):
+            test_src_file = src_dir_path + "test_x_day_" + str(day)
+            test_des_file = des_dir_path + "test_x_" + str(day) + ".fm"
+            train_src_file = src_dir_path + "train_x_day_" + str(day) + '_sample'
+            train_des_file = des_dir_path + "train_x_" + str(day) + ".fms"
+            # train_src_file = src_dir_path + "train_x_" + str(i)
+            # train_des_file = des_dir_path + "train_x_onehot_" + str(i) + ".fm"
+
+            if not online:
+                build_x_hepler(test_src_file, test_des_file,
+                               ad_features, ad_dim, ad_map,
+                               # user_features, user_dim, user_map,
+                               pos_features, pos_dim,
+                               cvr_handler,
+                               time_gap_dict=train_time_gap,
+                               # last_click_dict=train_last_click,
+                               data_type="train",
+                               has_gbdt=False,
+                               ffm=False,
+                               has_cvr=True)
+                gc.collect()
+
+            build_x_hepler(train_src_file, train_des_file,
+                           ad_features, ad_dim, ad_map,
+                           # user_features, user_dim, user_map,
+                           pos_features, pos_dim,
+                           cvr_handler,
+                           time_gap_dict=train_time_gap,
+                           # last_click_dict=train_last_click,
+                           data_type="train",
+                           has_gbdt=False,
+                           ffm=False,
+                           has_cvr=True)
+        gc.collect()
 
 
 if __name__ == '__main__':

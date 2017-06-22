@@ -2,7 +2,7 @@
 import numpy as np
 import constants
 import pandas as pd
-
+import gc
 
 class IDMapper:
     def __init__(self, idset_dir):
@@ -100,7 +100,7 @@ def process_place(raw_file, to_file):
 
 def clean_with_all_data(raw_file, to_file):
     raw_df = pd.read_csv(raw_file)
-    raw_df.drop(['clickTime', 'conversionTime', 'telecomsOperator', 'appPlatform', 'sitesetID', 'positionType'], inplace=True, axis=1)
+    raw_df.drop(['clickTime', 'conversionTime', 'telecomsOperator', 'sitesetID', 'positionType'], inplace=True, axis=1)
     raw_df.to_csv(to_file, index=False)
     del raw_df
     print "Clean one."
@@ -110,30 +110,30 @@ def show_head(raw_file, row):
     count = 0
     with open(raw_file, 'r') as f:
         for line in f:
-            print line
+            print line.strip()
             if count == row:
                 break
             count += 1
 
 if __name__ == '__main__':
-    # process_id(constants.custom_path+'/for_train/train_with_pos_info.csv',
-    #            constants.custom_path+'/for_train/clean_id/train_with_pos_info.csv')
-    # process_id(constants.custom_path+'/for_train/train_with_all_info.csv',
-    #            constants.custom_path+'/for_train/clean_id/train_with_all_info.csv')
-    #
+    process_id(constants.custom_path+'/for_train/train_with_pos_info.csv',
+               constants.custom_path+'/for_train/clean_id/train_with_pos_info.csv')
+    process_id(constants.custom_path+'/for_train/train_with_all_info.csv',
+               constants.custom_path+'/for_train/clean_id/train_with_all_info.csv')
+    gc.collect()
     # process_id(constants.custom_path+'/for_predict/train_with_pos_info.csv',
     #            constants.custom_path+'/for_predict/clean_id/train_with_pos_info.csv')
     # process_id(constants.custom_path + '/for_predict/train_with_all_info.csv',
     #            constants.custom_path + '/for_predict/clean_id/train_with_all_info.csv')
 
-    # clean_with_all_data(constants.custom_path+'/for_train/clean_id/train_with_all_info.csv',
-    #                     constants.custom_path + '/for_train/clean_id/train_with_all_info_clean.csv')
-    #
-    clean_with_all_data(constants.custom_path + '/for_predict/clean_id/train_with_all_info.csv',
-                        constants.custom_path + '/for_predict/clean_id/train_with_all_info_clean.csv')
+    clean_with_all_data(constants.custom_path+'/for_train/clean_id/train_with_all_info.csv',
+                        constants.custom_path + '/for_train/clean_id/train_with_all_info_clean.csv')
+    # gc.collect()
+    # clean_with_all_data(constants.custom_path + '/for_predict/clean_id/train_with_all_info.csv',
+    #                     constants.custom_path + '/for_predict/clean_id/train_with_all_info_clean.csv')
 
-    # show_head(constants.custom_path+'/for_train/train_with_all_info.csv', 5)
-
+    # show_head(constants.project_path + "/dataset/custom/actions/" + "tmp.action", 5)
+    # show_head(constants.custom_path + '/for_predict/train_with_all_info.csv', 5)
 
     # tmp_df = pd.read_csv(constants.custom_path+'/for_train/clean_id/train_with_pos_info.csv')
     # print tmp_df[tmp_df.positionID == 0]

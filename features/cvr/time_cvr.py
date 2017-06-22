@@ -5,9 +5,22 @@ from util import constants
 import math
 import cPickle as pickle
 import sys
+from features import cvr
 
-alpha = 130  # for smoothing
-beta = 5085
+alpha = 256  # for smoothing
+beta = 9179
+
+# for predict
+# left_day = 19
+# right_day = 30
+
+# for train
+# left_day = 17
+# right_day = 28
+
+# for offline
+left_day = 17
+right_day = 27
 
 # alpha = 135  # for smoothing
 # beta = 5085
@@ -25,19 +38,23 @@ in_memory = False
 
 
 # 用户安装行为
-def build_user_action():
+def build_user_action(src_path):
     if in_memory:
         # 读取favorite文件
-        user_category_file = constants.project_path + "/dataset/custom/favorite/" + "user_app_actions_with_category.csv"
-        user_action_dict = {}
-        user_install_dict = {}
+        user_category_file = constants.project_path + "/dataset/custom/actions/" + "user_app_actions_with_category.csv"
+        user_action_dict = {}   # 用户的安装喜好
+        user_install_dict = {}  # 用户是否安装过该app
         with open(user_category_file, 'r') as f:
             f.readline()
             for line in f:
                 row = line.strip().split(',')
                 userID = int(row[0])
-                day = int(row[1]) / 10000
+                day = int(row[1]) / 1000000
+                if day < left_day or day >= right_day:
+                    continue
                 category = int(row[3])
+                if category >= 100:
+                    category /= 100
                 if day in user_action_dict:
                     if userID in user_action_dict[day]:
                         user_action_dict[day][userID][category] = user_action_dict[day][userID].get(category, 0) + 1
@@ -54,18 +71,22 @@ def build_user_action():
                 else:
                     user_install_dict[day] = {userID: 1}
 
-        pickle.dump(user_action_dict, open(constants.custom_path+'/features/user_action_dict.pkl', 'wb'))
-        pickle.dump(user_install_dict, open(constants.custom_path + '/features/user_install_dict.pkl', 'wb'))
+        pickle.dump(user_action_dict,
+                    open(constants.custom_path + '/global_features/actions/for_offline/user_action_dict.pkl', 'wb'))
+        pickle.dump(user_install_dict,
+                    open(constants.custom_path + '/global_features/actions/for_offline/user_install_dict.pkl', 'wb'))
     else:
+        # change dir as different task
         user_action_dict = pickle.load(
-            open(constants.custom_path + '/features/user_action_dict.pkl', 'rb'))
+            open(constants.custom_path + '/global_features/actions/for_offline/user_action_dict.pkl', 'rb'))
         user_install_dict = pickle.load(
-            open(constants.custom_path + '/features/user_install_dict.pkl', 'rb'))
+            open(constants.custom_path + '/global_features/actions/for_offline/user_install_dict.pkl', 'rb'))
+    print "Loading use favorite finished."
     return user_action_dict, user_install_dict
 
 
 # 30天前用户app类别特征
-def build_user_before_action():
+def build_user_before_action(dir_path):
     if in_memory:
         user_before_category_file = constants.project_path + \
                                     "/dataset/custom/favorite/user_installedapps_with_category_group.csv"
@@ -87,14 +108,54 @@ def build_user_before_action():
                 else:
                     user_before_install_dict[userID] = number
         print "Building user before app favorite finished."
-        pickle.dump(user_before_action_dict, open(constants.custom_path + '/features/user_before_action_dict.pkl', 'wb'))
+        pickle.dump(user_before_action_dict, open(dir_path + 'features/user_before_action_dict.pkl', 'wb'))
         pickle.dump(user_before_install_dict,
-                    open(constants.custom_path + '/features/user_before_install_dict.pkl', 'wb'))
+                    open(dir_path + 'features/user_before_install_dict.pkl', 'wb'))
     else:
         user_before_action_dict = pickle.load(open(constants.custom_path + '/features/user_before_action_dict.pkl', 'rb'))
         user_before_install_dict = pickle.load(
             open(constants.custom_path + '/features/user_before_install_dict.pkl', 'rb'))
     return user_before_action_dict, user_before_install_dict
+
+
+# app安装信息
+def build_NDay_installationTimes(nday, dir_path):
+    if in_memory:
+        action_file = open(constants.raw_path + '/user_app_actions.csv', 'r')
+        action_file.readline()
+        actions_day_dict = {}
+        actions_preNday_dict = {}
+        for line in action_file:
+            row = line.strip().split(',')
+            installTime = row[1]
+            appID = row[2]
+            day = installTime[0:2]
+            if appID not in actions_day_dict:
+                actions_day_dict[appID] = {}
+                actions_day_dict[appID][day] = 1
+            elif day not in actions_day_dict[appID]:
+                actions_day_dict[appID][day] = 1
+            else:
+                actions_day_dict[appID][day] += 1
+        action_file.close()
+
+        for appID_key, day_dict_value in actions_day_dict.items():
+            if appID_key not in actions_preNday_dict:
+                actions_preNday_dict[appID_key] = {}
+            for day_key in range(17, 32):
+                if day_key not in actions_preNday_dict[appID_key]:
+                    actions_preNday_dict[appID_key][day_key] = 0
+                for day_key_dummy, installedTimes_value_dummy in day_dict_value.items():
+                    if int(day_key_dummy) + nday >= int(day_key) and int(day_key_dummy) < int(day_key):
+                        actions_preNday_dict[appID_key][day_key] += installedTimes_value_dummy
+
+        pickle.dump(actions_preNday_dict,
+                    open(constants.custom_path + '/global_features/actions/actions_preNday_dict.pkl', 'wb'))
+    else:
+        actions_preNday_dict = pickle.load(
+            open(constants.custom_path + '/global_features/actions/actions_preNday_dict.pkl', 'rb'))
+    print "Loading actions pre N day finished."
+    return actions_preNday_dict
 
 
 # 历史转化率信息
@@ -253,15 +314,6 @@ def init_history_info(train_ad_file, des_dir):
 
         max_cvr = max(appID_day_dict[appID][2], max_cvr)
         min_cvr = min(appID_day_dict[appID][2], min_cvr)
-
-    # update last day
-    # all_info_dict['userID'] = userID_day_dict
-    # all_info_dict['positionID'] = positionID_day_dict
-    # all_info_dict['appID'] = appID_day_dict
-    # all_info_dict['creativeID'] = creativeID_day_dict
-    # all_info_dict['advertiserID'] = advertiserID_day_dict
-    # all_info_dict['adID'] = adID_day_dict
-    # all_info_dict['campainID'] = campaignID_day_dict
     all_info_name = str(curDay) + '.pkl'
     f1 = file(des_dir+all_info_name, 'wb')
     pickle.dump(all_info_dict, f1, True)
@@ -271,35 +323,10 @@ def init_history_info(train_ad_file, des_dir):
     print max_cvr, min_cvr
 
 
-def get_history_info(ID_type, day):
-    '''
-    :type filePath: ID_type,string,ID的类型
-                    ID,int,ID号
-                    day,int,某一天
-    :rtype: ID_history_dict，dict,{Day17:[ck,conv,cvr]
-                                   Day18:[ck,conv,cvr]
-                                    ...
-                                   Day30:[ck,conv,cvr]
-                                    }
-    '''
-    all_info_name = str(day) + '.pkl'
-    all_info = file(des_dir+all_info_name, 'rb')
-    all_info_dict = pickle.load(all_info)
-    ID_history_dict = all_info_dict[ID_type]
-    # ID_history_dict = {}
-    # for i in xrange(17, day + 1):
-    #     if i in tmp:
-    #         ID_history_dict[i] = tmp[i]
-    #     else:
-    #         ID_history_dict[i] = [0, 0, 0]
-    return ID_history_dict
-
-
 if __name__ == '__main__':
-    des_dir = constants.project_path+"/dataset/custom/cvr_statistic/"
-    train_ad_file = constants.project_path+"/dataset/custom/train_with_ad_info.csv"
-    # init_history_info(train_ad_file, des_dir)
-    u = get_history_info('creativeID', 28)
-    print u[4565]
-    # for k in u.keys()[:5]:
-    #     print k, u[k]
+    # des_dir = constants.project_path+"/dataset/custom/cvr_statistic/"
+    # train_ad_file = constants.project_path+"/dataset/custom/train_with_ad_info.csv"
+    # cvr_handler = cvr.StatisticHandler(constants.custom_path + '/for_train/clean_id/')
+    # cvr_handler.load_time_cvr()
+    build_NDay_installationTimes(10, 'dd')
+    build_user_action("dd")

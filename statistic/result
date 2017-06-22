@@ -1162,3 +1162,48 @@ auc_test: 0.820673937655
 logloss: 0.100887457369
 time: 0:04:18.882000
 
++ time delta
+2017-06-18 22:48:13
+gbdt:
+auc_test: 0.831267296445
+logloss: 0.0992556548046
+time: 0:04:30.611000
+
+remove user cvr and connection onehot (后面recover了user cvr)
+0: 0.82834664706 0.0996457722583
+
+no combination
+2017-06-21 21:12:45
+gbdt:
+auc_test: 0.823532240718
+logloss: 0.100665347266
+time: 0:03:52.897000
+
++ action feature
+2017-06-21 22:11:41
+gbdt:
+auc_test: 0.831403212825
+logloss: 0.0992209943811
+time: 0:04:52.922000
+
+- favorite, app install -> 2days
+2017-06-21 23:02:51
+gbdt:
+auc_test: 0.831782596561
+logloss: 0.0991552891123
+time: 0:04:03.410000
+
+
+------------------------------------ remove 30 2 days
+2017-06-21 14:44:21
+gbdt:
+auc_test: 0.823781492552
+logloss: 0.10334414834
+time: 0:03:40.399000
+
+--------------------------------------
+
+
+
+
+

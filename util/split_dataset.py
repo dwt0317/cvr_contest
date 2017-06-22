@@ -113,7 +113,7 @@ def bootstrap_online_train(start_date, to_dir):
 
 # 按日期进行分割
 def split_by_date(left_bound, right_bound, to_file):
-    total_df = pd.read_csv(constants.clean_train_path)
+    total_df = pd.read_csv(constants.raw_train_path)
     train_df = total_df[(total_df['clickTime'] >= left_bound*1000000)
                         & (total_df['clickTime'] < right_bound*1000000)]
     train_df.to_csv(to_file, index=False)
@@ -123,14 +123,16 @@ def split_by_date(left_bound, right_bound, to_file):
 
 
 # 随机按量切分数据集
-def random_split_dataset(train_file, train_percent, to_path):
+def random_split_dataset(train_file, train_percent, to_path, l, r, n):
     total_df = pd.read_csv(train_file)
-    print total_df.shape
+    partial_df = total_df[(total_df.clickTime < r*1000000) & (total_df.clickTime >= l*1000000)]
+    print partial_df.shape
+    del total_df
     # total_df = abandon_data(total_df, abandon_list)
     # shuffle原数据集
 
-    for i in range(2, 4):
-        random_df = total_df.sample(frac=1)
+    for i in xrange(n):
+        random_df = partial_df.sample(frac=1)
         random_df['instanceID'] = random_df.index
         random_df.reset_index(drop=True, inplace=True)
         # print random_df.head()
@@ -177,13 +179,6 @@ def map_age(age):
     return age
 
 
-# 重新映射hometown
-def map_place_func(x):
-    if x != 0:
-        return x / 100
-    return x
-
-
 # 在train文件中merge user信息
 def merge_by_user(train_file, to_path):
     total_df = pd.read_csv(train_file)
@@ -193,8 +188,6 @@ def merge_by_user(train_file, to_path):
     # pos_df = pd.read_csv(constants.project_path + "/dataset/raw/" + "position.csv")
     # merge_df = pd.merge(left=merge_df, right=pos_df, how='left', on=['positionID'])
     merge_df['age'] = merge_df['age'].apply(lambda x: map_age(x))
-    merge_df['hometown'] = merge_df['hometown'].apply(lambda x: map_place_func(x))
-    merge_df['residence'] = merge_df['residence'].apply(lambda x: map_place_func(x))
     merge_df.to_csv(path_or_buf=to_path, index=False)
     print "Merging user finished."
 
@@ -240,6 +233,24 @@ def merge_with_all_data(train_file, day, to_dir):
     # all_info = pd.read_csv(to_dir+"train_with_all_info.csv")
 
 
+# 按日期进行分割低内存版
+def split_by_date_low_memory(left_bound, right_bound, raw_file, to_file):
+    to = open(to_file, 'w')
+    count = 0
+    with open(raw_file, 'r') as f:
+        to.write(f.readline())
+        for line in f:
+            row = line.strip().split(',')
+            day = int(row[1]) / 1000000
+            if day < left_bound or day >= right_bound:
+                continue
+            to.write(line)
+            if count % 100000 == 0:
+                print count
+            count += 1
+    to.close()
+
+
 # 合并分开的数据集
 def concat_data(dir_path, l_bound, r_bound, to_path):
     to_file = open(to_path, 'w')
@@ -266,24 +277,11 @@ def concat_data(dir_path, l_bound, r_bound, to_path):
 
 if __name__ == '__main__':
     dir_path = constants.project_path + "/dataset/custom/"
-    # bootstrap_online_train(23, dir_path)
-    # split_by_date_kfold(20, dir_path)
-    # abandon_thirty(constants.raw_train_path)
-
-    # conversion_gap()
-    # convert_data_time(constants.raw_train_path, constants.project_path + "/dataset/custom/train_re-time.csv", 0)
-    # convert_data_time(constants.raw_test_path, constants.project_path +"/dataset/custom/test_re-time.csv", 1)
-    # install_merge_by_app(constants.project_path + "/dataset/raw/" + "user_installedapps.csv",
-    #                      constants.project_path + "/dataset/raw/" + "user_installedapps_with_category.csv")
-    # merge_by_ad(constants.custom_path+'/for_predict/train.csv',
-    #             constants.project_path+"/dataset/custom/for_predict/train_with_ad_info.csv")
+    # merge_by_ad(constants.custom_path+'/for_predict/train.csv', constants.project_path+"/dataset/custom/for_predict/train_with_ad_info.csv")
     # merge_by_user(constants.custom_path+'/for_predict/train.csv',
-    #               constants.project_path + "/dataset/custom/for_predict/train_with_ad_info.csv")
-    # merge_by_pos(constants.custom_path+'/for_predict/train.csv',
-    # constants.project_path + "/dataset/custom/for_predict/train_with_pos_info.csv")
+    # constants.project_path + "/dataset/custom/clean_id/train_with_user_info.csv")
+    # merge_by_pos(constants.custom_path+'/train_clean.csv', constants.project_path + "/dataset/custom/train_with_pos_info.csv")
     # merge_with_all_data(constants.custom_path+'/for_predict/train.csv', 0, constants.custom_path+'/for_predict')
-
-
     # merge_by_category(constants.custom_path+'/clean_id/train.csv',
     #               constants.project_path + "/dataset/custom/clean_id/train_with_ad_pos_user_re2.csv")
     # for day in range(17, 31):
@@ -294,9 +292,15 @@ if __name__ == '__main__':
     # merge_by_ad(train_file, constants.custom_path + '/split_by_day/with_ad/train_with_ad_30.csv')
     # random_split_dataset(0.85, constants.project_path+"/dataset/custom/split_6/")
     # bootstrap_online_train(24, dir_path+"split_online/")
-    # headers = ['label','clickTime','conversionTime','creativeID','userID','positionID','connectionType','telecomsOperator','age','gender','education','marriageStatus','haveBaby','hometown','residence']
-    # concat_data(constants.custom_path+'/split_by_day/with_pos/', 17, 30,
-    #             constants.custom_path+'/for_train/train_with_pos_info.csv')
+
     # split_by_date(23, 27, constants.custom_path+'/for_train/train.csv')
-    split_by_date(23, 31, constants.custom_path + '/train_second_week.csv')
-    # random_split_dataset(constants.custom_path+'/for_predict/train_with_user_info.csv', 0.8, constants.custom_path+'/split_0/')
+    # split_by_date(27, 31, constants.custom_path + '/for_predict/train.csv')
+    # random_split_dataset(constants.custom_path+'/train_clean.csv', 0.65, constants.custom_path+'/split_1/', 27, 30, 1)
+
+    split_by_date_low_memory(27, 28, constants.custom_path + '/split_1/test_x_0',
+                             constants.custom_path + '/split_1/test_x_day_27')
+    split_by_date_low_memory(28, 29, constants.custom_path + '/split_1/test_x_0',
+                             constants.custom_path + '/split_1/test_x_day_28')
+    split_by_date_low_memory(29, 30, constants.custom_path + '/split_1/test_x_0',
+                             constants.custom_path + '/split_1/test_x_day_29')
+

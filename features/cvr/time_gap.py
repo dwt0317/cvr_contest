@@ -12,7 +12,7 @@ def compute_time_gap(time_lower, time_upper):
     + (time_upper % 100 - time_lower % 100)
 
 
-# not tested
+# deprecated
 def build_user_click_time_gap(train_file, test_file, dir_path):
     train_data = pd.read_csv(train_file)
     test_data = pd.read_csv(test_file)
@@ -70,29 +70,6 @@ def build_user_click_time_gap(train_file, test_file, dir_path):
     to_file.close()
 
 
-# 获取用户，creative跟上一条的时间差
-def get_min_click_IDS_time_diff(x):
-    x['user'] = x['userID'].shift(1)
-    x['creative'] = x['creativeID'].shift(1)
-    x['time_delta_user_creative'] = x['clickTime'] - x['clickTime'].shift(1)  # 减去上一条的时间
-    x.loc[
-        ((x.user != x.userID) | (x.creative != x.creativeID)), 'time_delta_user_creative'] = -1  # 第一条的时间差是-1
-    return x.drop(['user', 'creative'], axis=1)
-
-
-def get_userID_creativeID_delta(x):
-    x['user'] = x['userID'].shift(1)
-    x['creative'] = x['creativeID'].shift(1)
-    x['user_delta_up'] = x['userID'] - x['user']  # 减去上一条的userID
-    x['creative_delta_up'] = x['creativeID'] - x['creative']  # 减去上一条的creativeID
-    x.loc[(x.user_delta_up != 0) | (x.creative_delta_up != 0), 'user_creative_delta_up'] = 2  # 第一条的rank是2
-    x.fillna(0, inplace=True)
-    return x.drop(['user', 'creative', 'user_delta_up', 'creative_delta_up'], axis=1)
-
-
-
-
-
 def split_train_test(dir_path):
     train_test_fea = pd.read_csv(dir_path+'train_test_time_delta_fea.csv')
     print train_test_fea.head()
@@ -105,22 +82,23 @@ def split_train_test(dir_path):
 
 
 # 读取user time gap feature
-def load_user_click_time_gap(dir_path):
+def load_user_click_time_gap(dir_path, online):
     import copy
-    header = ['instance', 'continue_first_click', 'continue_not_first_click', 'time_delta']
-    # train_test_fea = pd.read_csv(dir_path + 'train_test_time_delta_fea.csv')
+    time_delta_file = dir_path + 'train_time_delta_clean.csv'
+    if online:
+        time_delta_file = dir_path + 'train_time_delta2829_clean.csv'
 
-    train_df = pd.read_csv(dir_path + 'train_time_delta_fea.csv')
+    train_df = pd.read_csv(time_delta_file)
     train_values = np.asarray(train_df.values).astype(int)
     train_dict = {}
     for row in train_values:
-        train_dict[int(row[0])] = copy.copy(list(row[2:]))
+        train_dict[int(row[4])] = copy.copy(list(row[:4]))
 
-    predict_df = pd.read_csv(dir_path + 'predict_time_delta_fea.csv')
+    predict_df = pd.read_csv(dir_path + 'predict_time_delta_clean.csv')
     predict_values = np.asarray(predict_df.values).astype(int)
     predict_dict = {}
     for row in predict_values:
-        predict_dict[int(row[0])] = copy.copy(list(row[2:]))
+        predict_dict[int(row[4])] = copy.copy(list(row[:4]))
     return train_dict, predict_dict
 
 
@@ -129,9 +107,9 @@ if __name__ == '__main__':
     train_file = "train_x_0"
     test_file = "test_x_0"
 
-    build_user_click_time_gap(constants.clean_train_path, constants.raw_test_path, dir_path)
+    # build_user_click_time_gap(constants.clean_train_path, constants.raw_test_path, dir_path)
     # split_train_test(dir_path)
-    # a, b = load_user_click_time_gap(train_file, test_file, dir_path)
-    # print len(a), len(b)
-    # print a[:5, :]
-    # print b[:5, :]
+    a, b = load_user_click_time_gap(train_file)
+    print len(a), len(b)
+    print a[:5, :]
+    print b[:5, :]
